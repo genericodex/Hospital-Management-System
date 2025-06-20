@@ -4,9 +4,26 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * @Entity declares the class as an entity (i.e. a persistent POJO class),
+ *          marking this class as a JPA entity, making it persistable to the database.
+ * @Id declares the identifier property of this entity *
+ * @Table element contains a schema and catalog attributes
+ *
+ *
+ */
+
 @Entity
 @Table(name = "patients")
 public class Patient {
+    /**
+     * Unique identifier for the patient.
+     * @Id marks this as the primary key
+     * @GeneratedValue specifies auto-increment strategy
+     * The IDENTITY strategy relies on the database to generate new identifier values
+     */
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -36,13 +53,14 @@ public class Patient {
     @Column(name = "insurance_number")
     private String insuranceNumber;
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Appointment> appointments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Billing> billings = new ArrayList<>();
-
     // Constructors
+
+    /**
+     * Default no-args constructor needed because Hibernate has to create instances of entities.
+     * To accomplish this, Hibernate first uses the no-args constructor to instantiate the entity object,
+     * then proceeds to populate the object’s properties with the corresponding data from the database.
+     *
+     */
     public Patient() {}
 
     public Patient(String firstName, String lastName, Date dateOfBirth, String contactNumber,
@@ -118,51 +136,6 @@ public class Patient {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getInsuranceNumber() {
-        return insuranceNumber;
-    }
-
-    public void setInsuranceNumber(String insuranceNumber) {
-        this.insuranceNumber = insuranceNumber;
-    }
-
-    public List<Appointment> getAppointments() {
-        return appointments;
-    }
-
-    public void setAppointments(List<Appointment> appointments) {
-        this.appointments = appointments;
-    }
-
-    public List<Billing> getBillings() {
-        return billings;
-    }
-
-    public void setBillings(List<Billing> billings) {
-        this.billings = billings;
-    }
-
-    // Helper methods
-    public void addAppointment(Appointment appointment) {
-        appointments.add(appointment);
-        appointment.setPatient(this);
-    }
-
-    public void removeAppointment(Appointment appointment) {
-        appointments.remove(appointment);
-        appointment.setPatient(null);
-    }
-
-    public void addBilling(Billing billing) {
-        billings.add(billing);
-        billing.setPatient(this);
-    }
-
-    public void removeBilling(Billing billing) {
-        billings.remove(billing);
-        billing.setPatient(null);
     }
 
     @Override

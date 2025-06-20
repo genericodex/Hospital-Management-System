@@ -1,4 +1,5 @@
 package com.pahappa.models;
+import com.pahappa.constants.StaffRoles;
 import jakarta.persistence.*;
 import java.util.Date;
 
@@ -22,7 +23,8 @@ public class Staff {
     private String contactNumber;
 
     @Column(nullable = false)
-    private String role; // RECEPTIONIST, NURSE, PHARMACIST, ADMIN
+    @Enumerated(EnumType.STRING)
+    private StaffRoles role; // RECEPTIONIST, NURSE, PHARMACIST, ADMIN
 
     @Column(nullable = false)
     private String department;
@@ -38,7 +40,7 @@ public class Staff {
     public Staff() {}
 
     public Staff(String firstName, String lastName, String email, String contactNumber,
-                 String role, String department, Date hireDate, String password) {
+                 StaffRoles role, String department, Date hireDate, String password) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -90,11 +92,11 @@ public class Staff {
         this.contactNumber = contactNumber;
     }
 
-    public String getRole() {
+    public StaffRoles getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(StaffRoles role) {
         this.role = role;
     }
 

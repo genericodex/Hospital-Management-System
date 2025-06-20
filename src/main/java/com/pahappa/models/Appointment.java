@@ -1,4 +1,5 @@
 package com.pahappa.models;
+import com.pahappa.constants.AppointmentStatus;
 import jakarta.persistence.*;
 import java.util.Date;
 
@@ -22,7 +23,9 @@ public class Appointment {
     private Date appointmentTime;
 
     @Column(nullable = false)
-    private String status; // SCHEDULED, CANCELLED, COMPLETED
+    @Enumerated(EnumType.STRING)
+    private AppointmentStatus status;
+
 
     @Column(name = "reason_for_visit")
     private String reasonForVisit;
@@ -33,7 +36,7 @@ public class Appointment {
     // Constructors
     public Appointment() {}
 
-    public Appointment(Patient patient, Doctor doctor, Date appointmentTime, String status) {
+    public Appointment(Patient patient, Doctor doctor, Date appointmentTime, AppointmentStatus status) {
         this.patient = patient;
         this.doctor = doctor;
         this.appointmentTime = appointmentTime;
@@ -73,11 +76,11 @@ public class Appointment {
         this.appointmentTime = appointmentTime;
     }
 
-    public String getStatus() {
+    public AppointmentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(AppointmentStatus status) {
         this.status = status;
     }
 

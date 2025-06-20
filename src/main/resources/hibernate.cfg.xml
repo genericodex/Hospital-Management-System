@@ -22,15 +22,17 @@
 
         <!-- Echo executed SQL to stdout -->
         <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.current_session_context_class">thread</property>
+        <property name="hibernate.connection.autocommit">false</property>
 
         <!-- Update database schema on startup -->
         <property name="hibernate.hbm2ddl.auto">update</property>
 
         <!-- Entity mappings -->
-        <mapping class="com.pahappa.model.Patient"/>
-        <mapping class="com.pahappa.model.Doctor"/>
-        <mapping class="com.pahappa.model.Appointment"/>
-        <mapping class="com.pahappa.model.Billing"/>
-        <mapping class="com.pahappa.model.Staff"/>
+        <mapping class="com.pahappa.models.Patient"/>
+        <mapping class="com.pahappa.models.Doctor"/>
+        <mapping class="com.pahappa.models.Appointment"/>
+        <mapping class="com.pahappa.models.Billing"/>
+        <mapping class="com.pahappa.models.Staff"/>
     </session-factory>
 </hibernate-configuration>

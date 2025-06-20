@@ -1,6 +1,7 @@
 package com.pahappa.models;
 import jakarta.persistence.*;
 import java.util.Date;
+import com.pahappa.constants.BillingStatus;
 
 @Entity
 @Table(name = "billings")
@@ -9,7 +10,18 @@ public class Billing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    /**
+     * When I use FetchType.LAZY, the related Patient data is not loaded immediately
+      with each Billing. Instead, it is only loaded when you try to access the patient property.
+      If your database session is already closed by that time,
+      Hibernate cannot fetch the Patient data, giving me a LazyInitializationException,
+      and then I lose DB connection.
+     * But FetchType.EAGER allows the patient data is loaded together with each Billing
+     * So LAZY loading needs an open database session when you access related data;
+     * otherwise, you get errors.
+     */
+
+    @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
@@ -21,7 +33,9 @@ public class Billing {
     private Double amount;
 
     @Column(nullable = false)
-    private String status; // PENDING, PAID, PARTIAL
+    @Enumerated(EnumType.STRING)
+    private BillingStatus status;
+
 
     @Column(name = "payment_method")
     private String paymentMethod; // CASH, CARD, INSURANCE
@@ -41,7 +55,7 @@ public class Billing {
     // Constructors
     public Billing() {}
 
-    public Billing(Patient patient, Date billDate, Double amount, String status) {
+    public Billing(Patient patient, Date billDate, Double amount, BillingStatus status) {
         this.patient = patient;
         this.billDate = billDate;
         this.amount = amount;
@@ -81,11 +95,11 @@ public class Billing {
         this.amount = amount;
     }
 
-    public String getStatus() {
+    public BillingStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(BillingStatus status) {
         this.status = status;
     }
 
@@ -129,7 +143,7 @@ public class Billing {
         this.discountAmount = discountAmount;
     }
 
-    // Helper method to calculate total amount
+    // Helper method to calculate the total amount
     public Double getTotalAmount() {
         double total = amount;
         if (taxAmount != null) total += taxAmount;

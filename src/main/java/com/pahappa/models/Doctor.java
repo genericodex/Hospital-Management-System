@@ -1,7 +1,6 @@
 package com.pahappa.models;
+import com.pahappa.constants.Specialization;
 import jakarta.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "doctors")
@@ -17,7 +16,9 @@ public class Doctor {
     private String lastName;
 
     @Column(nullable = false)
-    private String specialization;
+    @Enumerated(EnumType.STRING)
+    private Specialization specialization;
+
 
     @Column(name = "contact_number", nullable = false, unique = true)
     private String contactNumber;
@@ -25,13 +26,11 @@ public class Doctor {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Appointment> appointments = new ArrayList<>();
 
     // Constructors
     public Doctor() {}
 
-    public Doctor(String firstName, String lastName, String specialization,
+    public Doctor(String firstName, String lastName, Specialization specialization,
                   String contactNumber, String email) {
         this.firstName = firstName;
         this.lastName = lastName;
@@ -65,11 +64,11 @@ public class Doctor {
         this.lastName = lastName;
     }
 
-    public String getSpecialization() {
+    public Specialization getSpecialization() {
         return specialization;
     }
 
-    public void setSpecialization(String specialization) {
+    public void setSpecialization(Specialization specialization) {
         this.specialization = specialization;
     }
 
@@ -87,25 +86,6 @@ public class Doctor {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public List<Appointment> getAppointments() {
-        return appointments;
-    }
-
-    public void setAppointments(List<Appointment> appointments) {
-        this.appointments = appointments;
-    }
-
-    // Helper methods
-    public void addAppointment(Appointment appointment) {
-        appointments.add(appointment);
-        appointment.setDoctor(this);
-    }
-
-    public void removeAppointment(Appointment appointment) {
-        appointments.remove(appointment);
-        appointment.setDoctor(null);
     }
 
     @Override
