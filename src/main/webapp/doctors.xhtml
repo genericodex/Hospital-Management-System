@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<ui:composition template="/template.xhtml">
+    <ui:define name="title">Doctor Management</ui:define>
+
+    <ui:define name="content">
+        <h:form id="doctorForm">
+            <p:growl id="messages" showDetail="true" autoUpdate="true"/>
+
+            <p:toolbar>
+                <f:facet name="left">
+                    <p:commandButton value="Add New" icon="pi pi-plus"
+                                     action="#{doctorBean.initNewDoctor}"
+                                     update=":doctorForm:doctorDialog"
+                                     oncomplete="PF('doctorDialog').show()"/>
+
+                    <p:commandButton value="Delete Selected" icon="pi pi-trash"
+                                     disabled="#{empty doctorBean.selectedDoctors}"
+                                     action="#{doctorBean.deleteSelectedDoctors}"
+                                     update=":doctorForm:messages,:doctorForm:doctorTable"/>
+                </f:facet>
+
+                <f:facet name="right">
+                    <p:commandButton value="View Deleted" icon="pi pi-history"
+                                     action="#{doctorBean.loadDeletedDoctors}"
+                                     update=":doctorForm:deletedDoctorsDialog"
+                                     oncomplete="PF('deletedDoctorsDialog').show()"/>
+                </f:facet>
+            </p:toolbar>
+
+            <p:dataTable id="doctorTable" var="doctor" value="#{doctorBean.doctors}"
+                         paginator="true" rows="10" selection="#{doctorBean.selectedDoctors}"
+                         rowKey="#{doctor.id}" emptyMessage="No doctors found" lazy="false">
+
+                <p:column selectionMode="multiple" style="width:3%"/>
+
+                <p:column headerText="ID" sortBy="#{doctor.id}">
+                    <h:outputText value="#{doctor.id}"/>
+                </p:column>
+
+                <p:column headerText="Name" sortBy="#{doctor.lastName}">
+                    <h:outputText value="Dr. #{doctor.firstName} #{doctor.lastName}"/>
+                </p:column>
+
+                <p:column headerText="Specialization" sortBy="#{doctor.specialization}">
+                    <h:outputText value="#{doctor.specialization}"/>
+                </p:column>
+
+                <p:column headerText="Email" sortBy="#{doctor.email}">
+                    <h:outputText value="#{doctor.email}"/>
+                </p:column>
+
+                <p:column headerText="Phone" sortBy="#{doctor.contactNumber}">
+                    <h:outputText value="#{doctor.contactNumber}"/>
+                </p:column>
+
+                <p:column headerText="Actions" style="width:10%">
+                    <p:commandButton icon="pi pi-pencil" title="Edit"
+                                     action="#{doctorBean.editDoctor(doctor)}"
+                                     update=":doctorForm:doctorDialog"
+                                     oncomplete="PF('doctorDialog').show()"
+                                    />
+
+                    <p:commandButton icon="pi pi-trash" title="Delete"
+                                     action="#{doctorBean.deleteDoctor(doctor)}"
+                                     update=":doctorForm:messages,:doctorForm:doctorTable"/>
+                </p:column>
+            </p:dataTable>
+
+            <!-- Add/Edit Doctor Dialog -->
+            <p:dialog id="doctorDialog" header="Doctor Details" widgetVar="doctorDialog" modal="true" resizable="false">
+                <h:panelGrid columns="2" cellpadding="5">
+                    <h:outputLabel for="firstName" value="First Name:"/>
+                    <p:inputText id="firstName" value="#{doctorBean.selectedDoctor.firstName}" required="true"/>
+
+                    <h:outputLabel for="lastName" value="Last Name:"/>
+                    <p:inputText id="lastName" value="#{doctorBean.selectedDoctor.lastName}" required="true"/>
+
+                    <h:outputLabel for="specialization" value="Specialization:"/>
+                    <p:selectOneMenu id="specialization" value="#{doctorBean.selectedDoctor.specialization}" required="true">
+                        <f:selectItems value="#{doctorBean.specializations}" var="spec"
+                                       itemLabel="#{spec}" itemValue="#{spec}"/>
+                    </p:selectOneMenu>
+
+                    <h:outputLabel for="email" value="Email:"/>
+                    <p:inputText id="email" value="#{doctorBean.selectedDoctor.email}" required="true"/>
+
+                    <h:outputLabel for="phone" value="Phone:"/>
+                    <p:inputText id="phone" value="#{doctorBean.selectedDoctor.contactNumber}" required="true"/>
+                </h:panelGrid>
+
+                <f:facet name="footer">
+                    <p:commandButton value="Save" action="#{doctorBean.saveDoctor}"
+                                     update=":doctorForm:messages,:doctorForm:doctorTable"
+                                     oncomplete="if(!args.validationFailed) PF('doctorDialog').hide()"/>
+                    <p:commandButton value="Cancel" onclick="PF('doctorDialog').hide()" type="button"/>
+                </f:facet>
+            </p:dialog>
+
+            <!-- Deleted Doctors Dialog -->
+            <p:dialog id="deletedDoctorsDialog"  header="Deleted Doctors" widgetVar="deletedDoctorsDialog" modal="true" resizable="false">
+                <p:dataTable var="doctor" value="#{doctorBean.deletedDoctors}" paginator="true" rows="10">
+                    <p:column headerText="ID">
+                        <h:outputText value="#{doctor.id}"/>
+                    </p:column>
+
+                    <p:column headerText="Name">
+                        <h:outputText value="Dr. #{doctor.firstName} #{doctor.lastName}"/>
+                    </p:column>
+
+                    <p:column headerText="Specialization">
+                        <h:outputText value="#{doctor.specialization}"/>
+                    </p:column>
+
+                    <p:column headerText="Actions">
+                        <p:commandButton value="Restore" action="#{doctorBean.restoreDoctor(doctor.id)}"
+                                         update=":doctorForm:messages,:doctorForm:doctorTable,:doctorForm:deletedDoctorsDialog"/>
+                    </p:column>
+                </p:dataTable>
+            </p:dialog>
+        </h:form>
+    </ui:define>
+</ui:composition>
+</html>
