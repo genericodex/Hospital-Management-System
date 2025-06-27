@@ -3,72 +3,76 @@ package com.pahappa.dao;
 import com.pahappa.models.Staff;
 import com.pahappa.util.HibernateUtil;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import java.util.List;
 
 public class StaffDao {
 
     // Create
     public void saveStaff(Staff staff) {
-        Transaction transaction = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            transaction = session.beginTransaction();
-            session.save(staff);
-            transaction.commit();
-        } catch (Exception e) {
-            if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+        // Null checks for required fields
+        if (staff.getFirstName() == null || staff.getLastName() == null || staff.getEmail() == null || staff.getContactNumber() == null || staff.getRole() == null || staff.getDepartment() == null || staff.getHireDate() == null || staff.getPassword() == null) {
+            throw new IllegalArgumentException("All staff fields must be provided and not null.");
         }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Staff newStaff = new Staff();
+        newStaff.setFirstName(staff.getFirstName());
+        newStaff.setLastName(staff.getLastName());
+        newStaff.setEmail(staff.getEmail());
+        newStaff.setContactNumber(staff.getContactNumber());
+        newStaff.setRole(staff.getRole());
+        newStaff.setDepartment(staff.getDepartment());
+        newStaff.setHireDate(staff.getHireDate());
+        newStaff.setPassword(staff.getPassword());
+        newStaff.setDeleted(staff.isDeleted());
+        session.save(newStaff);
     }
 
     // Read
     public Staff getStaffById(Long id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Staff.class, id);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        if (id == null) {
+            throw new IllegalArgumentException("Staff id must not be null.");
         }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        return session.get(Staff.class, id);
     }
 
     public List<Staff> getAllStaff() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery(
-                    "FROM com.pahappa.models.Staff", Staff.class).list();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        return session.createQuery(
+                "FROM com.pahappa.models.Staff", Staff.class).list();
     }
 
     // Update
     public void updateStaff(Staff staff) {
-        Transaction transaction = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            transaction = session.beginTransaction();
-            session.update(staff);
-            transaction.commit();
-        } catch (Exception e) {
-            if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+        if (staff.getId() == null || staff.getFirstName() == null || staff.getLastName() == null || staff.getEmail() == null || staff.getContactNumber() == null || staff.getRole() == null || staff.getDepartment() == null || staff.getHireDate() == null || staff.getPassword() == null) {
+            throw new IllegalArgumentException("All staff fields and ID must be provided and not null.");
+        }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Staff managedStaff = session.get(Staff.class, staff.getId());
+        if (managedStaff != null) {
+            managedStaff.setFirstName(staff.getFirstName());
+            managedStaff.setLastName(staff.getLastName());
+            managedStaff.setEmail(staff.getEmail());
+            managedStaff.setContactNumber(staff.getContactNumber());
+            managedStaff.setRole(staff.getRole());
+            managedStaff.setDepartment(staff.getDepartment());
+            managedStaff.setHireDate(staff.getHireDate());
+            managedStaff.setPassword(staff.getPassword());
+            managedStaff.setDeleted(staff.isDeleted());
+            session.update(managedStaff);
         }
     }
 
     // Delete
     public void deleteStaff(Long id) {
-        Transaction transaction = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            transaction = session.beginTransaction();
-            Staff staff = session.get(Staff.class, id);
-            if (staff != null) session.delete(staff);
-            transaction.commit();
-        } catch (Exception e) {
-            if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+        if (id == null) {
+            throw new IllegalArgumentException("Staff id must not be null.");
         }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Staff staff = session.get(Staff.class, id);
+        if (staff != null) session.delete(staff);
     }
 
-    // Special Queries
     public Staff authenticate(String email, String password) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("FROM com.pahappa.models.Staff WHERE email = :email AND password = :password", Staff.class)
@@ -80,4 +84,52 @@ public class StaffDao {
             return null;
         }
     }
+
+    public void softDeleteStaff(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Staff id must not be null.");
+        }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Staff staff = session.get(Staff.class, id);
+        if (staff != null && !staff.isDeleted()) {
+            staff.setDeleted(true);
+            session.update(staff);
+        }
+    }
+
+    // Get all non-deleted staff
+    public List<Staff> getAllActiveStaff() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                    "FROM com.pahappa.models.Staff WHERE isDeleted = false", Staff.class).list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Get all deleted staff (bin)
+    public List<Staff> getDeletedStaff() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                    "FROM com.pahappa.models.Staff WHERE isDeleted = true", Staff.class).list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Restore staff
+    public void restoreStaff(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Staff id must not be null.");
+        }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Staff staff = session.get(Staff.class, id);
+        if (staff != null && staff.isDeleted()) {
+            staff.setDeleted(false);
+            session.update(staff);
+        }
+    }
+
 }
