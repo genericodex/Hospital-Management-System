@@ -6,21 +6,26 @@ import com.pahappa.constants.Specialization;
 import com.pahappa.constants.StaffRoles;
 import com.pahappa.dao.*;
 import com.pahappa.models.*;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-public class HospitalService {
+public class HospitalService implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private final PatientDao patientDao = new PatientDao();
     private final DoctorDao doctorDao = new DoctorDao();
     private final AppointmentDao appointmentDao = new AppointmentDao();
     private final StaffDao staffDao = new StaffDao();
     private final BillingDao billingDao = new BillingDao();
 
-    // ========== PATIENT CRUD OPERATIONS ==========
+    // Patient operations
     public Patient createPatient(String firstName, String lastName, Date dob,
-                                 String contact, String address, String email) {
+                                 String contact, String address, String email, Boolean isDeleted) {
 //        Transient object initialised
-        Patient patient = new Patient(firstName, lastName, dob, contact, address, email);
+        Patient patient = new Patient(firstName, lastName, dob, contact, address, email, isDeleted);
         patientDao.savePatient(patient);
         return patient;
     }
@@ -43,14 +48,30 @@ public class HospitalService {
         patientDao.deletePatient(id);
     }
 
-    public Patient findPatientByEmail(String email) {
-        return patientDao.findPatientByEmail(email);
+    public void softDeletePatient(Long id) {
+        patientDao.softDeletePatient(id);
     }
 
-    // ========== DOCTOR CRUD OPERATIONS ==========
+    public void restorePatient(Long id) {
+        patientDao.restorePatient(id);
+    }
+
+    public List<Patient> getAllActivePatient() {
+        return patientDao.getAllActivePatient();
+    }
+
+    public List<Patient> getDeletedPatient() {
+        return patientDao.getDeletedPatients();
+    }
+
+//    public Patient findPatientByEmail(String email) {
+//        return patientDao.findPatientByEmail(email);
+//    }
+
+    // Doctor operations
     public Doctor createDoctor(String firstName, String lastName, Specialization specialization,
-                               String contact, String email) {
-        Doctor doctor = new Doctor(firstName, lastName, specialization, contact, email);
+                               String contact, String email, Boolean isDeleted) {
+        Doctor doctor = new Doctor(firstName, lastName, specialization, contact, email, isDeleted);
         doctorDao.saveDoctor(doctor);
         return doctor;
     }
@@ -71,14 +92,31 @@ public class HospitalService {
         doctorDao.deleteDoctor(id);
     }
 
-    public List<Doctor> findDoctorsBySpecialization(String specialization) {
-        return doctorDao.findBySpecialization(specialization);
+//    public List<Doctor> findDoctorsBySpecialization(String specialization) {
+//        return doctorDao.findBySpecialization(specialization);
+//    }
+
+
+    public void softDeleteDoctor(Long id) {
+        doctorDao.softDeleteDoctor(id);
     }
 
-    // ========== APPOINTMENT OPERATIONS ==========
+    public void restoreDoctor(Long id) {
+        doctorDao.restoreDoctor(id);
+    }
+
+    public List<Doctor> getAllActiveDoctor() {
+        return doctorDao.getAllActiveDoctors();
+    }
+
+    public List<Doctor> getDeletedDoctors() {
+        return doctorDao.getDeletedDoctors();
+    }
+
+    // Appointment operations
     public Appointment createAppointment(Patient patient, Doctor doctor,
-                                         Date appointmentTime, String reason) {
-        Appointment appointment = new Appointment(patient, doctor, appointmentTime, AppointmentStatus.SCHEDULED);
+                                         Date appointmentTime, String reason, Boolean isDeleted) {
+        Appointment appointment = new Appointment(patient, doctor, appointmentTime, AppointmentStatus.SCHEDULED, isDeleted);
         appointment.setReasonForVisit(reason);
         appointmentDao.saveAppointment(appointment);
         return appointment;
@@ -97,20 +135,36 @@ public class HospitalService {
         return appointmentDao.getAppointmentsByDoctor(doctorId);
     }
 
+    public List<Appointment> getAppointmentsByPatient(Long patientId) {
+        return appointmentDao.getAppointmentsByPatient(patientId);
+    }
+
     public void updateAppointment(Appointment appointment) {
         appointmentDao.updateAppointment(appointment);
     }
 
     public void cancelAppointment(Long id) {
-        appointmentDao.deleteAppointment(id);
+        appointmentDao.softDeleteAppointment(id);
     }
 
-    // ========== STAFF OPERATIONS ==========
+    public void restoreAppointment(Long id) {
+        appointmentDao.restoreAppointment(id);
+    }
+
+    public List<Appointment> getAllActiveAppointments() {
+        return appointmentDao.getAllActiveAppointments();
+    }
+
+    public List<Appointment> getDeletedAppointments() {
+        return appointmentDao.getDeletedAppointments();
+    }
+
+    // Staff operations
     public Staff createStaff(String firstName, String lastName,
                              String email, String contact,
                              StaffRoles role, String department,
-                             Date hireDate, String password) {
-        Staff staff = new Staff(firstName, lastName, email, contact, role, department, hireDate, password);
+                             Date hireDate, String password, Boolean isDeleted) {
+        Staff staff = new Staff(firstName, lastName, email, contact, role, department, hireDate, password,isDeleted);
         staffDao.saveStaff(staff);
         return staff;
     }
@@ -136,7 +190,24 @@ public class HospitalService {
         staffDao.deleteStaff(id);
     }
 
-    // ========== BILLING OPERATIONS ==========
+
+    public void softDeleteStaff(Long id) {
+        staffDao.softDeleteStaff(id);
+    }
+
+    public void restoreStaff(Long id) {
+        staffDao.restoreStaff(id);
+    }
+
+    public List<Staff> getAllActiveStaff() {
+        return staffDao.getAllActiveStaff();
+    }
+
+    public List<Staff> getDeletedStaff() {
+        return staffDao.getDeletedStaff();
+    }
+
+    // billing operations
     public Billing createBilling(Patient patient, double amount, String description) {
         Billing billing = new Billing();
         billing.setPatient(patient);
@@ -160,14 +231,18 @@ public class HospitalService {
         return billingDao.getBillingsByPatient(patientId);
     }
 
-    public void updateBilling(Billing billing) {
-        billingDao.updateBilling(billing);
-    }
+//    public void updateBilling(Billing billing) {
+//        billingDao.updateBilling(billing);
+//    }
 
     public void processPayment(Billing billing, String paymentMethod) {
-        billing.setPaymentMethod(paymentMethod);
-        billing.setStatus(BillingStatus.PAID);
-        billingDao.updateBilling(billing);
+        // Always fetch managed entity from DB before updating
+        Billing managedBilling = billingDao.getBillingById(billing.getId());
+        if (managedBilling != null) {
+            managedBilling.setPaymentMethod(paymentMethod);
+            managedBilling.setStatus(BillingStatus.PAID);
+            billingDao.updateBilling(managedBilling);
+        }
     }
 
     public void deleteBilling(Long id) {
