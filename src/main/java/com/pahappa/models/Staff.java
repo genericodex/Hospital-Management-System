@@ -36,11 +36,14 @@ public class Staff {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     // Constructors
     public Staff() {}
 
     public Staff(String firstName, String lastName, String email, String contactNumber,
-                 StaffRoles role, String department, Date hireDate, String password) {
+                 StaffRoles role, String department, Date hireDate, String password, Boolean isDeleted) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -49,6 +52,7 @@ public class Staff {
         this.department = department;
         this.hireDate = hireDate;
         this.password = password;
+        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
     }
 
     // Getters and Setters
@@ -123,6 +127,10 @@ public class Staff {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public boolean isDeleted() {return isDeleted;}
+
+    public void setDeleted(boolean deleted) {isDeleted = deleted;}
 
     @Override
     public String toString() {
