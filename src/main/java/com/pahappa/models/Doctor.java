@@ -1,7 +1,6 @@
 package com.pahappa.models;
+import com.pahappa.constants.Specialization;
 import jakarta.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "doctors")
@@ -17,7 +16,9 @@ public class Doctor {
     private String lastName;
 
     @Column(nullable = false)
-    private String specialization;
+    @Enumerated(EnumType.STRING)
+    private Specialization specialization;
+
 
     @Column(name = "contact_number", nullable = false, unique = true)
     private String contactNumber;
@@ -25,19 +26,22 @@ public class Doctor {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Appointment> appointments = new ArrayList<>();
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
+
 
     // Constructors
     public Doctor() {}
 
-    public Doctor(String firstName, String lastName, String specialization,
-                  String contactNumber, String email) {
+    public Doctor(String firstName, String lastName, Specialization specialization,
+                  String contactNumber, String email, Boolean isDeleted) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.specialization = specialization;
         this.contactNumber = contactNumber;
         this.email = email;
+        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
     }
 
     // Getters and Setters
@@ -65,11 +69,11 @@ public class Doctor {
         this.lastName = lastName;
     }
 
-    public String getSpecialization() {
+    public Specialization getSpecialization() {
         return specialization;
     }
 
-    public void setSpecialization(String specialization) {
+    public void setSpecialization(Specialization specialization) {
         this.specialization = specialization;
     }
 
@@ -89,23 +93,11 @@ public class Doctor {
         this.email = email;
     }
 
-    public List<Appointment> getAppointments() {
-        return appointments;
+    public boolean isDeleted() {
+        return isDeleted;
     }
-
-    public void setAppointments(List<Appointment> appointments) {
-        this.appointments = appointments;
-    }
-
-    // Helper methods
-    public void addAppointment(Appointment appointment) {
-        appointments.add(appointment);
-        appointment.setDoctor(this);
-    }
-
-    public void removeAppointment(Appointment appointment) {
-        appointments.remove(appointment);
-        appointment.setDoctor(null);
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 
     @Override
@@ -116,5 +108,18 @@ public class Doctor {
                 ", lastName='" + lastName + '\'' +
                 ", specialization='" + specialization + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Doctor doctor = (Doctor) o;
+        return id != null && id.equals(doctor.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

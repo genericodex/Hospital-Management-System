@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<ui:composition template="/template.xhtml">
+    <ui:define name="title">Patient Management</ui:define>
+
+    <ui:define name="content">
+        <div class="bg-white rounded-lg shadow-lg p-8 max-w-6xl mx-auto mt-6">
+            <h:form id="patientForm">
+                <p:growl id="messages" showDetail="true" autoUpdate="true" styleClass="mb-4"/>
+
+                <p:toolbar styleClass="bg-blue-50 rounded-lg mb-4 p-4 flex flex-wrap gap-4 items-center justify-between">
+                    <f:facet name="left">
+                        <p:commandButton value="Add New" icon="pi pi-plus"
+                                         action="#{patientBean.initNewPatient}"
+                                         update="patientForm:patientDialog"
+                                         oncomplete="PF('patientDialog').show()"
+                                         styleClass="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow mr-2"/>
+
+                        <p:commandButton value="Delete Selected" icon="pi pi-trash"
+                                         disabled="#{!patientBean.hasSelectedPatients()}"
+                                         action="#{patientBean.deleteSelectedPatients}"
+                                         update="patientForm:messages,patientForm:patientTable"
+                                         styleClass="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded shadow"/>
+                    </f:facet>
+
+                    <f:facet name="right">
+                        <p:commandButton value="View Deleted" icon="pi pi-history"
+                                         action="#{patientBean.loadDeletedPatients}"
+                                         update="patientForm:deletedPatientsDialog"
+                                         oncomplete="PF('deletedPatientsDialog').show()"
+                                         styleClass="bg-gray-500 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded shadow"/>
+                    </f:facet>
+                </p:toolbar>
+
+                <p:dataTable id="patientTable" var="patient" value="#{patientBean.patients}"
+                             paginator="true" rows="10" selection="#{patientBean.selectedPatients}"
+                             rowKey="#{patient.id}" emptyMessage="No patients found"
+                             styleClass="min-w-full divide-y divide-gray-200 text-sm rounded-lg overflow-hidden shadow"
+                             tableStyleClass="w-full">
+                    <p:column selectionMode="multiple" style="width:3%"/>
+
+                    <p:column headerText="ID" sortBy="#{patient.id}">
+                        <h:outputText value="#{patient.id}" styleClass="font-semibold text-blue-700"/>
+                    </p:column>
+
+                    <p:column headerText="Name" sortBy="#{patient.lastName}">
+                        <h:outputText value="#{patient.firstName} #{patient.lastName}" styleClass="text-gray-800"/>
+                    </p:column>
+
+                    <p:column headerText="Date of Birth" sortBy="#{patient.dateOfBirth}">
+                        <h:outputText value="#{patient.dateOfBirth}">
+                            <f:convertDateTime pattern="MMM dd, yyyy"/>
+                        </h:outputText>
+                    </p:column>
+
+                    <p:column headerText="Email" sortBy="#{patient.email}">
+                        <h:outputText value="#{patient.email}"/>
+                    </p:column>
+
+                    <p:column headerText="Phone" sortBy="#{patient.contactNumber}">
+                        <h:outputText value="#{patient.contactNumber}"/>
+                    </p:column>
+
+                    <p:column headerText="Actions" style="width:10%">
+                        <p:commandButton icon="pi pi-pencil" title="Edit"
+                                         action="#{patientBean.editPatient(patient)}"
+                                         update="patientForm:patientDialog"
+                                         oncomplete="PF('patientDialog').show()"/>
+
+                        <p:commandButton icon="pi pi-trash" title="Delete"
+                                         action="#{patientBean.deletePatient(patient)}"
+                                         update="patientForm:messages,patientForm:patientTable"/>
+                    </p:column>
+                </p:dataTable>
+
+                <!-- Add/Edit Patient Dialog -->
+                <p:dialog id="patientDialog" header="Patient Details" widgetVar="patientDialog" modal="true" resizable="false" dynamic="true">
+                    <h:panelGrid columns="2" cellpadding="5">
+                        <h:outputLabel for="firstName" value="First Name:"/>
+                        <p:inputText id="firstName" value="#{patientBean.selectedPatient.firstName}" required="true"/>
+
+                        <h:outputLabel for="lastName" value="Last Name:"/>
+                        <p:inputText id="lastName" value="#{patientBean.selectedPatient.lastName}" required="true"/>
+
+                        <h:outputLabel for="dob" value="Date of Birth:"/>
+                        <p:calendar id="dob" value="#{patientBean.selectedPatient.dateOfBirth}" pattern="yyyy-MM-dd" required="true"/>
+
+                        <h:outputLabel for="email" value="Email:"/>
+                        <p:inputText id="email" value="#{patientBean.selectedPatient.email}" required="true"/>
+
+                        <h:outputLabel for="phone" value="Phone:"/>
+                        <p:inputText id="phone" value="#{patientBean.selectedPatient.contactNumber}" required="true"/>
+
+                        <h:outputLabel for="address" value="Address:"/>
+                        <p:inputTextarea id="address" value="#{patientBean.selectedPatient.address}" required="true"/>
+                    </h:panelGrid>
+
+                    <f:facet name="footer">
+                        <p:commandButton value="Save" action="#{patientBean.savePatient}"
+                                         update="patientForm:messages,patientForm:patientTable"
+                                         oncomplete="if(!args.validationFailed) PF('patientDialog').hide()"/>
+                        <p:commandButton value="Cancel" onclick="PF('patientDialog').hide()" type="button"/>
+                    </f:facet>
+                </p:dialog>
+
+                <!-- Deleted Patients Dialog -->
+                <p:dialog id="deletedPatientsDialog" header="Deleted Patients" widgetVar="deletedPatientsDialog" modal="true" resizable="false">
+                    <p:dataTable var="patient" value="#{patientBean.deletedPatients}" paginator="true" rows="10">
+                        <p:column headerText="ID">
+                            <h:outputText value="#{patient.id}"/>
+                        </p:column>
+
+                        <p:column headerText="Name">
+                            <h:outputText value="#{patient.firstName} #{patient.lastName}"/>
+                        </p:column>
+
+                        <p:column headerText="Email">
+                            <h:outputText value="#{patient.email}"/>
+                        </p:column>
+
+                        <p:column headerText="Actions">
+                            <p:commandButton value="Restore" action="#{patientBean.restorePatient(patient.id)}"
+                                             update="patientForm:messages,patientForm:patientTable,patientForm:deletedPatientsDialog"/>
+                        </p:column>
+                    </p:dataTable>
+                </p:dialog>
+            </h:form>
+        </div>
+    </ui:define>
+</ui:composition>
+</html>

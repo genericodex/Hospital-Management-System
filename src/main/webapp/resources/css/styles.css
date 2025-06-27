@@ -1,0 +1,49 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f5f5f5;
+}
+
+.ui-fluid {
+    width: 100%;
+}
+
+.ui-datatable {
+    margin: 20px;
+}
+
+.ui-toolbar {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px;
+}
+
+.ui-panel {
+    margin: 10px;
+}
+
+.ui-dialog {
+    border-radius: 6px;
+}
+
+.ui-menubar {
+    border: none;
+    background-color: #343a40;
+}
+
+.ui-menuitem-text {
+    color: white;
+}
+
+.ui-submenu-icon {
+    color: white;
+}

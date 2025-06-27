@@ -4,8 +4,8 @@
 
   <groupId>com.pahappa</groupId>
   <artifactId>Hospital-Management-System</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <version>1.6-SNAPSHOT</version>
+  <packaging>war</packaging>
 
   <name>Hospital-Management-System</name>
   <url>http://maven.apache.org</url>
@@ -24,23 +24,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-entitymanager</artifactId>
-      <version>3.5.6-Final</version>
-      <type>jar</type>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-annotations</artifactId>
-      <version>3.5.6-Final</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-
-      </exclusions>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
+      <version>3.1.0</version>
     </dependency>
 
     <dependency>
@@ -54,25 +40,12 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.32</version>
+      <version>1.7.36</version>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>1.7.32</version>
-    </dependency>
-
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>1.6.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>jcl-over-slf4j</artifactId>
-      <version>1.6.1</version>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.5.13</version>
     </dependency>
     <!-- JUnit for testing -->
     <dependency>
@@ -81,5 +54,77 @@
       <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- Weld CDI for Tomcat -->
+    <dependency>
+      <groupId>org.jboss.weld.servlet</groupId>
+      <artifactId>weld-servlet-shaded</artifactId>
+      <version>5.1.2.Final</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>jakarta.faces</groupId>
+      <artifactId>jakarta.faces-api</artifactId>
+      <version>4.1.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>jakarta.faces</artifactId>
+      <version>4.0.1</version>
+    </dependency>
+
+    <!-- Jakarta Servlet API -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>6.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Jakarta Inject API -->
+    <dependency>
+      <groupId>jakarta.inject</groupId>
+      <artifactId>jakarta.inject-api</artifactId>
+      <version>2.0.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.primefaces</groupId>
+      <artifactId>primefaces</artifactId>
+      <version>15.0.0</version>
+      <classifier>jakarta</classifier>
+    </dependency>
   </dependencies>
-</project>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.4.0</version>
+        <executions>
+          <execution>
+            <id>exploded</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exploded</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.1</version>
+
+        <configuration>
+          <source>21</source>
+          <target>21</target>
+          <compilerArgs>--enable-preview</compilerArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build></project>
