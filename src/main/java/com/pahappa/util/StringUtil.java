@@ -46,7 +46,25 @@ public class StringUtil {
         while (true) {
             try {
                 System.out.print(prompt + " (YYYY-MM-DD): ");
-                return dateFormat.parse(scanner.nextLine());
+                String input = scanner.nextLine();
+                String[] parts = input.split("-");
+                if (parts.length == 3) {
+                    int month = Integer.parseInt(parts[1]);
+                    int day = Integer.parseInt(parts[0]);
+                    if (month < 1 || month > 12) {
+                        System.out.println("Invalid month. Please enter a month between 01 and 12.");
+                        continue;
+                    }
+                if (day < 0 || day > 31) {
+                        System.out.println("Invalid day. Please enter a day between 01 and 31.");
+                        continue;
+                    }
+                    return dateFormat.parse(input);
+                } else {
+                    System.out.println("Please enter a valid date in the format YYYY-MM-DD.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid month. Please enter a valid number for the month.");
             } catch (ParseException e) {
                 System.out.println("Please enter a valid date in the format YYYY-MM-DD.");
             }
