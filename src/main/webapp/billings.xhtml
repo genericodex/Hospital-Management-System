@@ -72,7 +72,7 @@
             <p:dialog id="billingDialog" header="Create New Bill" widgetVar="billingDialog" modal="true" resizable="false">
                 <h:panelGrid columns="2" cellpadding="5">
                     <h:outputLabel for="patient" value="Patient:"/>
-                    <p:selectOneMenu id="patient" value="#{billingBean.selectedBilling.patient}" converter="#{patientConverter}" required="true">
+                    <p:selectOneMenu id="patient" value="#{billingBean.selectedBilling.patient}" converter="patientConverter" required="true">
                         <f:selectItems value="#{billingBean.patients}" var="patient"
                                        itemLabel="#{patient.firstName} #{patient.lastName}" itemValue="#{patient}"/>
                     </p:selectOneMenu>
