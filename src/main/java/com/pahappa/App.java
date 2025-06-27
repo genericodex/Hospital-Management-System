@@ -1,19 +1,12 @@
 package com.pahappa;
 
-import com.pahappa.util.StringUtil;
-import com.pahappa.constants.Specialization;
-import com.pahappa.models.*;
-import com.pahappa.services.HospitalService;
+import com.pahappa.dao.StaffDao;
 import com.pahappa.util.HibernateUtil;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 import java.util.Scanner;
-
 import static com.pahappa.services.AppointmentServices.*;
 import static com.pahappa.services.StaffServices.*;
+import com.pahappa.models.Staff;
 import static com.pahappa.services.BillingServices.*;
 import static com.pahappa.services.DoctorServices.*;
 import static com.pahappa.services.PatientServices.*;
@@ -27,6 +20,21 @@ public class App {
         try {
             HibernateUtil.getSessionFactory().openSession();
             System.out.println("Database connection successful!");
+
+            StaffDao staffDao = new StaffDao();
+            Staff loggedInStaff = null;
+            while (loggedInStaff == null) {
+                System.out.println("=== Staff Login ===");
+                String email = getStringInput("Enter email: ");
+                String password = getStringInput("Enter password: ");
+                loggedInStaff = staffDao.authenticate(email, password);
+                if (loggedInStaff == null) {
+                    System.out.println("Invalid email or password. Please try again.");
+                }
+            }
+
+            System.out.println("Login successful!! Welcome, " + loggedInStaff.getFirstName() + " " + loggedInStaff.getLastName() + "!");
+
 
             boolean running = true;
             while (running) {
@@ -130,6 +138,8 @@ public class App {
                 }case 3 :{updateAppointment();break;
                 }case 4 :{deleteAppointment();break;
                 }case 5 :{listAllAppointments();break;
+                }case 6: {listAppointmentsByDoctor(); break;
+                }case 7: {listAppointmentsByPatient();break;
                 }case 0 :{ return;
                 }default :{System.out.println("Invalid choice. Please try again.");break;
                 }

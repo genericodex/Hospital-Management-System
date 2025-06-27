@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="primefaces">
+
+<h:head>
+    <title>Hospital Management System - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(120deg, #3498db, #8e44ad);
+        }
+    </style>
+</h:head>
+
+<h:body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-700">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center">
+        <div class="flex flex-col items-center mb-8">
+            <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-2">
+                <i class="pi pi-hospital text-blue-600 text-3xl"></i>
+            </span>
+            <h2 class="text-3xl font-extrabold text-blue-700 mb-2 tracking-tight">Hospital Management System</h2>
+            <p class="text-gray-500 text-sm">Sign in to your account</p>
+        </div>
+        <h:form id="loginForm" styleClass="w-full">
+            <p:messages id="messages" showDetail="true" autoUpdate="true" styleClass="mb-4"/>
+            <div class="space-y-6">
+                <div>
+                    <label for="email" class="block text-gray-700 font-medium mb-1">Email</label>
+                    <p:inputText id="email" value="#{authBean.email}" required="true" styleClass="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+                </div>
+                <div>
+                    <label for="password" class="block text-gray-700 font-medium mb-1">Password</label>
+                    <p:password id="password" value="#{authBean.password}" required="true" feedback="false" styleClass="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+                </div>
+                <div>
+                    <p:commandButton value="Login" action="#{authBean.login}" update="messages" styleClass="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-lg transition duration-200"/>
+                </div>
+            </div>
+        </h:form>
+        <div class="mt-8 text-center text-gray-400 text-xs">
+            &#169; 2025 Hospital Management System. All rights reserved.
+        </div>
+    </div>
+</h:body>
+</html>

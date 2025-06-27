@@ -2,6 +2,7 @@ package com.pahappa.services;
 
 import com.pahappa.constants.Specialization;
 import com.pahappa.models.Doctor;
+import com.pahappa.models.Staff;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -11,12 +12,12 @@ import static com.pahappa.util.StringUtil.getStringInput;
 
 public class DoctorServices {
     private static final HospitalService service = new HospitalService();
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     // Doctor operations
     public static void createDoctor() {
         System.out.println("\n=== Create New Doctor ===");
         String firstName, lastName, phone, email, specStr;
+        Boolean isDeleted = false;
 
         do {firstName = getStringInput("Enter first name: ");
             if (firstName.isEmpty()) {System.out.println("First name cannot be empty. Please try again.");}
@@ -52,7 +53,7 @@ public class DoctorServices {
             if (email.isEmpty()) {System.out.println("Email cannot be empty. Please try again.");}
         }while (email.trim().isEmpty());
 
-        Doctor doctor = service.createDoctor(firstName, lastName, specialization, phone, email);
+        Doctor doctor = service.createDoctor(firstName, lastName, specialization, phone, email, isDeleted);
         System.out.println("Doctor created successfully with ID: " + doctor.getId());
     }
 
@@ -106,20 +107,45 @@ public class DoctorServices {
 
     }
 
-    public static void deleteDoctor() {
+    public static void eraseDoctor() {
         System.out.println("\n=== Delete Doctor ===");
         long id = getIntInput("Enter doctor ID: ");
         service.deleteDoctor(id);
         System.out.println("Doctor deleted successfully.");
     }
 
-    public static void listAllDoctors() {
+    public static void listAllDoctor() {
         System.out.println("\n=== All Doctors ===");
         List<Doctor> doctors = service.getAllDoctors();
-        doctors.forEach(d -> System.out.println(
-                "ID: " + d.getId() +
-                ", Name: Dr. " + d.getFirstName() + " " + d.getLastName() +
-                ", Specialization: " + d.getSpecialization()));
+
     }
+
+    public static void deleteDoctor() {
+        long id = getIntInput("Enter Doctor ID: ");
+        service.softDeleteDoctor(id);
+        System.out.println("Doctor moved to bin (soft deleted).");
+    }
+
+    public static void restoreDoctor() {
+        long id = getIntInput("Enter Doctor ID to restore: ");
+        service.restoreDoctor(id);
+        System.out.println("Doctor restored from bin.");
+    }
+
+    public static void listAllDoctors() {
+        List<Doctor> doctors = service.getAllActiveDoctor();
+        if (doctors == null || doctors.isEmpty()) {
+            System.out.println("No Doctor found.");
+            return;
+        }doctors.forEach(d -> System.out.println(
+                "ID: " + d.getId() +
+                        ", Name: Dr. " + d.getFirstName() + " " + d.getLastName() +
+                        ", Specialization: " + d.getSpecialization()));  }
+
+    public static void listDeletedDoctors() {
+        List<Doctor> deletedDoctors = service.getDeletedDoctors();
+        // display deletedStaff
+    }
+
 
 }

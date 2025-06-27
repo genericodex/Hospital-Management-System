@@ -1,6 +1,7 @@
 package com.pahappa.services;
 
 import com.pahappa.models.Patient;
+import com.pahappa.models.Staff;
 import com.pahappa.services.HospitalService;
 
 import java.text.SimpleDateFormat;
@@ -16,6 +17,7 @@ public class PatientServices {
     public static void createPatient() {
         System.out.println("\n=== Create New Patient ===");
         String firstName, lastName, phone, address, email;
+        Boolean isDeleted = false;
         do {
             firstName = getStringInput("Enter first name: ");
             if (firstName.trim().isEmpty()) {
@@ -28,7 +30,15 @@ public class PatientServices {
                 System.out.println("Last name cannot be empty. Please try again.");
             }
         }while (lastName.trim().isEmpty());
-        Date dob = getDateInput("Enter date of birth");
+        Date dob;
+        do {
+            dob = getDateInput("Enter date of birth");
+            Date today = new Date();
+            if (dob.after(today)) {
+                System.out.println("Date of birth cannot be in the future. Please enter a valid date.");
+                dob = null;
+            }
+        } while (dob == null);
         do {
             phone = getStringInput("Enter phone number: ");
             if (phone.trim().isEmpty()) {
@@ -52,7 +62,7 @@ public class PatientServices {
             }
         }while (email.trim().isEmpty());
 
-        Patient patient = service.createPatient(firstName, lastName, dob, phone, address, email);
+        Patient patient = service.createPatient(firstName, lastName, dob, phone, address, email, isDeleted);
         System.out.println("Patient created successfully with ID: " + patient.getId());
     }
 
@@ -112,17 +122,44 @@ public class PatientServices {
 
     }
 
-    public static void deletePatient() {
+    public static void erasePatient() {
         System.out.println("\n=== Delete Patient ===");
         long id = getIntInput("Enter patient ID: ");
         service.deletePatient(id);
         System.out.println("Patient deleted successfully.");
     }
 
+    public static void deletePatient() {
+        long id = getIntInput("Enter Patient ID: ");
+        service.softDeletePatient(id);
+        System.out.println("Patient moved to bin (soft deleted).");
+    }
+
+    public static void restorePatient() {
+        long id = getIntInput("Enter Patient ID to restore: ");
+        service.restorePatient(id);
+        System.out.println("Patient restored from bin.");
+    }
+
     public static void listAllPatients() {
+        List<Patient> patients = service.getAllActivePatient();
+        if (patients == null || patients.isEmpty()) {
+            System.out.println("No Patient found.");
+            return;
+        }patients.forEach(p -> System.out.println("ID: " + p.getId() +
+                ", Name: " + p.getFirstName() + " " + p.getLastName() +
+                ", Email: " + p.getEmail()));    }
+
+    public static void listDeletedPatient() {
+        List<Patient> deletedPatient = service.getDeletedPatient();
+        // display deletedStaff
+    }
+
+
+    public static void listAllPatient() {
         System.out.println("\n=== All Patients ===");
         List<Patient> patients = service.getAllPatients();
-
+    }
         /**
          *
          * How the .forEach() method works:
@@ -132,12 +169,19 @@ public class PatientServices {
          * Patient: The name of the ArrayList to be iterated.
          * action: The operation that accepts an element in the ArrayList as its only argument
          *      and does not return any value.
+         *
+         * Alternative for p -> ..... is the basic for loops;
+         * p - > System.out.println("ID: " + p.getId() ... shows a lambda expression
+         * showing the instance of the Patient class explaining "for each Patient p, do something"
+         *      for (int i = 0; i < patients.size(); i++) or for(Patients p : patients){
+         *          *     Patient p= patients.get(i);
+         *          *     System.out.println("ID: " + p.getId() +
+         *                 ", Name: " + p.getFirstName() + " " + p.getLastName() +
+         *                 ", Email: " + p.getEmail()));
+         *          * }
          */
 
-        patients.forEach(p -> System.out.println("ID: " + p.getId() +
-                ", Name: " + p.getFirstName() + " " + p.getLastName() +
-                ", Email: " + p.getEmail()));
-    }
+
 
 
 }

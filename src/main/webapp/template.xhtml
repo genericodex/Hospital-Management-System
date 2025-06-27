@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="primefaces"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <title><ui:insert name="title">Hospital Management System</ui:insert></title>
+    <!-- Tailwind CSS CDN (correct link) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PrimeIcons CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/primeicons/primeicons.css" />
+    <script>
+      function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('hidden');
+      }
+    </script>
+</h:head>
+
+<h:body class="bg-gray-100 min-h-screen">
+    <div class="flex flex-col min-h-screen">
+        <!-- Top Bar -->
+        <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 text-white px-6 py-4 flex items-center justify-between shadow-lg rounded-b-2xl">
+            <div class="flex items-center">
+                <button type="button" class="mr-4 md:hidden focus:outline-none" onclick="toggleSidebar()">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <span class="text-2xl font-extrabold tracking-wide drop-shadow">Hospital Management System</span>
+            </div>
+            <div class="flex items-center gap-4">
+
+            </div>
+        </div>
+        <div class="flex flex-1">
+            <!-- Sidebar -->
+            <div id="sidebar" class="bg-white/90 backdrop-blur w-64 p-5 border-r border-blue-100 fixed md:static h-full md:h-auto z-20 transition-all duration-300 md:block hidden rounded-tr-3xl shadow-xl">
+                <h:form>
+                    <nav class="flex flex-col gap-3">
+                        <h:link outcome="dashboard" styleClass="block px-4 py-2 rounded-xl hover:bg-blue-100 text-gray-800 flex items-center gap-3 font-medium transition shadow-sm">
+                            <i class="pi pi-home text-blue-600"></i>
+                            <span>Dashboard</span>
+                        </h:link>
+                        <!-- Patients Dropdown -->
+                        <div class="relative">
+                            <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold text-gray-600 rounded hover:bg-blue-100 focus:outline-none" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                <span class="flex items-center gap-2">
+                                    <i class="pi pi-users text-blue-600"></i>
+                                    Patients
+                                </span>
+                                <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <h:link outcome="patients" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-list text-blue-400"></i>
+                                    <span>Manage Patients</span>
+                                </h:link>
+                                <p:commandLink action="#{patientBean.initNewPatient}" ajax="false" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-user-plus text-green-500"></i>
+                                    <span>New Patient</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                        <!-- Doctors Dropdown -->
+                        <div class="relative">
+                            <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold text-gray-600 rounded hover:bg-blue-100 focus:outline-none" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                <span class="flex items-center gap-2">
+                                    <i class="pi pi-user text-green-600"></i>
+                                    Doctors
+                                </span>
+                                <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <h:link outcome="doctors" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-list text-green-400"></i>
+                                    <span>Manage Doctors</span>
+                                </h:link>
+                                <p:commandLink action="#{doctorBean.initNewDoctor}" ajax="false" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-user-plus text-green-500"></i>
+                                    <span>New Doctor</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                        <!-- Appointments Dropdown -->
+                        <div class="relative">
+                            <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold text-gray-600 rounded hover:bg-blue-100 focus:outline-none" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                <span class="flex items-center gap-2">
+                                    <i class="pi pi-calendar text-yellow-600"></i>
+                                    Appointments
+                                </span>
+                                <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <h:link outcome="appointments" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-list text-yellow-400"></i>
+                                    <span>Manage Appointments</span>
+                                </h:link>
+                                <p:commandLink action="#{appointmentBean.initNewAppointment}" ajax="false" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-plus text-yellow-500"></i>
+                                    <span>New Appointment</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                        <!-- Billing Dropdown -->
+                        <div class="relative">
+                            <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold text-gray-600 rounded hover:bg-blue-100 focus:outline-none" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                <span class="flex items-center gap-2">
+                                    <i class="pi pi-money-bill text-purple-600"></i>
+                                    Billing
+                                </span>
+                                <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <h:link outcome="billings" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-list text-purple-400"></i>
+                                    <span>Manage Bills</span>
+                                </h:link>
+                                <p:commandLink action="#{billingBean.initNewBilling}" ajax="false" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-plus text-purple-500"></i>
+                                    <span>New Bill</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                        <!-- Staff Dropdown -->
+                        <div class="relative">
+                            <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold text-gray-600 rounded hover:bg-blue-100 focus:outline-none" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                <span class="flex items-center gap-2">
+                                    <i class="pi pi-id-card text-pink-600"></i>
+                                    Staff
+                                </span>
+                                <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <h:link outcome="staff" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-list text-pink-400"></i>
+                                    <span>Manage Staff</span>
+                                </h:link>
+                                <p:commandLink action="#{staffBean.initNewStaff}" ajax="false" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-user-plus text-pink-500"></i>
+                                    <span>New Staff</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                        <!-- Settings Link -->
+                        <h:link outcome="settings" styleClass="block px-4 py-2 rounded hover:bg-blue-100 text-gray-800 flex items-center gap-2">
+                            <i class="pi pi-cog text-gray-600"></i>
+                            <span class="font-bold">Settings</span>
+                        </h:link>
+                        <div class="mt-4  justify-center">
+                            <p:commandButton icon="pi pi-power-off" value="Logout" title="Logout" action="#{authBean.logout}"
+                                             styleClass="!w-full !max-h-[20px] !max-w-[120px] !flex !items-center !justify-center !gap-4 !bg-red-700
+                                             !hover:bg-red-800 !text-white font-thin !font-small py-4 !rounded-8xl shadow-2xl !transition-all
+                                             !duration-200 !transform !hover:scale-105 !focus:outline-none focus:ring-4 !focus:ring-red-100
+                                             !focus:ring-opacity-60 !border-5 !border-red-800 !text-xl">
+                            </p:commandButton>
+                        </div>
+                    </nav>
+                </h:form>
+            </div>
+            <!-- Main Content Area -->
+            <div class="flex-1 p-8 bg-white rounded-lg shadow-md max-w-7xl mx-auto mt-8 md:mt-8 md:ml-64">
+                <ui:insert name="content">Default content</ui:insert>
+            </div>
+        </div>
+    </div>
+</h:body>
+</html>

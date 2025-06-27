@@ -22,6 +22,10 @@ public class Patient {
      * @Id marks this as the primary key
      * @GeneratedValue specifies auto-increment strategy
      * The IDENTITY strategy relies on the database to generate new identifier values
+     *
+     * Using Long for entity IDs allows for null values before
+     * persistence, which is necessary for Hibernate/JPA to
+     * manage entity lifecycle and primary key generation properly.
      */
 
     @Id
@@ -53,6 +57,9 @@ public class Patient {
     @Column(name = "insurance_number")
     private String insuranceNumber;
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     // Constructors
 
     /**
@@ -64,13 +71,14 @@ public class Patient {
     public Patient() {}
 
     public Patient(String firstName, String lastName, Date dateOfBirth, String contactNumber,
-                   String address, String email) {
+                   String address, String email, Boolean isDeleted) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.dateOfBirth = dateOfBirth;
         this.contactNumber = contactNumber;
         this.address = address;
         this.email = email;
+        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
     }
 
     // Getters and Setters
@@ -122,13 +130,13 @@ public class Patient {
         this.address = address;
     }
 
-    public String getMedicalHistory() {
-        return medicalHistory;
-    }
-
-    public void setMedicalHistory(String medicalHistory) {
-        this.medicalHistory = medicalHistory;
-    }
+//    public String getMedicalHistory() {
+//        return medicalHistory;
+//    }
+//
+//    public void setMedicalHistory(String medicalHistory) {
+//        this.medicalHistory = medicalHistory;
+//    }
 
     public String getEmail() {
         return email;
@@ -138,6 +146,16 @@ public class Patient {
         this.email = email;
     }
 
+    public boolean isDeleted() {return isDeleted;}
+
+    public void setDeleted(boolean deleted) {isDeleted = deleted;}
+
+    /**
+     *  The toString() method, which provides a string representation of the Patient object.
+     *  It is annotated with @Override because it overrides
+     *  the default toString() method from the Object class.
+     * @return
+     */
     @Override
     public String toString() {
         return "Patient{" +
@@ -146,5 +164,18 @@ public class Patient {
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Patient patient = (Patient) o;
+        return id != null && id.equals(patient.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

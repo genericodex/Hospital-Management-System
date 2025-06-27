@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+<h:head>
+    <title>Hospital Management System - Dashboard</title>
+    <h:outputStylesheet library="css" name="styles.css"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+</h:head>
+
+<ui:composition template="template.xhtml">
+    <ui:define name="title">Dashboard</ui:define>
+
+    <ui:define name="content">
+        <h:form>
+            <p:panel header="Dashboard Overview" style="margin: 20px;">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mt-5">
+                    <p:panel styleClass="ui-card bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl w-full max-w-xs mx-auto border border-blue-200 hover:scale-105 hover:shadow-2xl transition-transform duration-300">
+                        <f:facet name="header">
+                            <div class="flex flex-col items-center">
+                                <span class="bg-blue-500 text-white rounded-full p-4 shadow-lg mb-2">
+                                    <i class="pi pi-users text-3xl"></i>
+                                </span>
+                                <span class="font-semibold text-lg">Patients</span>
+                            </div>
+                        </f:facet>
+                        <div class="flex flex-col items-center justify-center mt-2 mb-1 w-full">
+                            <div class="w-full flex flex-col items-center bg-white/60 rounded-xl shadow-inner py-3 px-2 mb-1 border border-blue-100">
+                                <span class="text-4xl font-extrabold text-blue-700 tracking-tight drop-shadow">
+                                    <h:outputText value="#{dashboardBean.patientCount}">
+                                        <f:convertNumber type="number" groupingUsed="true"/>
+                                    </h:outputText>
+                                </span>
+                                <span class="uppercase text-xs text-blue-500 tracking-widest mt-1">Total</span>
+                            </div>
+                        </div>
+                        <p:commandLink value="View All" action="patients" styleClass="dashboard-link text-blue-600 text-sm mt-3 font-semibold hover:underline"/>
+                    </p:panel>
+
+                    <p:panel styleClass="ui-card bg-gradient-to-br from-green-100 to-green-200 flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl w-full max-w-xs mx-auto border border-green-200 hover:scale-105 hover:shadow-2xl transition-transform duration-300">
+                        <f:facet name="header">
+                            <div class="flex flex-col items-center">
+                                <span class="bg-green-500 text-white rounded-full p-4 shadow-lg mb-2">
+                                    <i class="pi pi-user-plus text-3xl"></i>
+                                </span>
+                                <span class="font-semibold text-lg">Doctors</span>
+                            </div>
+                        </f:facet>
+                        <div class="flex flex-col items-center justify-center mt-2 mb-1 w-full">
+                            <div class="w-full flex flex-col items-center bg-white/60 rounded-xl shadow-inner py-3 px-2 mb-1 border border-green-100">
+                                <span class="text-4xl font-extrabold text-green-700 tracking-tight drop-shadow">
+                                    <h:outputText value="#{dashboardBean.doctorCount}">
+                                        <f:convertNumber type="number" groupingUsed="true"/>
+                                    </h:outputText>
+                                </span>
+                                <span class="uppercase text-xs text-green-500 tracking-widest mt-1">Total</span>
+                            </div>
+                        </div>
+                        <p:commandLink value="View All" action="doctors" styleClass="dashboard-link text-green-600 text-sm mt-3 font-semibold hover:underline"/>
+                    </p:panel>
+
+                    <p:panel styleClass="ui-card bg-gradient-to-br from-yellow-100 to-yellow-200 flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl w-full max-w-xs mx-auto border border-yellow-200 hover:scale-105 hover:shadow-2xl transition-transform duration-300">
+                        <f:facet name="header">
+                            <div class="flex flex-col items-center">
+                                <span class="bg-yellow-500 text-white rounded-full p-4 shadow-lg mb-2">
+                                    <i class="pi pi-calendar text-3xl"></i>
+                                </span>
+                                <span class="font-semibold text-lg">Appointments</span>
+                            </div>
+                        </f:facet>
+                        <div class="flex flex-col items-center justify-center mt-2 mb-1">
+                            <span class="text-4xl font-extrabold text-yellow-700 tracking-tight drop-shadow">
+                                <h:outputText value="#{dashboardBean.appointmentCount}">
+                                    <f:convertNumber type="number" groupingUsed="true"/>
+                                </h:outputText>
+                            </span>
+                            <span class="uppercase text-xs text-yellow-500 tracking-widest mt-1">Total</span>
+                        </div>
+                        <p:commandLink value="View All" action="appointments" styleClass="dashboard-link text-yellow-600 text-sm mt-3 font-semibold hover:underline"/>
+                    </p:panel>
+
+                    <p:panel styleClass="ui-card bg-gradient-to-br from-purple-100 to-purple-200 flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl w-full max-w-xs mx-auto border border-purple-200 hover:scale-105 hover:shadow-2xl transition-transform duration-300">
+                        <f:facet name="header">
+                            <div class="flex flex-col items-center">
+                                <span class="bg-purple-500 text-white rounded-full p-4 shadow-lg mb-2">
+                                    <i class="pi pi-id-card text-3xl"></i>
+                                </span>
+                                <span class="font-semibold text-lg">Staff</span>
+                            </div>
+                        </f:facet>
+                        <div class="flex flex-col items-center justify-center mt-2 mb-1">
+                            <span class="text-4xl font-extrabold text-purple-700 tracking-tight drop-shadow">
+                                <h:outputText value="#{dashboardBean.staffCount}">
+                                    <f:convertNumber type="number" groupingUsed="true"/>
+                                </h:outputText>
+                            </span>
+                            <span class="uppercase text-xs text-purple-500 tracking-widest mt-1">Total</span>
+                        </div>
+                        <p:commandLink value="View All" action="staff" styleClass="dashboard-link text-purple-600 text-sm mt-3 font-semibold hover:underline"/>
+                    </p:panel>
+                </div>
+            </p:panel>
+
+            <p:panel styleClass="border-0 shadow-none bg-transparent">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="pi pi-calendar text-blue-600 text-xl"></i>
+                    <span class="font-semibold text-blue-700 text-lg">Recent Appointments</span>
+                </div>
+                <div class="overflow-x-auto rounded-xl shadow-lg bg-white">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-blue-600">
+                            <tr>
+                                <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider rounded-tl-lg">Patient</th>
+                                <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider">Doctor</th>
+                                <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider">Date</th>
+                                <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider rounded-tr-lg">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            <ui:repeat var="appointment" value="#{dashboardBean.recentAppointments}">
+                                <tr class="hover:bg-blue-50 transition">
+                                    <td class="px-4 py-2 whitespace-nowrap text-gray-800 font-medium">
+                                        <h:outputText value="#{appointment.patient.firstName} #{appointment.patient.lastName}"/>
+                                    </td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-gray-700">
+                                        <h:outputText value="Dr. #{appointment.doctor.firstName} #{appointment.doctor.lastName}"/>
+                                    </td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-gray-600">
+                                        <h:outputText value="#{appointment.appointmentTime}">
+                                            <f:convertDateTime pattern="MMM dd, yyyy hh:mm a"/>
+                                        </h:outputText>
+                                    </td>
+                                    <td class="px-4 py-2 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                                            <h:outputText value="#{appointment.status}"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </ui:repeat>
+                        </tbody>
+                    </table>
+                </div>
+            </p:panel>
+        </h:form>
+    </ui:define>
+</ui:composition>
+</html>

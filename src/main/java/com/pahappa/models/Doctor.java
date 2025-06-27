@@ -26,17 +26,22 @@ public class Doctor {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
+
 
     // Constructors
     public Doctor() {}
 
     public Doctor(String firstName, String lastName, Specialization specialization,
-                  String contactNumber, String email) {
+                  String contactNumber, String email, Boolean isDeleted) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.specialization = specialization;
         this.contactNumber = contactNumber;
         this.email = email;
+        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
     }
 
     // Getters and Setters
@@ -88,6 +93,13 @@ public class Doctor {
         this.email = email;
     }
 
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+
     @Override
     public String toString() {
         return "Doctor{" +
@@ -96,5 +108,18 @@ public class Doctor {
                 ", lastName='" + lastName + '\'' +
                 ", specialization='" + specialization + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Doctor doctor = (Doctor) o;
+        return id != null && id.equals(doctor.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

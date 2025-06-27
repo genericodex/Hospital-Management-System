@@ -52,14 +52,18 @@ public class Billing {
     @Column(name = "discount_amount")
     private Double discountAmount;
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted;
+
     // Constructors
     public Billing() {}
 
-    public Billing(Patient patient, Date billDate, Double amount, BillingStatus status) {
+    public Billing(Patient patient, Date billDate, Double amount, BillingStatus status, Boolean isDeleted) {
         this.patient = patient;
         this.billDate = billDate;
         this.amount = amount;
         this.status = status;
+        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
     }
 
     // Getters and Setters
@@ -111,13 +115,13 @@ public class Billing {
         this.paymentMethod = paymentMethod;
     }
 
-    public String getInsuranceClaimId() {
-        return insuranceClaimId;
-    }
-
-    public void setInsuranceClaimId(String insuranceClaimId) {
-        this.insuranceClaimId = insuranceClaimId;
-    }
+//    public String getInsuranceClaimId() {
+//        return insuranceClaimId;
+//    }
+//
+//    public void setInsuranceClaimId(String insuranceClaimId) {
+//        this.insuranceClaimId = insuranceClaimId;
+//    }
 
     public String getServiceDescription() {
         return serviceDescription;
@@ -127,30 +131,43 @@ public class Billing {
         this.serviceDescription = serviceDescription;
     }
 
-    public Double getTaxAmount() {
-        return taxAmount;
+    public boolean isDeleted() {
+        return isDeleted;
     }
 
-    public void setTaxAmount(Double taxAmount) {
-        this.taxAmount = taxAmount;
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
+//
+//    public Double getTaxAmount() {
+//        return taxAmount;
+//    }
+//
+//    public void setTaxAmount(Double taxAmount) {
+//        this.taxAmount = taxAmount;
+//    }
+//
+//    public Double getDiscountAmount() {
+//        return discountAmount;
+//    }
+//
+//    public void setDiscountAmount(Double discountAmount) {
+//        this.discountAmount = discountAmount;
+//    }
+//
+//    // Helper method to calculate the total amount
+//    public Double getTotalAmount() {
+//        double total = amount;
+//        if (taxAmount != null) total += taxAmount;
+//        if (discountAmount != null) total -= discountAmount;
+//        return total;
+//    }
 
-    public Double getDiscountAmount() {
-        return discountAmount;
-    }
-
-    public void setDiscountAmount(Double discountAmount) {
-        this.discountAmount = discountAmount;
-    }
-
-    // Helper method to calculate the total amount
-    public Double getTotalAmount() {
-        double total = amount;
-        if (taxAmount != null) total += taxAmount;
-        if (discountAmount != null) total -= discountAmount;
-        return total;
-    }
-
+    /**
+     * I am using the toString method to create the string representation of an object.
+     * It is commonly overridden to return a human-readable view of the object's state, especially when debugging and logging.
+     * @return
+     */
     @Override
     public String toString() {
         return "Billing{" +
