@@ -2,8 +2,9 @@ package com.pahappa.beans;
 
 import com.pahappa.constants.Specialization;
 import com.pahappa.models.Doctor;
-import com.pahappa.services.HospitalService;
+import com.pahappa.services.DoctorServiceImpl;
 import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -12,6 +13,7 @@ import jakarta.inject.Named;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Named
@@ -21,57 +23,60 @@ public class DoctorBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Inject
-    private HospitalService hospitalService;
+    private DoctorServiceImpl doctorService;
+
+    @Inject
+    private SettingsBean settingsBean;
 
     private List<Doctor> doctors;
     private List<Doctor> selectedDoctors;
     private List<Doctor> deletedDoctors;
     private Doctor selectedDoctor;
     private boolean newDoctor;
+    private Long doctorToDeleteId;
+    private String searchTerm;
+    private List<Doctor> filteredDoctors;
+    private String password;
 
     @PostConstruct
     public void init() {
-        doctors = hospitalService.getAllActiveDoctor();
+        doctors = doctorService.getAllActiveDoctors();
+        filteredDoctors = new ArrayList<>(doctors);
         selectedDoctor = new Doctor();
     }
 
     public void initNewDoctor() {
         selectedDoctor = new Doctor();
         newDoctor = true;
+        password = null;
     }
 
     public void saveDoctor() {
         try {
-            // Server-side validation for required fields
-            if (selectedDoctor.getFirstName() == null || selectedDoctor.getFirstName().trim().isEmpty() ||
-                selectedDoctor.getLastName() == null || selectedDoctor.getLastName().trim().isEmpty() ||
-                selectedDoctor.getSpecialization() == null ||
-                selectedDoctor.getContactNumber() == null || selectedDoctor.getContactNumber().trim().isEmpty() ||
-                selectedDoctor.getEmail() == null || selectedDoctor.getEmail().trim().isEmpty()) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "All fields are required."));
-                return;
-            }
             if (newDoctor) {
-                hospitalService.createDoctor(
+                Doctor savedDoctor = doctorService.createDoctor(
                         selectedDoctor.getFirstName(),
                         selectedDoctor.getLastName(),
                         selectedDoctor.getSpecialization(),
                         selectedDoctor.getContactNumber(),
                         selectedDoctor.getEmail(),
-                        false
+                        false,
+                        password // Set password
                 );
+                selectedDoctor = savedDoctor; // Now has ID
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Doctor created successfully"));
             } else {
-                hospitalService.updateDoctor(selectedDoctor);
+                if (password != null && !password.isEmpty()) {
+                    selectedDoctor.setPassword(password);
+                }
+                doctorService.updateDoctor(selectedDoctor, null);
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Doctor updated successfully"));
             }
-            doctors = hospitalService.getAllActiveDoctor();
-            // Reset selectedDoctor and newDoctor after save/update
-            selectedDoctor = new Doctor();
+            doctors = doctorService.getAllActiveDoctors();
             newDoctor = false;
+            password = null;
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
@@ -80,8 +85,8 @@ public class DoctorBean implements Serializable {
 
     public void deleteDoctor(Doctor doctor) {
         try {
-            hospitalService.softDeleteDoctor(doctor.getId());
-            doctors = hospitalService.getAllActiveDoctor();
+            doctorService.softDeleteDoctor(doctor.getId(), null); // Pass current user for audit log if available
+            doctors = doctorService.getAllActiveDoctors();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Doctor deleted successfully"));
         } catch (Exception e) {
@@ -93,9 +98,9 @@ public class DoctorBean implements Serializable {
     public void deleteSelectedDoctors() {
         try {
             for (Doctor doctor : selectedDoctors) {
-                hospitalService.softDeleteDoctor(doctor.getId());
+                doctorService.softDeleteDoctor(doctor.getId(), null); // Pass current user for audit log if available
             }
-            doctors = hospitalService.getAllActiveDoctor();
+            doctors = doctorService.getAllActiveDoctors();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(selectedDoctors.size() + " doctors deleted successfully"));
             selectedDoctors = null;
@@ -106,14 +111,14 @@ public class DoctorBean implements Serializable {
     }
 
     public void loadDeletedDoctors() {
-        deletedDoctors = hospitalService.getDeletedDoctors();
+        deletedDoctors = doctorService.getDeletedDoctors();
     }
 
     public void restoreDoctor(Long id) {
         try {
-            hospitalService.restoreDoctor(id);
-            doctors = hospitalService.getAllActiveDoctor();
-            deletedDoctors = hospitalService.getDeletedDoctors();
+            doctorService.restoreDoctor(id, null); // Pass current user for audit log if available
+            doctors = doctorService.getAllActiveDoctors();
+            deletedDoctors = doctorService.getDeletedDoctors();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Doctor restored successfully"));
         } catch (Exception e) {
@@ -124,12 +129,28 @@ public class DoctorBean implements Serializable {
 
     public void editDoctor(Doctor doctor) {
         // Fetch the managed Doctor entity from DB to avoid detached entity issues
-        this.selectedDoctor = hospitalService.getDoctorById(doctor.getId());
+        this.selectedDoctor = doctorService.getDoctorById(doctor.getId());
         this.newDoctor = false;
     }
 
     public Specialization[] getSpecializations() {
         return Specialization.values();
+    }
+
+    public List<String> getAvailableSpecializations() {
+        return settingsBean.getSpecializations();
+    }
+
+    public void searchDoctors() {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            filteredDoctors = new java.util.ArrayList<>(doctors);
+        } else {
+            String lower = searchTerm.toLowerCase();
+            filteredDoctors = doctors.stream()
+                .filter(d -> (d.getFirstName() + " " + d.getLastName()).toLowerCase().contains(lower)
+                    || (d.getSpecialization() != null && d.getSpecialization().toLowerCase().contains(lower)))
+                .toList();
+        }
     }
 
     // Getters and Setters
@@ -144,5 +165,35 @@ public class DoctorBean implements Serializable {
     public Doctor getSelectedDoctor() { return selectedDoctor; }
     public void setSelectedDoctor(Doctor selectedDoctor) { this.selectedDoctor = selectedDoctor; }
     public List<Doctor> getDeletedDoctors() { return deletedDoctors; }
-    public boolean isNewDoctor() { return newDoctor; }
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    public boolean isNewDoctor() {
+        return newDoctor;
+    }
+    public Long getDoctorToDeleteId() { return doctorToDeleteId; }
+    public void setDoctorToDeleteId(Long doctorToDeleteId) { this.doctorToDeleteId = doctorToDeleteId; }
+    public List<Doctor> getFilteredDoctors() {
+        if (filteredDoctors == null) {
+            filteredDoctors = new ArrayList<>(doctors);
+        }
+        return filteredDoctors;
+    }
+    public String getSearchTerm() { return searchTerm; }
+    public void setSearchTerm(String searchTerm) { this.searchTerm = searchTerm; }
+
+    public void hardDeleteDoctor(Long id) {
+        try {
+            doctorService.deleteDoctor(id, null); // Pass current user for audit log if available
+            loadDeletedDoctors();
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage("Doctor permanently deleted"));
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+        }
+    }
 }
