@@ -9,19 +9,10 @@ public class DoctorDao {
 
     // Create
     public void saveDoctor(Doctor doctor) {
-        // Null checks for required fields
-        if (doctor.getFirstName() == null || doctor.getLastName() == null || doctor.getSpecialization() == null || doctor.getContactNumber() == null || doctor.getEmail() == null) {
-            throw new IllegalArgumentException("All doctor fields must be provided and not null.");
-        }
+        // Persist doctor without strict null checks; validation should be handled in service or JSF layer
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-        Doctor newDoctor = new Doctor();
-        newDoctor.setFirstName(doctor.getFirstName());
-        newDoctor.setLastName(doctor.getLastName());
-        newDoctor.setSpecialization(doctor.getSpecialization());
-        newDoctor.setContactNumber(doctor.getContactNumber());
-        newDoctor.setEmail(doctor.getEmail());
-        newDoctor.setDeleted(doctor.isDeleted());
-        session.save(newDoctor);
+        session.persist(doctor);
+        session.flush();
     }
 
     // Read
@@ -52,7 +43,11 @@ public class DoctorDao {
             managedDoctor.setContactNumber(doctor.getContactNumber());
             managedDoctor.setEmail(doctor.getEmail());
             managedDoctor.setDeleted(doctor.isDeleted());
+            if (doctor.getPassword() != null && !doctor.getPassword().isEmpty()) {
+                managedDoctor.setPassword(doctor.getPassword());
+            }
             session.update(managedDoctor);
+            session.flush();
         }
     }
 
@@ -112,6 +107,19 @@ public class DoctorDao {
         if (doctor != null && doctor.isDeleted()) {
             doctor.setDeleted(false);
             session.update(doctor);
+        }
+    }
+
+    // Authenticate doctor
+    public Doctor authenticate(String email, String password) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("FROM Doctor WHERE email = :email AND password = :password AND isDeleted = false", Doctor.class)
+                    .setParameter("email", email)
+                    .setParameter("password", password)
+                    .uniqueResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

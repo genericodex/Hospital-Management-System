@@ -11,8 +11,11 @@ import java.util.List;
 
 /**
  * - A Session is the main runtime interface between Java and Hibernate
+ * <p>
  *     - 'beginTransaction()': Starts a new transaction
+ * <p>
  *     - 'commit()': Saves changes permanently
+ * <p>
  *     - 'rollback()': Reverts changes if something goes wrong
  */
 
@@ -20,24 +23,21 @@ public class PatientDao {
 
     private static final Logger logger = LoggerFactory.getLogger(PatientDao.class);
 
+    /**
+     * getSessionFactory() returns a special object that creates and manages connections to the database.
+     * Think of it as a factory that produces sessions (connections).
+     * <p>
+     *
+     * getCurrentSession() gives you the current active connection (session) to the database for your ongoing work.
+     * If there isn’t one, it creates a new one for you. This session is used to read from or write to the database.
+     */
     // Create
     public void savePatient(Patient patient) {
         logger.debug("Attempting to save patient: {}", patient.getEmail());
-        // Null checks for required fields
-        if (patient.getFirstName() == null || patient.getLastName() == null || patient.getDateOfBirth() == null || patient.getContactNumber() == null || patient.getAddress() == null || patient.getEmail() == null) {
-            throw new IllegalArgumentException("All patient fields must be provided and not null.");
-        }
+        // Persist patient without strict null checks; validation should be handled in service or JSF layer
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-        Patient newPatient = new Patient();
-        newPatient.setFirstName(patient.getFirstName());
-        newPatient.setLastName(patient.getLastName());
-        newPatient.setDateOfBirth(patient.getDateOfBirth());
-        newPatient.setContactNumber(patient.getContactNumber());
-        newPatient.setAddress(patient.getAddress());
-        newPatient.setEmail(patient.getEmail());
-        newPatient.setDeleted(patient.isDeleted());
-        session.persist(newPatient);
-        logger.info("Successfully saved patient with ID: {}", newPatient.getId());
+        session.persist(patient);
+        logger.info("Successfully saved patient with ID: {}", patient.getId());
     }
 
     // Read
@@ -62,9 +62,9 @@ public class PatientDao {
 
     // Update
     public void updatePatient(Patient patient) {
-        // Null checks for required fields
-        if (patient.getId() == null || patient.getFirstName() == null || patient.getLastName() == null || patient.getDateOfBirth() == null || patient.getContactNumber() == null || patient.getAddress() == null || patient.getEmail() == null) {
-            throw new IllegalArgumentException("All patient fields and ID must be provided and not null.");
+        // Persist patient without strict null checks; validation should be handled in service or JSF layer
+        if (patient.getId() == null) {
+            throw new IllegalArgumentException("Patient id must not be null.");
         }
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Patient managedPatient = session.get(Patient.class, patient.getId());
@@ -74,8 +74,11 @@ public class PatientDao {
             managedPatient.setDateOfBirth(patient.getDateOfBirth());
             managedPatient.setContactNumber(patient.getContactNumber());
             managedPatient.setAddress(patient.getAddress());
+            managedPatient.setMedicalHistory(patient.getMedicalHistory());
             managedPatient.setEmail(patient.getEmail());
             managedPatient.setDeleted(patient.isDeleted());
+            managedPatient.setUpdatedBy(patient.getUpdatedBy());
+            managedPatient.setUpdatedAt(patient.getUpdatedAt());
             session.update(managedPatient);
         }
     }

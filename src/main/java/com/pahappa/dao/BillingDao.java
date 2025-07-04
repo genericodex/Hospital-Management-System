@@ -38,7 +38,8 @@ public class BillingDao {
 
     public List<Billing> getAllBillings() {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-        return session.createQuery("FROM Billing", Billing.class).list();
+
+        return session.createQuery("FROM Billing b WHERE b.isDeleted = false", Billing.class).list();
     }
 
     // Update
@@ -69,6 +70,39 @@ public class BillingDao {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Billing billing = session.get(Billing.class, id);
         if (billing != null) session.delete(billing);
+    }
+
+    // Soft Delete
+    public void softDeleteBilling(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Billing id must not be null.");
+        }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Billing billing = session.get(Billing.class, id);
+        if (billing != null && !billing.isDeleted()) {
+            billing.setDeleted(true);
+            session.update(billing);
+        }
+    }
+
+    // Restore
+    public void restoreBilling(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Billing id must not be null.");
+        }
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        Billing billing = session.get(Billing.class, id);
+        if (billing != null && billing.isDeleted()) {
+            billing.setDeleted(false);
+            session.update(billing);
+        }
+    }
+
+    // Get all deleted billings (bin)
+    public List<Billing> getDeletedBillings() {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        return session.createQuery(
+                "FROM Billing WHERE isDeleted = true", Billing.class).list();
     }
 
     // Special Queries
