@@ -10,7 +10,7 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
@@ -33,14 +33,20 @@ public class Appointment {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted;
+
     // Constructors
     public Appointment() {}
 
-    public Appointment(Patient patient, Doctor doctor, Date appointmentTime, AppointmentStatus status) {
+    public Appointment(Patient patient, Doctor doctor, Date appointmentTime, AppointmentStatus status, Boolean isDeleted
+    ) {
         this.patient = patient;
         this.doctor = doctor;
         this.appointmentTime = appointmentTime;
         this.status = status;
+        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
+
     }
 
     // Getters and Setters
@@ -100,6 +106,36 @@ public class Appointment {
         this.notes = notes;
     }
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+    public boolean isValidAppointmentTime() {
+        return appointmentTime != null && !appointmentTime.before(new java.util.Date());
+    }
+
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     @Override
     public String toString() {
         return "Appointment{" +

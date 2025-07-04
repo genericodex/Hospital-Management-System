@@ -1,8 +1,9 @@
 package com.pahappa.beans;
 
 import com.pahappa.models.Patient;
-import com.pahappa.services.HospitalService;
+import com.pahappa.services.PatientServiceImpl;
 import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -13,6 +14,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Serializable allows objects of the PatientBean class to be converted into a format
+ * that can be easily saved to a file, sent over a network, or stored in memory, and then later restored
+ * back into a real object.
+ *
+ * This is useful for web applications to keep user data between requests or sessions.
+ */
 @Named
 @ViewScoped
 public class PatientBean implements Serializable {
@@ -20,18 +29,33 @@ public class PatientBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Inject
-    private HospitalService hospitalService;
+    private PatientServiceImpl patientService;
+
+    @Inject
+    private AuthBean authBean;
 
     private List<Patient> patients;
     private List<Patient> selectedPatients;
     private List<Patient> deletedPatients;
     private Patient selectedPatient;
     private boolean newPatient;
+    private Long patientToDeleteId;
+    private String searchTerm;
+    private List<Patient> filteredPatients;
 
+    /**
+     * The @PostConstruct annotation is used to indicate that this method should be called after the
+     * constructor has been invoked and all dependency injections have been completed.
+     *
+     * in layman's terms, it means that this method will run automatically after the bean is created.
+     *
+     */
     @PostConstruct
     public void init() {
-        patients = hospitalService.getAllActivePatient();
+        patients = patientService.getAllActivePatient();
         selectedPatient = new Patient();
+        // Always initialize filteredPatients to avoid null
+        filteredPatients = new ArrayList<>(patients);
     }
 
     public void initNewPatient() {
@@ -41,24 +65,37 @@ public class PatientBean implements Serializable {
 
     public void savePatient() {
         try {
+            // Backend validation for phone number and birthdate
+            if (!selectedPatient.isValidPhoneNumber()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Phone number must be exactly 10 digits."));
+                return;
+            }
+            if (!selectedPatient.isValidBirthDate()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Birth date cannot be in the future."));
+                return;
+            }
             if (newPatient) {
-                hospitalService.createPatient(
+                patientService.createPatient(
                         selectedPatient.getFirstName(),
                         selectedPatient.getLastName(),
                         selectedPatient.getDateOfBirth(),
                         selectedPatient.getContactNumber(),
                         selectedPatient.getAddress(),
                         selectedPatient.getEmail(),
-                        false
+                        false,
+                        selectedPatient.getMedicalHistory(),
+                        authBean != null ? authBean.getLoggedInUser() : null
                 );
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Patient created successfully"));
             } else {
-                hospitalService.updatePatient(selectedPatient);
+                patientService.updatePatient(selectedPatient, authBean != null ? authBean.getLoggedInUser() : null);
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Patient updated successfully"));
             }
-            patients = hospitalService.getAllActivePatient();
+            patients = patientService.getAllActivePatient();
             // Reset selectedPatient and newPatient after save/update
             selectedPatient = new Patient();
             newPatient = false;
@@ -70,8 +107,8 @@ public class PatientBean implements Serializable {
 
     public void deletePatient(Patient patient) {
         try {
-            hospitalService.softDeletePatient(patient.getId());
-            patients = hospitalService.getAllActivePatient();
+            patientService.softDeletePatient(patient.getId(), authBean != null ? authBean.getLoggedInUser() : null);
+            patients = patientService.getAllActivePatient();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Patient deleted successfully"));
         } catch (Exception e) {
@@ -83,9 +120,9 @@ public class PatientBean implements Serializable {
     public void deleteSelectedPatients() {
         try {
             for (Patient patient : selectedPatients) {
-                hospitalService.softDeletePatient(patient.getId());
+                patientService.softDeletePatient(patient.getId(), authBean != null ? authBean.getLoggedInUser() : null);
             }
-            patients = hospitalService.getAllActivePatient();
+            patients = patientService.getAllActivePatient();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(selectedPatients.size() + " patients deleted successfully"));
             selectedPatients = null;
@@ -96,14 +133,14 @@ public class PatientBean implements Serializable {
     }
 
     public void loadDeletedPatients() {
-        deletedPatients = hospitalService.getDeletedPatient();
+        deletedPatients = patientService.getDeletedPatient();
     }
 
     public void restorePatient(Long id) {
         try {
-            hospitalService.restorePatient(id);
-            patients = hospitalService.getAllActivePatient();
-            deletedPatients = hospitalService.getDeletedPatient();
+            patientService.restorePatient(id, authBean != null ? authBean.getLoggedInUser() : null);
+            patients = patientService.getAllActivePatient();
+            deletedPatients = patientService.getDeletedPatient();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Patient restored successfully"));
         } catch (Exception e) {
@@ -112,14 +149,37 @@ public class PatientBean implements Serializable {
         }
     }
 
+    public void hardDeletePatient(Long id) {
+        try {
+            patientService.deletePatient(id, authBean != null ? authBean.getLoggedInUser() : null);
+            deletedPatients = patientService.getDeletedPatient();
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage("Patient permanently deleted"));
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+        }
+    }
+
     public void editPatient(Patient patient) {
         // Fetch the managed Patient entity from DB to avoid detached entity issues
-        this.selectedPatient = hospitalService.getPatientById(patient.getId());
+        this.selectedPatient = patientService.getPatientById(patient.getId());
         this.newPatient = false;
     }
 
     public boolean hasSelectedPatients() {
         return selectedPatients != null && !selectedPatients.isEmpty();
+    }
+
+    public void searchPatients() {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            filteredPatients = new ArrayList<>(patients);
+        } else {
+            String lower = searchTerm.toLowerCase();
+            filteredPatients = patients.stream()
+                .filter(p -> (p.getFirstName() + " " + p.getLastName()).toLowerCase().contains(lower))
+                .toList();
+        }
     }
 
     // Getters and Setters
@@ -130,4 +190,14 @@ public class PatientBean implements Serializable {
     public void setSelectedPatient(Patient selectedPatient) { this.selectedPatient = selectedPatient; }
     public List<Patient> getDeletedPatients() { return deletedPatients; }
     public boolean isNewPatient() { return newPatient; }
+    public Long getPatientToDeleteId() { return patientToDeleteId; }
+    public void setPatientToDeleteId(Long patientToDeleteId) { this.patientToDeleteId = patientToDeleteId; }
+    public String getSearchTerm() { return searchTerm; }
+    public void setSearchTerm(String searchTerm) { this.searchTerm = searchTerm; }
+    public List<Patient> getFilteredPatients() {
+        if (filteredPatients == null) {
+            filteredPatients = new ArrayList<>(patients);
+        }
+        return filteredPatients;
+    }
 }

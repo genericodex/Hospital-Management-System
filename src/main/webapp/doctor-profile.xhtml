@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+<ui:composition template="/template.xhtml">
+    <ui:define name="title">Doctor Profile</ui:define>
+    <ui:define name="content">
+        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl p-10 mt-10">
+            <div class="flex items-center mb-8">
+                <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mr-4">
+                    <i class="pi pi-user text-blue-600 text-3xl"/>
+                </span>
+                <div>
+                    <h2 class="text-3xl font-extrabold text-blue-700 mb-1 tracking-tight">My Profile</h2>
+                    <p class="text-gray-500 text-sm">Doctor Account Details</p>
+                </div>
+            </div>
+            <h:form id="profileForm">
+                <h:panelGroup layout="block" styleClass="mb-6 text-right">
+                    <p:commandButton value="#{doctorAuthBean.editMode ? 'Cancel' : 'Edit Profile'}"
+                                     action="#{doctorAuthBean.toggleEditMode}"
+                                     update="profileForm"
+                                     styleClass="#{doctorAuthBean.editMode ? '!bg-red-500' : '!bg-blue-500'} #{doctorAuthBean.editMode ? 'hover:!bg-red-700' : 'hover:!bg-blue-700'} #{doctorAuthBean.editMode ? '!border-red-500' : '!border-blue-500'} text-white font-bold py-2 px-6 rounded-lg
+                                     shadow transition duration-200"/>
+                </h:panelGroup>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">First Name</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-id-card text-blue-400 mr-2"/>
+                            <h:outputText value="#{doctorAuthBean.loggedInDoctor.firstName}" styleClass="font-semibold text-gray-700"
+                                          rendered="#{!doctorAuthBean.editMode}"/>
+                            <p:inputText value="#{doctorAuthBean.loggedInDoctor.firstName}" rendered="#{doctorAuthBean.editMode}"
+                                         styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0"/>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">Last Name</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-id-card text-blue-400 mr-2"/>
+                            <h:outputText value="#{doctorAuthBean.loggedInDoctor.lastName}" styleClass="font-semibold text-gray-700"
+
+                                          rendered="#{!doctorAuthBean.editMode}"/>
+                            <p:inputText value="#{doctorAuthBean.loggedInDoctor.lastName}" rendered="#{doctorAuthBean.editMode}"
+
+                                         styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0"/>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">Email</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-envelope text-blue-400 mr-2"/>
+                            <h:outputText value="#{doctorAuthBean.loggedInDoctor.email}" styleClass="font-semibold text-gray-700"
+
+                                          rendered="#{!doctorAuthBean.editMode}"/>
+                            <p:inputText value="#{doctorAuthBean.loggedInDoctor.email}" rendered="#{doctorAuthBean.editMode}"
+
+                                         styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0"/>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">Specialization</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-briefcase text-blue-400 mr-2"/>
+                            <h:outputText value="#{doctorAuthBean.loggedInDoctor.specialization}" styleClass="font-semibold text-gray-700" rendered="#{!doctorAuthBean.editMode}"/>
+                            <p:selectOneMenu value="#{doctorAuthBean.loggedInDoctor.specialization}" rendered="#{doctorAuthBean.editMode}" styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0">
+                                <f:selectItems value="#{settingsBean.specializations}" var="spec" itemValue="#{spec}" itemLabel="#{spec}"/>
+                            </p:selectOneMenu>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">Contact Number</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-phone text-blue-400 mr-2"/>
+                            <h:outputText value="#{doctorAuthBean.loggedInDoctor.contactNumber}" styleClass="font-semibold text-gray-700"
+                                          rendered="#{!doctorAuthBean.editMode}"/>
+                            <p:inputText value="#{doctorAuthBean.loggedInDoctor.contactNumber}" rendered="#{doctorAuthBean.editMode}"
+                                         styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0"/>
+                        </div>
+                    </div>
+                </div>
+                <h:panelGroup layout="block" styleClass="mt-8 text-right" rendered="#{doctorAuthBean.editMode}">
+                    <p:commandButton value="Save Changes" action="#{doctorAuthBean.saveProfile}" update="profileForm"
+                                     styleClass="!bg-green-500 hover:!bg-green-700 !border-green-300 hover:!border-green-500
+                                     text-white font-bold py-2 px-6 rounded-lg shadow transition duration-200 mr-2"/>
+                    <span style="display:inline-block; width:0.75rem;"/>
+                    <p:commandButton value="Cancel" action="#{doctorAuthBean.toggleEditMode}" update="profileForm"
+                                     styleClass="!bg-gray-400 hover:!bg-gray-600 !border-gray-400 text-white font-bold py-2 px-6 rounded-lg shadow
+                                     transition duration-200"/>
+                </h:panelGroup>
+            </h:form>
+        </div>
+    </ui:define>
+</ui:composition>
+</html>

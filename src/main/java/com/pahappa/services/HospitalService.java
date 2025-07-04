@@ -4,173 +4,66 @@ import com.pahappa.constants.AppointmentStatus;
 import com.pahappa.constants.BillingStatus;
 import com.pahappa.constants.Specialization;
 import com.pahappa.constants.StaffRoles;
-import com.pahappa.dao.*;
 import com.pahappa.models.*;
 import java.util.Date;
 import java.util.List;
 
-public class HospitalService {
-    private final PatientDao patientDao = new PatientDao();
-    private final DoctorDao doctorDao = new DoctorDao();
-    private final AppointmentDao appointmentDao = new AppointmentDao();
-    private final StaffDao staffDao = new StaffDao();
-    private final BillingDao billingDao = new BillingDao();
+public interface HospitalService {
+    // Patient operations
+    Patient createPatient(String firstName, String lastName, Date dob, String contact, String address, String email, Boolean isDeleted, String medicalHistory, Staff staff);
+    Patient getPatientById(Long id);
+    List<Patient> getAllPatients();
+    void updatePatient(Patient patient, Staff staff);
+    void deletePatient(Long id, Staff staff);
+    void softDeletePatient(Long id, Staff staff);
+    void restorePatient(Long id, Staff staff);
+    List<Patient> getAllActivePatient();
+    List<Patient> getDeletedPatient();
 
-    // ========== PATIENT CRUD OPERATIONS ==========
-    public Patient createPatient(String firstName, String lastName, Date dob,
-                                 String contact, String address, String email) {
-//        Transient object initialised
-        Patient patient = new Patient(firstName, lastName, dob, contact, address, email);
-        patientDao.savePatient(patient);
-        return patient;
-    }
+    // Doctor operations
+    Doctor createDoctor(String firstName, String lastName, String specialization, String contactNumber, String email, Boolean isDeleted, String password);
+    Doctor getDoctorById(Long id);
+    List<Doctor> getAllDoctors();
+    List<Doctor> getAllActiveDoctors();
+    List<Doctor> getDeletedDoctors();
+    void updateDoctor(Doctor doctor, Staff staff);
+    void deleteDoctor(Long id, Staff staff);
+    void softDeleteDoctor(Long id, Staff staff);
+    void restoreDoctor(Long id, Staff staff);
 
-    public Patient getPatientById(Long id) {
-        return patientDao.getPatientById(id);
-    }
+    // Appointment operations
+    Appointment createAppointment(Patient patient, Doctor doctor, Date appointmentTime, String reason, Boolean isDeleted);
+    List<Appointment> getAllAppointments();
+    Appointment getAppointmentById(Long id);
+    List<Appointment> getAppointmentsByDoctor(Long doctorId);
+    List<Appointment> getAppointmentsByPatient(Long patientId);
+    void updateAppointment(Appointment appointment);
+    void cancelAppointment(Long id);
+    void deleteAppointment(Long id);
+    void restoreAppointment(Long id);
+    List<Appointment> getAllActiveAppointments();
+    List<Appointment> getDeletedAppointments();
 
-    public List<Patient> getAllPatients() {
-        return patientDao.getAllPatients();
-    }
+    // Staff operations
+    Staff createStaff(String firstName, String lastName, String email, String contact, StaffRoles role, String department, Date hireDate, String password, Boolean isDeleted, Staff performedBy);
+    List<Staff> getAllStaff();
+    Staff getStaffById(Long id);
+    Staff authenticateStaff(String email, String password);
+    List<Staff> getAllActiveStaff();
+    List<Staff> getDeletedStaff();
+    void updateStaff(Staff staff, Staff performedBy);
+    void deleteStaff(Long id, Staff performedBy);
+    void softDeleteStaff(Long id, Staff performedBy);
+    void restoreStaff(Long id, Staff performedBy);
+    Staff getStaffByEmail(String mail);
 
-    public void updatePatient(Patient patient) {
-        patientDao.updatePatient(patient);
-    }
+    // billing operations
+    Billing createBilling(Patient patient, double amount, String description);
+    List<Billing> getAllBillings();
+    Billing getBillingById(Long id);
+    List<Billing> getBillingsByPatient(Long patientId);
+    void updateBilling(Billing billing);
+    void processPayment(Billing billing, String paymentMethod);
+    void deleteBilling(Long id);
 
-
-
-    public void deletePatient(Long id) {
-        patientDao.deletePatient(id);
-    }
-
-    public Patient findPatientByEmail(String email) {
-        return patientDao.findPatientByEmail(email);
-    }
-
-    // ========== DOCTOR CRUD OPERATIONS ==========
-    public Doctor createDoctor(String firstName, String lastName, Specialization specialization,
-                               String contact, String email) {
-        Doctor doctor = new Doctor(firstName, lastName, specialization, contact, email);
-        doctorDao.saveDoctor(doctor);
-        return doctor;
-    }
-
-    public Doctor getDoctorById(Long id) {
-        return doctorDao.getDoctorById(id);
-    }
-
-    public List<Doctor> getAllDoctors() {
-        return doctorDao.getAllDoctors();
-    }
-
-    public void updateDoctor(Doctor doctor) {
-        doctorDao.updateDoctor(doctor);
-    }
-
-    public void deleteDoctor(Long id) {
-        doctorDao.deleteDoctor(id);
-    }
-
-    public List<Doctor> findDoctorsBySpecialization(String specialization) {
-        return doctorDao.findBySpecialization(specialization);
-    }
-
-    // ========== APPOINTMENT OPERATIONS ==========
-    public Appointment createAppointment(Patient patient, Doctor doctor,
-                                         Date appointmentTime, String reason) {
-        Appointment appointment = new Appointment(patient, doctor, appointmentTime, AppointmentStatus.SCHEDULED);
-        appointment.setReasonForVisit(reason);
-        appointmentDao.saveAppointment(appointment);
-        return appointment;
-    }
-
-
-    public List<Appointment> getAllAppointments() {
-        return appointmentDao.getAllAppointments();
-    }
-
-    public Appointment getAppointmentById(Long id) {
-        return appointmentDao.getAppointmentById(id);
-    }
-
-    public List<Appointment> getAppointmentsByDoctor(Long doctorId) {
-        return appointmentDao.getAppointmentsByDoctor(doctorId);
-    }
-
-    public void updateAppointment(Appointment appointment) {
-        appointmentDao.updateAppointment(appointment);
-    }
-
-    public void cancelAppointment(Long id) {
-        appointmentDao.deleteAppointment(id);
-    }
-
-    // ========== STAFF OPERATIONS ==========
-    public Staff createStaff(String firstName, String lastName,
-                             String email, String contact,
-                             StaffRoles role, String department,
-                             Date hireDate, String password) {
-        Staff staff = new Staff(firstName, lastName, email, contact, role, department, hireDate, password);
-        staffDao.saveStaff(staff);
-        return staff;
-    }
-
-    public List<Staff> getAllStaff() {
-        return staffDao.getAllStaff();
-    }
-
-
-    public Staff getStaffById(Long id) {
-        return staffDao.getStaffById(id);
-    }
-
-    public Staff authenticateStaff(String email, String password) {
-        return staffDao.authenticate(email, password);
-    }
-
-    public void updateStaff(Staff staff) {
-        staffDao.updateStaff(staff);
-    }
-
-    public void deleteStaff(Long id) {
-        staffDao.deleteStaff(id);
-    }
-
-    // ========== BILLING OPERATIONS ==========
-    public Billing createBilling(Patient patient, double amount, String description) {
-        Billing billing = new Billing();
-        billing.setPatient(patient);
-        billing.setBillDate(new Date());
-        billing.setAmount(amount);
-        billing.setServiceDescription(description);
-        billing.setStatus(BillingStatus.PENDING);
-        billingDao.saveBilling(billing);
-        return billing;
-    }
-
-    public List<Billing> getAllBillings() {
-        return billingDao.getAllBillings();
-    }
-
-    public Billing getBillingById(Long id) {
-        return billingDao.getBillingById(id);
-    }
-
-    public List<Billing> getBillingsByPatient(Long patientId) {
-        return billingDao.getBillingsByPatient(patientId);
-    }
-
-    public void updateBilling(Billing billing) {
-        billingDao.updateBilling(billing);
-    }
-
-    public void processPayment(Billing billing, String paymentMethod) {
-        billing.setPaymentMethod(paymentMethod);
-        billing.setStatus(BillingStatus.PAID);
-        billingDao.updateBilling(billing);
-    }
-
-    public void deleteBilling(Long id) {
-        billingDao.deleteBilling(id);
-    }
 }

@@ -2,34 +2,46 @@ package com.pahappa.beans;
 
 import com.pahappa.constants.StaffRoles;
 import com.pahappa.models.Staff;
-import com.pahappa.services.HospitalService;
+import com.pahappa.services.StaffServiceImpl;
 import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import org.hibernate.annotations.View;
+
+import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Named
 @ViewScoped
 public class StaffBean implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Inject
-    private HospitalService hospitalService;
+    private StaffServiceImpl staffService;
+
+    @Inject
+    private SettingsBean settingsBean;
 
     private List<Staff> staffList;
     private List<Staff> selectedStaffList;
-    private List<Staff> deletedStaff;
     private Staff selectedStaff;
     private String password;
     private boolean newStaff;
+    private Long staffToDeleteId;
+    private String searchTerm;
+    private List<Staff> filteredStaffList;
+    private List<Staff> deletedStaff;
 
     @PostConstruct
     public void init() {
-        staffList = hospitalService.getAllActiveStaff();
+        staffList = staffService.getAllActiveStaff();
         selectedStaff = new Staff();
     }
 
@@ -41,14 +53,14 @@ public class StaffBean implements Serializable {
 
     public void editStaff(Staff staff) {
         // Always fetch a fresh, managed entity from the DB for editing
-        this.selectedStaff = hospitalService.getStaffById(staff.getId());
+        this.selectedStaff = staffService.getStaffById(staff.getId());
         this.newStaff = false;
     }
 
     public void saveStaff() {
         try {
             if (selectedStaff.getId() == null) {
-                hospitalService.createStaff(
+                staffService.createStaff(
                         selectedStaff.getFirstName(),
                         selectedStaff.getLastName(),
                         selectedStaff.getEmail(),
@@ -57,13 +69,13 @@ public class StaffBean implements Serializable {
                         selectedStaff.getDepartment(),
                         selectedStaff.getHireDate(),
                         password,
-                        false
+                        false,
+                        null
                 );
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Staff member created successfully"));
             } else {
-                // Always fetch managed entity for update
-                Staff managedStaff = hospitalService.getStaffById(selectedStaff.getId());
+                Staff managedStaff = staffService.getStaffById(selectedStaff.getId());
                 if (managedStaff != null) {
                     managedStaff.setFirstName(selectedStaff.getFirstName());
                     managedStaff.setLastName(selectedStaff.getLastName());
@@ -74,13 +86,13 @@ public class StaffBean implements Serializable {
                     managedStaff.setHireDate(selectedStaff.getHireDate());
                     managedStaff.setPassword(selectedStaff.getPassword());
                     managedStaff.setDeleted(selectedStaff.isDeleted());
-                    hospitalService.updateStaff(managedStaff);
+                    // Pass current user as actor for audit log
+                    staffService.updateStaff(managedStaff, selectedStaff);
                 }
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Staff member updated successfully"));
             }
-            staffList = hospitalService.getAllActiveStaff();
-            // Reset selectedStaff and newStaff after save/update
+            staffList = staffService.getAllActiveStaff();
             selectedStaff = new Staff();
             password = null;
             newStaff = false;
@@ -92,8 +104,9 @@ public class StaffBean implements Serializable {
 
     public void deleteStaff(Staff staff) {
         try {
-            hospitalService.softDeleteStaff(staff.getId());
-            staffList = hospitalService.getAllActiveStaff();
+            // Pass current user as actor for audit log
+            staffService.softDeleteStaff(staff.getId(), selectedStaff);
+            staffList = staffService.getAllActiveStaff();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Staff member deleted successfully"));
         } catch (Exception e) {
@@ -105,9 +118,9 @@ public class StaffBean implements Serializable {
     public void deleteSelectedStaff() {
         try {
             for (Staff staff : selectedStaffList) {
-                hospitalService.softDeleteStaff(staff.getId());
+                staffService.softDeleteStaff(staff.getId(), selectedStaff);
             }
-            staffList = hospitalService.getAllActiveStaff();
+            staffList = staffService.getAllActiveStaff();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(selectedStaffList.size() + " staff members deleted successfully"));
             selectedStaffList = null;
@@ -117,15 +130,10 @@ public class StaffBean implements Serializable {
         }
     }
 
-    public void loadDeletedStaff() {
-        deletedStaff = hospitalService.getDeletedStaff();
-    }
-
     public void restoreStaff(Long id) {
         try {
-            hospitalService.restoreStaff(id);
-            staffList = hospitalService.getAllActiveStaff();
-            deletedStaff = hospitalService.getDeletedStaff();
+            staffService.restoreStaff(id, selectedStaff);
+            staffList = staffService.getAllActiveStaff();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Staff member restored successfully"));
         } catch (Exception e) {
@@ -134,8 +142,43 @@ public class StaffBean implements Serializable {
         }
     }
 
+    public void hardDeleteStaff(Long id) {
+        try {
+            staffService.deleteStaff(id, selectedStaff);
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage("Staff member permanently deleted"));
+        } catch (Exception e) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+        }
+    }
+
+    public void searchStaff() {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            filteredStaffList = new java.util.ArrayList<>(staffList);
+        } else {
+            String lower = searchTerm.toLowerCase();
+            filteredStaffList = staffList.stream()
+                .filter(s -> (s.getFirstName() + " " + s.getLastName()).toLowerCase().contains(lower)
+                    || (s.getDepartment() != null && s.getDepartment().toLowerCase().contains(lower)))
+                .toList();
+        }
+    }
+
+    public void loadDeletedStaff() {
+        deletedStaff = staffService.getDeletedStaff();
+    }
+
     public StaffRoles[] getRoles() {
         return StaffRoles.values();
+    }
+
+    public List<String> getAvailableRoles() {
+        return settingsBean.getRoles();
+    }
+
+    public List<String> getAvailableSpecializations() {
+        return settingsBean.getSpecializations();
     }
 
     // Getters and Setters
@@ -144,8 +187,20 @@ public class StaffBean implements Serializable {
     public void setSelectedStaffList(List<Staff> selectedStaffList) { this.selectedStaffList = selectedStaffList; }
     public Staff getSelectedStaff() { return selectedStaff; }
     public void setSelectedStaff(Staff selectedStaff) { this.selectedStaff = selectedStaff; }
-    public List<Staff> getDeletedStaff() { return deletedStaff; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
     public boolean isNewStaff() { return newStaff; }
+    public Long getStaffToDeleteId() { return staffToDeleteId; }
+    public void setStaffToDeleteId(Long staffToDeleteId) { this.staffToDeleteId = staffToDeleteId; }
+    public String getSearchTerm() { return searchTerm; }
+    public void setSearchTerm(String searchTerm) { this.searchTerm = searchTerm; }
+    public List<Staff> getFilteredStaffList() {
+        if (filteredStaffList == null) {
+            filteredStaffList = new ArrayList<>(staffList);
+        }
+        return filteredStaffList;
+    }
+    public List<Staff> getDeletedStaff() {
+        return deletedStaff;
+    }
 }
