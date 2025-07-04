@@ -17,12 +17,18 @@
                     <p:commandButton value="Add New" icon="pi pi-plus"
                                      action="#{doctorBean.initNewDoctor}"
                                      update=":doctorForm:doctorDialog"
-                                     oncomplete="PF('doctorDialog').show()"/>
+                                     oncomplete="PF('doctorDialog').show()"
+                                     styleClass="!bg-blue-600 hover:!bg-blue-900 text-white font-semibold py-1 px-2 rounded
+                                         shadow mr-2 text-xs !max-w-[150px] max-h-[50px]"/>
+
+                    <span style="display:inline-block; width:0.75rem;"/>
 
                     <p:commandButton value="Delete Selected" icon="pi pi-trash"
                                      disabled="#{empty doctorBean.selectedDoctors}"
                                      action="#{doctorBean.deleteSelectedDoctors}"
-                                     update=":doctorForm:messages,:doctorForm:doctorTable"/>
+                                     update=":doctorForm:messages,:doctorForm:doctorTable"
+                                     styleClass="!bg-red-500 hover:!bg-red-600 text-white font-semibold py-1 px-2 rounded
+                                         !border !border-red-500 shadow text-xs min-w-[28px] min-h-[28px]"/>
                 </f:facet>
 
                 <f:facet name="right">
@@ -33,9 +39,15 @@
                 </f:facet>
             </p:toolbar>
 
-            <p:dataTable id="doctorTable" var="doctor" value="#{doctorBean.doctors}"
+            <!-- Search Bar -->
+            <div class="mb-4 pt-2 flex items-center gap-2">
+                <p:inputText value="#{doctorBean.searchTerm}" placeholder="Search by name or specialization....." styleClass="w-64"/>
+                <p:commandButton value="Search" icon="pi pi-search" action="#{doctorBean.searchDoctors}" update="doctorForm:doctorTable"/>
+            </div>
+
+            <p:dataTable id="doctorTable" var="doctor" value="#{doctorBean.filteredDoctors}"
                          paginator="true" rows="10" selection="#{doctorBean.selectedDoctors}"
-                         rowKey="#{doctor.id}" emptyMessage="No doctors found" lazy="false">
+                         rowKey="#{doctorBean.selectedDoctor.id}" emptyMessage="No doctors found" lazy="false">
 
                 <p:column selectionMode="multiple" style="width:3%"/>
 
@@ -60,6 +72,8 @@
                 </p:column>
 
                 <p:column headerText="Actions" style="width:10%">
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+
                     <p:commandButton icon="pi pi-pencil" title="Edit"
                                      action="#{doctorBean.editDoctor(doctor)}"
                                      update=":doctorForm:doctorDialog"
@@ -68,12 +82,15 @@
 
                     <p:commandButton icon="pi pi-trash" title="Delete"
                                      action="#{doctorBean.deleteDoctor(doctor)}"
-                                     update=":doctorForm:messages,:doctorForm:doctorTable"/>
+                                     update=":doctorForm:messages,:doctorForm:doctorTable"
+                                     styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+                    </div>
                 </p:column>
             </p:dataTable>
 
             <!-- Add/Edit Doctor Dialog -->
-            <p:dialog id="doctorDialog" header="Doctor Details" widgetVar="doctorDialog" modal="true" resizable="false">
+            <p:dialog id="doctorDialog"  header="Doctor Details" widgetVar="doctorDialog" modal="true" resizable="false"
+                      onHide="jsfajaxResetDoctorForm()">
                 <h:panelGrid columns="2" cellpadding="5">
                     <h:outputLabel for="firstName" value="First Name:"/>
                     <p:inputText id="firstName" value="#{doctorBean.selectedDoctor.firstName}" required="true"/>
@@ -83,20 +100,28 @@
 
                     <h:outputLabel for="specialization" value="Specialization:"/>
                     <p:selectOneMenu id="specialization" value="#{doctorBean.selectedDoctor.specialization}" required="true">
-                        <f:selectItems value="#{doctorBean.specializations}" var="spec"
-                                       itemLabel="#{spec}" itemValue="#{spec}"/>
+                        <f:selectItems value="#{doctorBean.availableSpecializations}" var="spec" itemLabel="#{spec}" itemValue="#{spec}"/>
                     </p:selectOneMenu>
 
                     <h:outputLabel for="email" value="Email:"/>
-                    <p:inputText id="email" value="#{doctorBean.selectedDoctor.email}" required="true"/>
+                    <p:inputText id="email" value="#{doctorBean.selectedDoctor.email}" required="true" validatorMessage="Enter a valid email address format">
+                    <f:validateRegex pattern="^.+@.+\.com$" />
+                        <f:ajax event="blur" render=":doctorForm:messages"/>
+                    </p:inputText>
 
                     <h:outputLabel for="phone" value="Phone:"/>
-                    <p:inputText id="phone" value="#{doctorBean.selectedDoctor.contactNumber}" required="true"/>
+                    <p:inputText id="phone" value="#{doctorBean.selectedDoctor.contactNumber}" required="true" validatorMessage="Phone number must be exactly 10 digits.">
+                        <f:validateRegex pattern="^[0-9]{10}$"/>
+                        <f:ajax event="blur" render=":doctorForm:messages"/>
+                    </p:inputText>
+
+                    <h:outputLabel for="password" value="Password:"/>
+                    <p:password id="password" value="#{doctorBean.password}" required="#{doctorBean.newDoctor}" feedback="true" toggleMask="true"/>
                 </h:panelGrid>
 
                 <f:facet name="footer">
                     <p:commandButton value="Save" action="#{doctorBean.saveDoctor}"
-                                     update=":doctorForm:messages,:doctorForm:doctorTable"
+                                     update=":doctorForm:messages,:doctorForm:doctorTable,:doctorForm:doctorDialog"
                                      oncomplete="if(!args.validationFailed) PF('doctorDialog').hide()"/>
                     <p:commandButton value="Cancel" onclick="PF('doctorDialog').hide()" type="button"/>
                 </f:facet>
@@ -116,14 +141,27 @@
                     <p:column headerText="Specialization">
                         <h:outputText value="#{doctor.specialization}"/>
                     </p:column>
-
-                    <p:column headerText="Actions">
-                        <p:commandButton value="Restore" action="#{doctorBean.restoreDoctor(doctor.id)}"
-                                         update=":doctorForm:messages,:doctorForm:doctorTable,:doctorForm:deletedDoctorsDialog"/>
+                    <p:column headerText="Email">
+                        <h:outputText value="#{doctor.email}"/>
                     </p:column>
+                    <p:column headerText="Phone">
+                        <h:outputText value="#{doctor.contactNumber}"/>
+                    </p:column>
+
                 </p:dataTable>
             </p:dialog>
         </h:form>
     </ui:define>
 </ui:composition>
+
+<script type="text/javascript">
+    function jsfajaxResetDoctorForm() {
+        jsf.ajax.request(null, null, {execute:'@this', render:'doctorForm:doctorDialog', onevent:function(data){
+            if(data.status==='success') {
+                // Optionally, you can add more JS here if needed
+            }
+        }});
+    }
+</script>
+
 </html>

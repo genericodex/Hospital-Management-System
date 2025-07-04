@@ -25,11 +25,38 @@
                         <p:column headerText="Email">
                             <h:outputText value="#{patient.email}"/>
                         </p:column>
+                        <p:column headerText="Created By">
+                            <h:outputText value="#{patient.createdBy}"/>
+                        </p:column>
+                        <p:column headerText="Created At">
+                            <h:outputText value="#{patient.createdAt}">
+                                <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="Updated By">
+                            <h:outputText value="#{patient.updatedBy}"/>
+                        </p:column>
+                        <p:column headerText="Updated At">
+                            <h:outputText value="#{patient.updatedAt}">
+                                <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
+                            </h:outputText>
+                        </p:column>
                         <p:column headerText="Actions">
                             <p:commandButton value="Restore" icon="pi pi-undo" action="#{patientBean.restorePatient(patient.id)}"
                                              update="@form"/>
+                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                                             oncomplete="PF('confirmDeletePatientDialog').show()"
+                                             actionListener="#{patientBean.setPatientToDeleteId(patient.id)}"
+                                             update="@form" styleClass="ui-button-danger ml-2"/>
                         </p:column>
                     </p:dataTable>
+                    <p:dialog id="confirmDeletePatientDialog" widgetVar="confirmDeletePatientDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
+                        <h:outputText value="Are you sure you want to permanently delete this patient? This action cannot be undone."/>
+                        <f:facet name="footer">
+                            <p:commandButton value="Yes, Delete" action="#{patientBean.hardDeletePatient(patientBean.patientToDeleteId)}" update="@form" oncomplete="PF('confirmDeletePatientDialog').hide()" styleClass="ui-button-danger"/>
+                            <p:commandButton value="Cancel" onclick="PF('confirmDeletePatientDialog').hide()" type="button"/>
+                        </f:facet>
+                    </p:dialog>
                 </p:tab>
                 <p:tab title="Doctors">
                     <p:commandButton value="Load Deleted Doctors" icon="pi pi-refresh"
@@ -48,8 +75,19 @@
                         <p:column headerText="Actions">
                             <p:commandButton value="Restore" icon="pi pi-undo" action="#{doctorBean.restoreDoctor(doctor.id)}"
                                              update="@form"/>
+                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                                             oncomplete="PF('confirmDeleteDoctorDialog').show()"
+                                             actionListener="#{doctorBean.setDoctorToDeleteId(doctor.id)}"
+                                             update="@form" styleClass="ui-button-danger ml-2"/>
                         </p:column>
                     </p:dataTable>
+                    <p:dialog id="confirmDeleteDoctorDialog" widgetVar="confirmDeleteDoctorDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
+                        <h:outputText value="Are you sure you want to permanently delete this doctor? This action cannot be undone."/>
+                        <f:facet name="footer">
+                            <p:commandButton value="Yes, Delete" action="#{doctorBean.hardDeleteDoctor(doctorBean.doctorToDeleteId)}" update="@form" oncomplete="PF('confirmDeleteDoctorDialog').hide()" styleClass="ui-button-danger"/>
+                            <p:commandButton value="Cancel" onclick="PF('confirmDeleteDoctorDialog').hide()" type="button"/>
+                        </f:facet>
+                    </p:dialog>
                 </p:tab>
                 <p:tab title="Appointments">
                     <p:commandButton value="Load Deleted Appointments" icon="pi pi-refresh"
@@ -73,8 +111,19 @@
                         <p:column headerText="Actions">
                             <p:commandButton value="Restore" icon="pi pi-undo" action="#{appointmentBean.restoreAppointment(appointment.id)}"
                                              update="@form"/>
+                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                                             oncomplete="PF('confirmDeleteAppointmentDialog').show()"
+                                             actionListener="#{appointmentBean.setAppointmentToDeleteId(appointment.id)}"
+                                             update="@form" styleClass="ui-button-danger ml-2"/>
                         </p:column>
                     </p:dataTable>
+                    <p:dialog id="confirmDeleteAppointmentDialog" widgetVar="confirmDeleteAppointmentDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
+                        <h:outputText value="Are you sure you want to permanently delete this appointment? This action cannot be undone."/>
+                        <f:facet name="footer">
+                            <p:commandButton value="Yes, Delete" action="#{appointmentBean.hardDeleteAppointment(appointmentBean.appointmentToDeleteId)}" update="@form" oncomplete="PF('confirmDeleteAppointmentDialog').hide()" styleClass="ui-button-danger"/>
+                            <p:commandButton value="Cancel" onclick="PF('confirmDeleteAppointmentDialog').hide()" type="button"/>
+                        </f:facet>
+                    </p:dialog>
                 </p:tab>
                 <p:tab title="Staff">
                     <p:commandButton value="Load Deleted Staff" icon="pi pi-refresh"
@@ -93,8 +142,91 @@
                         <p:column headerText="Actions">
                             <p:commandButton value="Restore" icon="pi pi-undo" action="#{staffBean.restoreStaff(staff.id)}"
                                              update="@form"/>
+                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                                             oncomplete="PF('confirmDeleteStaffDialog').show()"
+                                             actionListener="#{staffBean.setStaffToDeleteId(staff.id)}"
+                                             update="@form" styleClass="ui-button-danger ml-2"/>
                         </p:column>
                     </p:dataTable>
+                    <p:dialog id="confirmDeleteStaffDialog" widgetVar="confirmDeleteStaffDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
+                        <h:outputText value="Are you sure you want to permanently delete this staff member? This action cannot be undone."/>
+                        <f:facet name="footer">
+                            <p:commandButton value="Yes, Delete" action="#{staffBean.hardDeleteStaff(staffBean.staffToDeleteId)}" update="@form" oncomplete="PF('confirmDeleteStaffDialog').hide()" styleClass="ui-button-danger"/>
+                            <p:commandButton value="Cancel" onclick="PF('confirmDeleteStaffDialog').hide()" type="button"/>
+                        </f:facet>
+                    </p:dialog>
+                </p:tab>
+                <p:tab title="Billings">
+                    <p:commandButton value="Load Deleted Billings" icon="pi pi-refresh"
+                                     action="#{billingBean.loadDeletedBillings}"
+                                     update="@form"/>
+                    <p:dataTable id="deletedBillingsTable" var="billing" value="#{billingBean.deletedBillings}" paginator="true" rows="10">
+                        <p:column headerText="ID">
+                            <h:outputText value="#{billing.id}"/>
+                        </p:column>
+                        <p:column headerText="Patient">
+                            <h:outputText value="#{billing.patient.firstName} #{billing.patient.lastName}"/>
+                        </p:column>
+                        <p:column headerText="Amount">
+                            <h:outputText value="#{billing.amount}"/>
+                        </p:column>
+                        <p:column headerText="Description">
+                            <h:outputText value="#{billing.serviceDescription}"/>
+                        </p:column>
+                        <p:column headerText="Actions">
+                            <p:commandButton value="Restore" icon="pi pi-undo" action="#{billingBean.restoreBilling(billing.id)}"
+                                             update="@form"/>
+                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                                             oncomplete="PF('confirmDeleteBillingDialog').show()"
+                                             actionListener="#{billingBean.setBillingToDeleteId(billing.id)}"
+                                             update="@form" styleClass="ui-button-danger ml-2"/>
+                        </p:column>
+                    </p:dataTable>
+                    <p:dialog id="confirmDeleteBillingDialog" widgetVar="confirmDeleteBillingDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
+                        <h:outputText value="Are you sure you want to permanently delete this billing? This action cannot be undone."/>
+                        <f:facet name="footer">
+                            <p:commandButton value="Yes, Delete" action="#{billingBean.hardDeleteBilling(billingBean.billingToDeleteId)}" update="@form" oncomplete="PF('confirmDeleteBillingDialog').hide()" styleClass="ui-button-danger"/>
+                            <p:commandButton value="Cancel" onclick="PF('confirmDeleteBillingDialog').hide()" type="button"/>
+                        </f:facet>
+                    </p:dialog>
+                </p:tab>
+                <p:tab title="Roles and Specializations">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Specializations Management -->
+                        <div class="bg-white rounded-2xl shadow p-6">
+                            <h3 class="text-xl font-bold mb-4 text-blue-500">Manage Specializations</h3>
+                            <h:panelGroup layout="block" styleClass="mb-4 flex gap-2">
+                                <p:inputText value="#{settingsBean.newSpecialization}" placeholder="Add new specialization..." styleClass="w-full px-3 py-2 border rounded"/>
+                                <p:commandButton value="Add" action="#{settingsBean.addSpecialization}" update="specializationsTable specializationsMsg" styleClass="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"/>
+                            </h:panelGroup>
+                            <p:messages id="specializationsMsg" autoUpdate="true" closable="true"/>
+                            <p:dataTable id="specializationsTable" var="spec" value="#{settingsBean.specializations}" styleClass="mt-2">
+                                <p:column headerText="Specialization">
+                                    <h:outputText value="#{spec}"/>
+                                </p:column>
+                                <p:column headerText="Actions" style="width: 100px;">
+                                    <p:commandButton icon="pi pi-trash" action="#{settingsBean.removeSpecialization(spec)}" update="specializationsTable specializationsMsg" styleClass="ui-button-danger"/>
+                                </p:column>
+                            </p:dataTable>
+                        </div>
+                        <!-- Roles Management -->
+                        <div class="bg-white rounded-2xl shadow p-6">
+                            <h3 class="text-xl font-bold mb-4 text-blue-500">Manage Roles</h3>
+                            <h:panelGroup layout="block" styleClass="mb-4 flex gap-2">
+                                <p:inputText value="#{settingsBean.newRole}" placeholder="Add new role..." styleClass="w-full px-3 py-2 border rounded"/>
+                                <p:commandButton value="Add" action="#{settingsBean.addRole}" update="rolesTable rolesMsg" styleClass="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded"/>
+                            </h:panelGroup>
+                            <p:messages id="rolesMsg" autoUpdate="true" closable="true"/>
+                            <p:dataTable id="rolesTable" var="role" value="#{settingsBean.roles}" styleClass="mt-2">
+                                <p:column headerText="Role">
+                                    <h:outputText value="#{role}"/>
+                                </p:column>
+                                <p:column headerText="Actions" style="width: 100px;">
+                                    <p:commandButton icon="pi pi-trash" action="#{settingsBean.removeRole(role)}" update="rolesTable rolesMsg" styleClass="ui-button-danger"/>
+                                </p:column>
+                            </p:dataTable>
+                        </div>
+                    </div>
                 </p:tab>
             </p:tabView>
         </h:form>

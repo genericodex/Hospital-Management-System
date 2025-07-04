@@ -15,17 +15,21 @@
 
                 <p:toolbar styleClass="bg-blue-50 rounded-lg mb-4 p-4 flex flex-wrap gap-4 items-center justify-between">
                     <f:facet name="left">
-                        <p:commandButton value="Add New" icon="pi pi-plus"
-                                         action="#{patientBean.initNewPatient}"
-                                         update="patientForm:patientDialog"
-                                         oncomplete="PF('patientDialog').show()"
-                                         styleClass="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow mr-2"/>
+                    <p:commandButton value="Add New" icon="pi pi-plus"
+                                     action="#{patientBean.initNewPatient}"
+                                     update="patientForm:patientDialog"
+                                     oncomplete="PF('patientDialog').show()"
+                                     styleClass="!bg-blue-600 hover:!bg-blue-900 text-white font-semibold py-1 px-2 rounded
+                                         shadow mr-2 text-xs !max-w-[150px] max-h-[50px]"/>
+
+                        <span style="display:inline-block; width:0.75rem;"/>
 
                         <p:commandButton value="Delete Selected" icon="pi pi-trash"
                                          disabled="#{!patientBean.hasSelectedPatients()}"
                                          action="#{patientBean.deleteSelectedPatients}"
                                          update="patientForm:messages,patientForm:patientTable"
-                                         styleClass="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded shadow"/>
+                                         styleClass="!bg-red-500 hover:!bg-red-600 text-white font-semibold py-1 px-2 rounded
+                                         !border !border-red-500 shadow text-xs min-w-[28px] min-h-[28px]"/>
                     </f:facet>
 
                     <f:facet name="right">
@@ -33,54 +37,76 @@
                                          action="#{patientBean.loadDeletedPatients}"
                                          update="patientForm:deletedPatientsDialog"
                                          oncomplete="PF('deletedPatientsDialog').show()"
-                                         styleClass="bg-gray-500 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded shadow"/>
+                                         styleClass="bg-gray-500 hover:bg-gray-700 text-white font-semibold py-1 px-2 rounded
+                                         shadow text-xs min-w-[80px] min-h-[28px]"/>
                     </f:facet>
                 </p:toolbar>
 
-                <p:dataTable id="patientTable" var="patient" value="#{patientBean.patients}"
-                             paginator="true" rows="10" selection="#{patientBean.selectedPatients}"
-                             rowKey="#{patient.id}" emptyMessage="No patients found"
-                             styleClass="min-w-full divide-y divide-gray-200 text-sm rounded-lg overflow-hidden shadow"
-                             tableStyleClass="w-full">
-                    <p:column selectionMode="multiple" style="width:3%"/>
+                <!-- Search Bar -->
+                <div class="mb-4 flex items-center gap-2">
+                    <p:inputText value="#{patientBean.searchTerm}" placeholder="Search by name..." styleClass="w-64"/>
+                    <p:commandButton value="Search" icon="pi pi-search" action="#{patientBean.searchPatients}" update="patientForm:patientTable"/>
+                </div>
+                <div style="overflow-x:auto;">
+                    <p:dataTable id="patientTable" var="patient" value="#{patientBean.filteredPatients}"
+                                 paginator="true" rows="10" selection="#{patientBean.selectedPatients}"
+                                 rowKey="#{patientBean.selectedPatient.id}" emptyMessage="No patients found"
+                                 style="min-width: 1500px; width:100%;"
+                                 scrollable="true" scrollWidth="1500px"
+                                 styleClass="divide-y divide-gray-200 text-sm rounded-lg overflow-hidden shadow"
+                                 tableStyleClass="w-full">
+                        <p:column selectionMode="multiple" style="width:3%"/>
 
-                    <p:column headerText="ID" sortBy="#{patient.id}">
-                        <h:outputText value="#{patient.id}" styleClass="font-semibold text-blue-700"/>
-                    </p:column>
+                        <p:column headerText="ID" sortBy="#{patientBean.selectedPatient.id}">
+                            <h:outputText value="#{patient.id}" styleClass="font-semibold text-blue-700"/>
+                        </p:column>
 
-                    <p:column headerText="Name" sortBy="#{patient.lastName}">
-                        <h:outputText value="#{patient.firstName} #{patient.lastName}" styleClass="text-gray-800"/>
-                    </p:column>
+                        <p:column headerText="Name" sortBy="#{patient.lastName}">
+                            <h:outputText value="#{patient.firstName} #{patient.lastName}" styleClass="text-gray-800"/>
+                        </p:column>
 
-                    <p:column headerText="Date of Birth" sortBy="#{patient.dateOfBirth}">
-                        <h:outputText value="#{patient.dateOfBirth}">
-                            <f:convertDateTime pattern="MMM dd, yyyy"/>
-                        </h:outputText>
-                    </p:column>
+                        <p:column headerText="Date of Birth" sortBy="#{patient.dateOfBirth}">
+                            <h:outputText value="#{patient.dateOfBirth}">
+                                <f:convertDateTime pattern="MMM dd, yyyy"/>
+                            </h:outputText>
+                        </p:column>
 
-                    <p:column headerText="Email" sortBy="#{patient.email}">
-                        <h:outputText value="#{patient.email}"/>
-                    </p:column>
+                        <p:column headerText="Email" sortBy="#{patient.email}">
+                            <h:outputText value="#{patient.email}"/>
+                        </p:column>
 
-                    <p:column headerText="Phone" sortBy="#{patient.contactNumber}">
-                        <h:outputText value="#{patient.contactNumber}"/>
-                    </p:column>
+                        <p:column headerText="Phone" sortBy="#{patient.contactNumber}">
+                            <h:outputText value="#{patient.contactNumber}"/>
+                        </p:column>
 
-                    <p:column headerText="Actions" style="width:10%">
-                        <p:commandButton icon="pi pi-pencil" title="Edit"
-                                         action="#{patientBean.editPatient(patient)}"
-                                         update="patientForm:patientDialog"
-                                         oncomplete="PF('patientDialog').show()"/>
+                        <p:column headerText="Address" sortBy="#{patient.address}">
+                            <h:outputText value="#{patient.address}" styleClass="text-gray-600"/>
+                        </p:column>
 
-                        <p:commandButton icon="pi pi-trash" title="Delete"
-                                         action="#{patientBean.deletePatient(patient)}"
-                                         update="patientForm:messages,patientForm:patientTable"/>
-                    </p:column>
-                </p:dataTable>
+                        <p:column headerText="History" sortBy="#{patient.medicalHistory}">
+                            <h:outputText value="#{patient.medicalHistory}" styleClass="text-gray-600"/>
+                        </p:column>
+
+                        <p:column headerText="Actions" style="width:10%">
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <p:commandButton icon="pi pi-pencil" title="Edit"
+                                                 action="#{patientBean.editPatient(patient)}"
+                                                 update="patientForm:patientDialog"
+                                                 oncomplete="PF('patientDialog').show()"
+                                                 styleClass="p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+
+                                <p:commandButton icon="pi pi-trash" title="Delete"
+                                                 action="#{patientBean.deletePatient(patient)}"
+                                                 update="patientForm:messages,patientForm:patientTable"
+                                                 styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+                            </div>
+                        </p:column>
+                    </p:dataTable>
+                </div>
 
                 <!-- Add/Edit Patient Dialog -->
                 <p:dialog id="patientDialog" header="Patient Details" widgetVar="patientDialog" modal="true" resizable="false" dynamic="true">
-                    <h:panelGrid columns="2" cellpadding="5">
+                    <h:panelGrid columns="2" cellpadding="5" style="width:100%;">
                         <h:outputLabel for="firstName" value="First Name:"/>
                         <p:inputText id="firstName" value="#{patientBean.selectedPatient.firstName}" required="true"/>
 
@@ -88,16 +114,27 @@
                         <p:inputText id="lastName" value="#{patientBean.selectedPatient.lastName}" required="true"/>
 
                         <h:outputLabel for="dob" value="Date of Birth:"/>
-                        <p:calendar id="dob" value="#{patientBean.selectedPatient.dateOfBirth}" pattern="yyyy-MM-dd" required="true"/>
+                        <p:calendar id="dob" value="#{patientBean.selectedPatient.dateOfBirth}" pattern="yyyy-MM-dd" required="true" maxdate="#{now}"/>
 
                         <h:outputLabel for="email" value="Email:"/>
-                        <p:inputText id="email" value="#{patientBean.selectedPatient.email}" required="true"/>
+                        <p:inputText id="email" value="#{patientBean.selectedPatient.email}" required="true" validatorMessage="Enter a valid email address format"
+                                     placeholder="Enter email...">
+                            <f:validateRegex pattern="^.+@.+\.com$"/>
+                            <f:ajax event="blur" render=":patientForm:messages"/>
+                        </p:inputText>
 
                         <h:outputLabel for="phone" value="Phone:"/>
-                        <p:inputText id="phone" value="#{patientBean.selectedPatient.contactNumber}" required="true"/>
+                        <p:inputText id="phone" value="#{patientBean.selectedPatient.contactNumber}" required="true" maxlength="10"
+                                     pattern="\d{10}" title="Phone number must be exactly 10 digits." validatorMessage="Phone number must be exactly 10 digits.">
+                            <f:validateRegex pattern="\d{10}" />
+                        </p:inputText>
 
                         <h:outputLabel for="address" value="Address:"/>
                         <p:inputTextarea id="address" value="#{patientBean.selectedPatient.address}" required="true"/>
+
+                        <h:outputLabel for="medicalHistory" value="Medical History:" style="vertical-align:top;"/>
+                        <p:inputTextarea id="medicalHistory" value="#{patientBean.selectedPatient.medicalHistory}" required="true"
+                                         rows="5" cols="30" maxlength="500" placeholder="Enter medical history..." style="width:100%;"/>
                     </h:panelGrid>
 
                     <f:facet name="footer">
@@ -109,7 +146,8 @@
                 </p:dialog>
 
                 <!-- Deleted Patients Dialog -->
-                <p:dialog id="deletedPatientsDialog" header="Deleted Patients" widgetVar="deletedPatientsDialog" modal="true" resizable="false">
+                <p:dialog id="deletedPatientsDialog" header="Deleted Patients" widgetVar="deletedPatientsDialog" modal="true"
+                          resizable="false">
                     <p:dataTable var="patient" value="#{patientBean.deletedPatients}" paginator="true" rows="10">
                         <p:column headerText="ID">
                             <h:outputText value="#{patient.id}"/>
@@ -122,11 +160,15 @@
                         <p:column headerText="Email">
                             <h:outputText value="#{patient.email}"/>
                         </p:column>
-
-                        <p:column headerText="Actions">
-                            <p:commandButton value="Restore" action="#{patientBean.restorePatient(patient.id)}"
-                                             update="patientForm:messages,patientForm:patientTable,patientForm:deletedPatientsDialog"/>
+                        <p:column headerText="Phone">
+                            <h:outputText value="#{patient.contactNumber}"/>
                         </p:column>
+                        <p:column headerText="Date of Birth">
+                            <h:outputText value="#{patient.dateOfBirth}">
+                                <f:convertDateTime pattern="MMM dd, yyyy"/>
+                            </h:outputText>
+                        </p:column>
+
                     </p:dataTable>
                 </p:dialog>
             </h:form>

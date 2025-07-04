@@ -19,10 +19,14 @@
                                      update=":staffForm:staffDialog"
                                      oncomplete="PF('staffDialog').show()"/>
 
+                    <span style="display:inline-block; width:0.75rem;"/>
+
                     <p:commandButton value="Delete Selected" icon="pi pi-trash"
                                      disabled="#{empty staffBean.selectedStaffList}"
                                      action="#{staffBean.deleteSelectedStaff}"
-                                     update=":staffForm:messages,:staffForm:staffTable"/>
+                                     update=":staffForm:messages,:staffForm:staffTable"
+                                     styleClass="!bg-red-500 hover:!bg-red-600 text-white font-semibold py-1 px-2 rounded
+                                         !border !border-red-500 shadow text-xs min-w-[28px] min-h-[28px]"/>
                 </f:facet>
 
                 <f:facet name="right">
@@ -33,7 +37,13 @@
                 </f:facet>
             </p:toolbar>
 
-            <p:dataTable id="staffTable" var="staff" value="#{staffBean.staffList}"
+            <!-- Search Bar -->
+            <div class="mb-2 pt-2 flex items-center gap-2">
+                <p:inputText value="#{staffBean.searchTerm}" placeholder="Search by name or department..." styleClass="w-64"/>
+                <p:commandButton value="Search" icon="pi pi-search" action="#{staffBean.searchStaff}" update="staffForm:staffTable"/>
+            </div>
+
+            <p:dataTable id="staffTable" var="staff" value="#{staffBean.filteredStaffList}"
                          paginator="true" rows="10" selection="#{staffBean.selectedStaffList}"
                          rowKey="#{staff.id}" emptyMessage="No staff members found">
 
@@ -60,6 +70,8 @@
                 </p:column>
 
                 <p:column headerText="Actions" style="width:10%">
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+
                     <p:commandButton icon="pi pi-pencil" title="Edit"
                                      action="#{staffBean.editStaff(staff)}"
                                      update=":staffForm:staffDialog"
@@ -68,7 +80,9 @@
                     <p:commandButton icon="pi pi-trash" title="Delete"
                                      action="#{staffBean.deleteStaff(staff)}"
                                      update=":staffForm:messages,:staffForm:staffTable"
-                                     process="@this" immediate="true"/>
+                                     process="@this" immediate="true"
+                                     styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+                    </div>
                 </p:column>
             </p:dataTable>
 
@@ -89,8 +103,7 @@
 
                     <h:outputLabel for="role" value="Role:"/>
                     <p:selectOneMenu id="role" value="#{staffBean.selectedStaff.role}" required="true">
-                        <f:selectItems value="#{staffBean.roles}" var="role"
-                                       itemLabel="#{role}" itemValue="#{role}"/>
+                        <f:selectItems value="#{staffBean.availableRoles}" var="role" itemLabel="#{role}" itemValue="#{role}"/>
                     </p:selectOneMenu>
 
                     <h:outputLabel for="department" value="Department:"/>
