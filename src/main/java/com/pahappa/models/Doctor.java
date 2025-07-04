@@ -1,5 +1,4 @@
 package com.pahappa.models;
-import com.pahappa.constants.Specialization;
 import jakarta.persistence.*;
 
 @Entity
@@ -16,8 +15,7 @@ public class Doctor {
     private String lastName;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Specialization specialization;
+    private String specialization;
 
 
     @Column(name = "contact_number", nullable = false, unique = true)
@@ -26,22 +24,75 @@ public class Doctor {
     @Column(nullable = false, unique = true)
     private String email;
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+    @Column(nullable = false)
+    private String password;
+
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
     // Constructors
     public Doctor() {}
 
+<<<<<<< Updated upstream
     public Doctor(String firstName, String lastName, Specialization specialization,
+<<<<<<< Updated upstream
                   String contactNumber, String email, Boolean isDeleted) {
+=======
+<<<<<<< Updated upstream
+                  String contactNumber, String email) {
+=======
+<<<<<<< Updated upstream
+                  String contactNumber, String email, Boolean isDeleted) {
+=======
+                  String contactNumber, String email) {
+=======
+    public Doctor(String firstName, String lastName, String specialization,
+                  String contactNumber, String email, Boolean isDeleted, String password) {
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
         this.firstName = firstName;
         this.lastName = lastName;
         this.specialization = specialization;
         this.contactNumber = contactNumber;
         this.email = email;
+<<<<<<< Updated upstream
         this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
+=======
+<<<<<<< Updated upstream
+=======
+        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
+        this.password = password;
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     }
 
     // Getters and Setters
@@ -69,11 +120,11 @@ public class Doctor {
         this.lastName = lastName;
     }
 
-    public Specialization getSpecialization() {
+    public String getSpecialization() {
         return specialization;
     }
 
-    public void setSpecialization(Specialization specialization) {
+    public void setSpecialization(String specialization) {
         this.specialization = specialization;
     }
 
@@ -93,6 +144,16 @@ public class Doctor {
         this.email = email;
     }
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     public boolean isDeleted() {
         return isDeleted;
     }
@@ -100,6 +161,21 @@ public class Doctor {
         isDeleted = deleted;
     }
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     @Override
     public String toString() {
         return "Doctor{" +
