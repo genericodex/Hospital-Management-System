@@ -75,7 +75,7 @@ public class StaffDao {
 
     public Staff authenticate(String email, String password) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM com.pahappa.models.Staff WHERE email = :email AND password = :password", Staff.class)
+            return session.createQuery("FROM com.pahappa.models.Staff WHERE email = :email AND password = :password AND isDeleted = false", Staff.class)
                     .setParameter("email", email)
                     .setParameter("password", password)
                     .uniqueResult();
@@ -99,13 +99,9 @@ public class StaffDao {
 
     // Get all non-deleted staff
     public List<Staff> getAllActiveStaff() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
             return session.createQuery(
                     "FROM com.pahappa.models.Staff WHERE isDeleted = false", Staff.class).list();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     // Get all deleted staff (bin)
@@ -132,4 +128,17 @@ public class StaffDao {
         }
     }
 
+    public Staff getStaffByEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email must not be null or empty.");
+        }
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("FROM com.pahappa.models.Staff WHERE email = :email", Staff.class)
+                    .setParameter("email", email)
+                    .uniqueResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
