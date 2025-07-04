@@ -66,6 +66,7 @@ public class Billing {
         this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
     }
 
+
     // Getters and Setters
     public Long getId() {
         return id;
