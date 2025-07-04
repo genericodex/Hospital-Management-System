@@ -19,8 +19,19 @@ public class AuthFilter implements Filter {
 
         // Only check session for protected pages
         if (!loginPage && !resource) {
+<<<<<<< Updated upstream
             Object auth = req.getSession().getAttribute("authBean");
             if (auth == null) {
+=======
+<<<<<<< Updated upstream
+            Object auth = req.getSession().getAttribute("authBean");
+            if (auth == null) {
+=======
+            Object staffAuth = req.getSession().getAttribute("authBean");
+            Object doctorAuth = req.getSession().getAttribute("doctorAuthBean");
+            if (staffAuth == null && doctorAuth == null) {
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
                 res.sendRedirect(req.getContextPath() + "/login.xhtml");
                 return;
             }
