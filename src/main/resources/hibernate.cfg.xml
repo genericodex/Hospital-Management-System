@@ -34,5 +34,6 @@
         <mapping class="com.pahappa.models.Appointment"/>
         <mapping class="com.pahappa.models.Billing"/>
         <mapping class="com.pahappa.models.Staff"/>
+        <mapping class="com.pahappa.models.AuditLog"/>
     </session-factory>
 </hibernate-configuration>

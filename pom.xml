@@ -54,6 +54,20 @@
       <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+  </dependencies><build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration><source>14</source><target>14</target></configuration></plugin></plugins></build>
+</project>
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+  </dependencies><build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration><source>14</source><target>14</target></configuration></plugin></plugins></build>
+</project>
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
     <!-- Weld CDI for Tomcat -->
     <dependency>
@@ -90,7 +104,15 @@
       <version>2.0.1</version>
       <scope>provided</scope>
     </dependency>
+<<<<<<< Updated upstream
 
+=======
+<<<<<<< Updated upstream
+
+=======
+    
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     <dependency>
       <groupId>org.primefaces</groupId>
       <artifactId>primefaces</artifactId>
@@ -123,8 +145,24 @@
         <configuration>
           <source>21</source>
           <target>21</target>
+<<<<<<< Updated upstream
           <compilerArgs>--enable-preview</compilerArgs>
+=======
+<<<<<<< Updated upstream
+          <compilerArgs>--enable-preview</compilerArgs>
+=======
+<!--          <compilerArgs>&#45;&#45;enable-preview</compilerArgs>-->
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
         </configuration>
       </plugin>
     </plugins>
   </build></project>
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes

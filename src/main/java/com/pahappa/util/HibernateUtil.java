@@ -53,7 +53,7 @@ public class HibernateUtil {
         if (sessionFactory == null) {
             try {
                 Configuration configuration = new Configuration();
-                configuration.configure("hibernate.cfg.xml");
+                configuration.configure();
 
                 // Register entity classes
                 configuration.addAnnotatedClass(Patient.class);
@@ -73,6 +73,7 @@ public class HibernateUtil {
                 sources.addAnnotatedClass(Doctor.class);
                 sources.addAnnotatedClass(Appointment.class);
                 sources.addAnnotatedClass(Billing.class);
+                sources.addAnnotatedClass(AuditLog.class);
                 sources.addAnnotatedClass(Staff.class);
 
                 Metadata metadata = sources.getMetadataBuilder().build();
