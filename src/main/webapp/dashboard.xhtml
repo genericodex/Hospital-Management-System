@@ -14,63 +14,78 @@
 <ui:composition template="template.xhtml">
     <ui:define name="title">Dashboard</ui:define>
 
-    <ui:define name="content">
-        <h:form>
-            <p:panel header="Dashboard Overview" style="margin: 20px;">
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mt-5">
-                    <p:panel styleClass="ui-card bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl w-full max-w-xs mx-auto border border-blue-200 hover:scale-105 hover:shadow-2xl transition-transform duration-300">
+    <ui:define name="content" >
+        <h:form id="dashboardForm">
+            <p:panel styleClass="border-0  !rounded-lg mb-4 !shadow-lg bg-blue-100">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="pi pi-calendar text-blue-600 text-xl"/>
+                    <span class="font-semibold text-blue-700 text-lg">Dashboard Overview</span>
+                </div>
+                <div class="border border-red-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 p-2 mt-1">
+                    <p:panel styleClass=" !bg-gradient-to-br !from-blue-100 !to-blue-200
+                    !flex !flex-col !items-center !justify-center !rounded-2xl !shadow-xl !w-full
+                    !border !border-blue-300 hover:scale-105 hover:shadow-2xl transition-transform duration-300 cursor-pointer group"
+                             style="cursor:pointer;"
+                             onclick="window.location='patients'">
                         <f:facet name="header">
                             <div class="flex flex-col items-center">
                                 <span class="bg-blue-500 text-white rounded-full p-4 shadow-lg mb-2">
-                                    <i class="pi pi-users text-3xl"></i>
+                                    <i class="pi pi-users text-3xl"/>
                                 </span>
                                 <span class="font-semibold text-lg">Patients</span>
                             </div>
-                        </f:facet>
-                        <div class="flex flex-col items-center justify-center mt-2 mb-1 w-full">
-                            <div class="w-full flex flex-col items-center bg-white/60 rounded-xl shadow-inner py-3 px-2 mb-1 border border-blue-100">
-                                <span class="text-4xl font-extrabold text-blue-700 tracking-tight drop-shadow">
+                        <div class="flex flex-col items-center justify-center  w-full">
+                            <div class="flex flex-col items-center rounded-xl ">
+                                <span class="text-4xl font-extrabold text-blue-900 drop-shadow">
                                     <h:outputText value="#{dashboardBean.patientCount}">
                                         <f:convertNumber type="number" groupingUsed="true"/>
                                     </h:outputText>
                                 </span>
                                 <span class="uppercase text-xs text-blue-500 tracking-widest mt-1">Total</span>
                             </div>
+                        <p:commandLink value="View All" action="patients"  styleClass="!items-center !justify-center !text-blue-600 !text-sm !mt-3 !font-semibold "/>
                         </div>
-                        <p:commandLink value="View All" action="patients" styleClass="dashboard-link text-blue-600 text-sm mt-3 font-semibold hover:underline"/>
+                        </f:facet>
                     </p:panel>
 
-                    <p:panel styleClass="ui-card bg-gradient-to-br from-green-100 to-green-200 flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl w-full max-w-xs mx-auto border border-green-200 hover:scale-105 hover:shadow-2xl transition-transform duration-300">
+                    <p:panel styleClass="!ui-card !bg-gradient-to-br !from-green-100 !to-green-200
+                    !flex !flex-col !items-center !justify-center !p-6 !rounded-2xl !shadow-xl !w-full !max-w-xs !mx-auto
+                    !border !border-green-300 hover:scale-105 hover:shadow-2xl transition-transform duration-300 cursor-pointer group"
+                             style="cursor:pointer;"
+                             onclick="window.location='doctors.xhtml'">
                         <f:facet name="header">
                             <div class="flex flex-col items-center">
                                 <span class="bg-green-500 text-white rounded-full p-4 shadow-lg mb-2">
-                                    <i class="pi pi-user-plus text-3xl"></i>
+                                    <i class="pi pi-user-plus text-3xl"/>
                                 </span>
                                 <span class="font-semibold text-lg">Doctors</span>
                             </div>
-                        </f:facet>
-                        <div class="flex flex-col items-center justify-center mt-2 mb-1 w-full">
-                            <div class="w-full flex flex-col items-center bg-white/60 rounded-xl shadow-inner py-3 px-2 mb-1 border border-green-100">
-                                <span class="text-4xl font-extrabold text-green-700 tracking-tight drop-shadow">
+                        <div class="flex flex-col items-center justify-center ">
+                            <div class="flex flex-col items-center rounded-xl ">
+                                <span class="text-4xl font-extrabold text-green-700  drop-shadow">
                                     <h:outputText value="#{dashboardBean.doctorCount}">
                                         <f:convertNumber type="number" groupingUsed="true"/>
                                     </h:outputText>
                                 </span>
                                 <span class="uppercase text-xs text-green-500 tracking-widest mt-1">Total</span>
                             </div>
+                        <p:commandLink value="View All" action="doctors"  styleClass="dashboard-link !text-green-600 !text-sm !mt-3 !font-semibold "/>
                         </div>
-                        <p:commandLink value="View All" action="doctors" styleClass="dashboard-link text-green-600 text-sm mt-3 font-semibold hover:underline"/>
+                        </f:facet>
                     </p:panel>
 
-                    <p:panel styleClass="ui-card bg-gradient-to-br from-yellow-100 to-yellow-200 flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl w-full max-w-xs mx-auto border border-yellow-200 hover:scale-105 hover:shadow-2xl transition-transform duration-300">
-                        <f:facet name="header">
+                    <p:panel styleClass="!ui-card !bg-gradient-to-br !from-yellow-100 !to-yellow-200 !flex !flex-col !items-center
+                    !justify-center !p-6 !rounded-2xl !shadow-xl !w-full !max-w-xs !mx-auto !border !border-yellow-300 hover:scale-105
+                    hover:shadow-2xl transition-transform duration-300 cursor-pointer group"
+                             style="cursor:pointer;"
+                             onclick="window.location='appointments.xhtml'">
+                    <f:facet name="header">
                             <div class="flex flex-col items-center">
                                 <span class="bg-yellow-500 text-white rounded-full p-4 shadow-lg mb-2">
-                                    <i class="pi pi-calendar text-3xl"></i>
+                                    <i class="pi pi-calendar text-3xl"/>
                                 </span>
                                 <span class="font-semibold text-lg">Appointments</span>
                             </div>
-                        </f:facet>
                         <div class="flex flex-col items-center justify-center mt-2 mb-1">
                             <span class="text-4xl font-extrabold text-yellow-700 tracking-tight drop-shadow">
                                 <h:outputText value="#{dashboardBean.appointmentCount}">
@@ -78,43 +93,48 @@
                                 </h:outputText>
                             </span>
                             <span class="uppercase text-xs text-yellow-500 tracking-widest mt-1">Total</span>
+                        <p:commandLink value="View All" action="appointments"  styleClass="dashboard-link !text-yellow-600 !text-sm !mt-3 !font-semibold "/>
                         </div>
-                        <p:commandLink value="View All" action="appointments" styleClass="dashboard-link text-yellow-600 text-sm mt-3 font-semibold hover:underline"/>
+                        </f:facet>
                     </p:panel>
 
-                    <p:panel styleClass="ui-card bg-gradient-to-br from-purple-100 to-purple-200 flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl w-full max-w-xs mx-auto border border-purple-200 hover:scale-105 hover:shadow-2xl transition-transform duration-300">
-                        <f:facet name="header">
-                            <div class="flex flex-col items-center">
+                    <p:panel styleClass="!ui-card !bg-gradient-to-br !from-purple-100 !to-purple-200 !flex !flex-col !items-center
+                    !justify-center !p-6 !rounded-2xl !shadow-xl !w-full !max-w-xs !mx-auto !border !border-purple-300 hover:scale-105
+                    hover:shadow-2xl transition-transform duration-300 cursor-pointer group"
+                             style="cursor:pointer;"
+                             onclick="window.location='staff.xhtml'">
+                        <f:facet name="header" styleClass="!bg-purple-100 !rounded-tl-lg !rounded-tr-lg">
+                            <div class="flex flex-col bg-purple-100 p-0 items-center">
                                 <span class="bg-purple-500 text-white rounded-full p-4 shadow-lg mb-2">
-                                    <i class="pi pi-id-card text-3xl"></i>
+                                    <i class="pi pi-id-card text-3xl"/>
                                 </span>
                                 <span class="font-semibold text-lg">Staff</span>
                             </div>
-                        </f:facet>
-                        <div class="flex flex-col items-center justify-center mt-2 mb-1">
+                        <div class="flex flex-col items-center p-0 w-full">
                             <span class="text-4xl font-extrabold text-purple-700 tracking-tight drop-shadow">
                                 <h:outputText value="#{dashboardBean.staffCount}">
                                     <f:convertNumber type="number" groupingUsed="true"/>
                                 </h:outputText>
                             </span>
                             <span class="uppercase text-xs text-purple-500 tracking-widest mt-1">Total</span>
+                        <p:commandLink value="View All" action="staff"  styleClass="dashboard-link !text-purple-600 !text-sm !mt-3 !font-semibold "/>
                         </div>
-                        <p:commandLink value="View All" action="staff" styleClass="dashboard-link text-purple-600 text-sm mt-3 font-semibold hover:underline"/>
+                        </f:facet>
                     </p:panel>
                 </div>
             </p:panel>
 
-            <p:panel styleClass="border-0 shadow-none bg-transparent">
+            <p:panel styleClass="!border-0 shadow-lg !bg-transparent !rounded-lg">
                 <div class="flex items-center gap-2 mb-4">
-                    <i class="pi pi-calendar text-blue-600 text-xl"></i>
+                    <i class="pi pi-calendar text-blue-600 text-xl"/>
                     <span class="font-semibold text-blue-700 text-lg">Recent Appointments</span>
                 </div>
-                <div class="overflow-x-auto rounded-xl shadow-lg bg-white">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <div class="overflow-x-auto rounded-2xl shadow-0 bg-white">
+                    <table id="dashboardTable" class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-blue-600">
                             <tr>
-                                <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider rounded-tl-lg">Patient</th>
-                                <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider">Doctor</th>
+                                <th class="px-4  text-left font-bold text-white uppercase tracking-wider rounded-tl-lg">Patient</th>
+                                <th class="px-4  text-left font-bold text-white uppercase tracking-wider">Doctor</th>
                                 <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider">Date</th>
                                 <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider rounded-tr-lg">Status</th>
                             </tr>
@@ -134,7 +154,10 @@
                                         </h:outputText>
                                     </td>
                                     <td class="px-4 py-2 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                        #{appointment.status eq 'SCHEDULED' ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                        : appointment.status eq 'COMPLETED' ? 'bg-green-100 text-green-700 border border-green-200'
+                                        : 'bg-gray-100 text-gray-700 border border-gray-200'}">
                                             <h:outputText value="#{appointment.status}"/>
                                         </span>
                                     </td>
@@ -142,6 +165,17 @@
                             </ui:repeat>
                         </tbody>
                     </table>
+                    <div class="flex justify-center mt-2">
+                        <p:commandButton icon="pi pi-angle-left" disabled="#{dashboardBean.page == 0}"
+                                    actionListener="#{dashboardBean.prevPage}" update="@parent"
+                                    styleClass="mr-5 !bg-transparent !border-0 !shadow-none !text-blue-700 hover:!bg-blue-100 hover:!text-blue-800
+                                    transition-all duration-200 !w-8 !h-8 flex items-center justify-center"/>
+                                <span class="mx-5 font-normal text-blue-900">Page #{dashboardBean.page + 1} of #{dashboardBean.totalPages}</span>
+                                <p:commandButton icon="pi pi-angle-right" disabled="#{dashboardBean.page + 1 >= dashboardBean.totalPages}"
+                                    actionListener="#{dashboardBean.nextPage}" update="@parent"
+                                    styleClass="!bg-transparent !border-0 !shadow-none !text-blue-600 hover:!bg-blue-100 hover:!text-blue-800
+                                    transition-all duration-200 !w-8 !h-8 flex items-center justify-center"/>
+                    </div>
                 </div>
             </p:panel>
         </h:form>
