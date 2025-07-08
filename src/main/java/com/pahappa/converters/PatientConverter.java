@@ -2,10 +2,8 @@ package com.pahappa.converters;
 
 import com.pahappa.models.Patient;
 import com.pahappa.services.HospitalService;
-<<<<<<< Updated upstream
-=======
-import com.pahappa.services.PatientServiceImpl;
->>>>>>> Stashed changes
+import com.pahappa.services.patient.impl.PatientServiceImpl;
+import jakarta.faces.application.FacesMessage;
 import jakarta.faces.component.UIComponent;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.convert.Converter;
@@ -15,11 +13,7 @@ import jakarta.inject.Inject;
 @FacesConverter(value = "patientConverter", managed = true)
 public class PatientConverter implements Converter<Patient> {
     @Inject
-<<<<<<< Updated upstream
-    private HospitalService hospitalService;
-=======
     private PatientServiceImpl hospitalService;
->>>>>>> Stashed changes
 
     @Override
     public Patient getAsObject(FacesContext context, UIComponent component, String value) {
@@ -28,7 +22,7 @@ public class PatientConverter implements Converter<Patient> {
             Long id = Long.valueOf(value);
             return hospitalService.getPatientById(id);
         } catch (Exception e) {
-            return null;
+            throw new jakarta.faces.convert.ConverterException(new FacesMessage(FacesMessage.SEVERITY_ERROR, "Conversion Error", "Could not convert patient: " + e.getMessage()));
         }
     }
 
