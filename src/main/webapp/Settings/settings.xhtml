@@ -15,7 +15,7 @@
                     <p:commandButton value="Load Deleted Patients" icon="pi pi-refresh"
                                      action="#{patientBean.loadDeletedPatients}"
                                      update="@form"/>
-                    <p:dataTable id="deletedPatientsTable" var="patient" value="#{patientBean.deletedPatients}" paginator="true" rows="10">
+                    <p:dataTable id="deletedPatientsTable" var="patient" value="#{patientBean.deletedPatients}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{patient.id}"/>
                         </p:column>
@@ -62,7 +62,7 @@
                     <p:commandButton value="Load Deleted Doctors" icon="pi pi-refresh"
                                      action="#{doctorBean.loadDeletedDoctors}"
                                      update="@form"/>
-                    <p:dataTable id="deletedDoctorsTable" var="doctor" value="#{doctorBean.deletedDoctors}" paginator="true" rows="10">
+                    <p:dataTable id="deletedDoctorsTable" var="doctor" value="#{doctorBean.deletedDoctors}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{doctor.id}"/>
                         </p:column>
@@ -93,7 +93,7 @@
                     <p:commandButton value="Load Deleted Appointments" icon="pi pi-refresh"
                                      action="#{appointmentBean.loadCancelledAppointments}"
                                      update="@form"/>
-                    <p:dataTable id="deletedAppointmentsTable" var="appointment" value="#{appointmentBean.cancelledAppointments}" paginator="true" rows="10">
+                    <p:dataTable id="deletedAppointmentsTable" var="appointment" value="#{appointmentBean.cancelledAppointments}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{appointment.id}"/>
                         </p:column>
@@ -129,7 +129,7 @@
                     <p:commandButton value="Load Deleted Staff" icon="pi pi-refresh"
                                      action="#{staffBean.loadDeletedStaff}"
                                      update="@form"/>
-                    <p:dataTable id="deletedStaffTable" var="staff" value="#{staffBean.deletedStaff}" paginator="true" rows="10">
+                    <p:dataTable id="deletedStaffTable" var="staff" value="#{staffBean.deletedStaff}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{staff.id}"/>
                         </p:column>
@@ -160,7 +160,7 @@
                     <p:commandButton value="Load Deleted Billings" icon="pi pi-refresh"
                                      action="#{billingBean.loadDeletedBillings}"
                                      update="@form"/>
-                    <p:dataTable id="deletedBillingsTable" var="billing" value="#{billingBean.deletedBillings}" paginator="true" rows="10">
+                    <p:dataTable id="deletedBillingsTable" var="billing" value="#{billingBean.deletedBillings}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{billing.id}"/>
                         </p:column>
