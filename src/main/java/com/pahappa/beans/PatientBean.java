@@ -1,7 +1,7 @@
 package com.pahappa.beans;
 
 import com.pahappa.models.Patient;
-import com.pahappa.services.PatientServiceImpl;
+import com.pahappa.services.patient.impl.PatientServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
@@ -13,6 +13,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -21,10 +23,23 @@ import java.util.List;
  * back into a real object.
  *
  * This is useful for web applications to keep user data between requests or sessions.
+ *
+ * <p>
+ * long -- primitive type in Java.<p>
+ * Long -- an object type (a class that wraps a long value).
+ *
+ * Java expects serialVersionUID to be a primitive long (not a Long object) because:<p>
+ * The Serializable interface and the Java serialization mechanism are designed to use a simple, fixed-size value for versioning classes.<p>
+ * A primitive long is more efficient: it uses less memory and is faster to read/write than a Long object, which is a wrapper class and can be null.<p>
+ * The serialization process is low-level and expects a constant value, not an object reference that could be null or have extra object overhead.<p>
+ * The Java compiler and serialization runtime specifically look for a static final long field named serialVersionUID. If you use Long,
+ * it will not be recognized and will not work as intended.<p><p>
+ * In summary: serialVersionUID must be a primitive long so that Java serialization can reliably and efficiently check class versions.
  */
 @Named
 @ViewScoped
 public class PatientBean implements Serializable {
+    private static final Logger logger = LoggerFactory.getLogger(PatientBean.class);
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -52,7 +67,9 @@ public class PatientBean implements Serializable {
      */
     @PostConstruct
     public void init() {
+        logger.debug("PatientBean @PostConstruct init called");
         patients = patientService.getAllActivePatient();
+        logger.debug("Loaded patients: {}", patients != null ? patients.size() : 0);
         selectedPatient = new Patient();
         // Always initialize filteredPatients to avoid null
         filteredPatients = new ArrayList<>(patients);
@@ -64,6 +81,7 @@ public class PatientBean implements Serializable {
     }
 
     public void savePatient() {
+        logger.debug("savePatient called. newPatient: {}, selectedPatient: {}", newPatient, selectedPatient);
         try {
             // Backend validation for phone number and birthdate
             if (!selectedPatient.isValidPhoneNumber()) {
@@ -96,10 +114,12 @@ public class PatientBean implements Serializable {
                         new FacesMessage("Patient updated successfully"));
             }
             patients = patientService.getAllActivePatient();
+            logger.info("Patient saved/updated successfully");
             // Reset selectedPatient and newPatient after save/update
             selectedPatient = new Patient();
             newPatient = false;
         } catch (Exception e) {
+            logger.error("Error in savePatient", e);
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
         }
@@ -174,21 +194,47 @@ public class PatientBean implements Serializable {
     public void searchPatients() {
         if (searchTerm == null || searchTerm.trim().isEmpty()) {
             filteredPatients = new ArrayList<>(patients);
-        } else {
-            String lower = searchTerm.toLowerCase();
-            filteredPatients = patients.stream()
-                .filter(p -> (p.getFirstName() + " " + p.getLastName()).toLowerCase().contains(lower))
-                .toList();
         }
+        // 1. Create a new empty list to hold the results
+        List<Patient> results = new ArrayList<>();
+        String lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+        // 2. Loop through each patient in the original list
+        for (Patient patient : patients) {
+            // Defensive check in case first or last name could be null
+            String firstName = patient.getFirstName() != null ? patient.getFirstName() : "";
+            String lastName = patient.getLastName() != null ? patient.getLastName() : "";
+            String fullName = (firstName + " " + lastName).toLowerCase();
+
+            // 3. If the patient's name matches, add them to the results list
+            if (fullName.contains(lowerCaseSearchTerm)) {
+                results.add(patient);
+            }
+        }
+
+        // 4. Assign the new list of results to filteredPatients
+        filteredPatients = results;
     }
 
     // Getters and Setters
-    public List<Patient> getPatients() { return patients; }
+    public List<Patient> getPatients() {
+        logger.debug("getPatients called. patients size: {}", patients != null ? patients.size() : 0);
+        if (patients == null || patients.isEmpty()) {
+            patients = patientService.getAllActivePatient();
+            logger.debug("Reloaded patients from DB. New size: {}", patients != null ? patients.size() : 0);
+        }
+        return patients;
+    }
     public List<Patient> getSelectedPatients() { return selectedPatients; }
     public void setSelectedPatients(List<Patient> selectedPatients) { this.selectedPatients = selectedPatients; }
     public Patient getSelectedPatient() { return selectedPatient; }
     public void setSelectedPatient(Patient selectedPatient) { this.selectedPatient = selectedPatient; }
-    public List<Patient> getDeletedPatients() { return deletedPatients; }
+    public List<Patient> getDeletedPatients() {
+        if (deletedPatients == null) {
+            deletedPatients = patientService.getDeletedPatient();
+        }
+        return deletedPatients;
+    }
     public boolean isNewPatient() { return newPatient; }
     public Long getPatientToDeleteId() { return patientToDeleteId; }
     public void setPatientToDeleteId(Long patientToDeleteId) { this.patientToDeleteId = patientToDeleteId; }

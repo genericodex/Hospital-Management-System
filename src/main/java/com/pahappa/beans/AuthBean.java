@@ -4,7 +4,7 @@ import com.pahappa.dao.AuditLogDao;
 import com.pahappa.models.AuditLog;
 import com.pahappa.models.Staff;
 import com.pahappa.services.HospitalService;
-import com.pahappa.services.StaffServiceImpl;
+import com.pahappa.services.staff.impl.StaffServiceImpl;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -40,7 +40,7 @@ public class AuthBean implements Serializable {
                 log.setNewValue(loggedInUser.toString());
                 auditLogDao.saveAuditLog(log);
                 FacesContext.getCurrentInstance().getExternalContext().getSessionMap().put("authBean", this);
-                return "/dashboard.xhtml?faces-redirect=true";
+                return "dashboard";
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login Failed. \n", "Invalid credentials"));

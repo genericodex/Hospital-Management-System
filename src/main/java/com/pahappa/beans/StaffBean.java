@@ -2,7 +2,7 @@ package com.pahappa.beans;
 
 import com.pahappa.constants.StaffRoles;
 import com.pahappa.models.Staff;
-import com.pahappa.services.StaffServiceImpl;
+import com.pahappa.services.staff.impl.StaffServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
@@ -10,7 +10,6 @@ import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import org.hibernate.annotations.View;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -182,7 +181,12 @@ public class StaffBean implements Serializable {
     }
 
     // Getters and Setters
-    public List<Staff> getStaffList() { return staffList; }
+    public List<Staff> getStaffList() {
+        if (staffList == null || staffList.isEmpty()) {
+            staffList = staffService.getAllActiveStaff();
+        }
+        return staffList;
+    }
     public List<Staff> getSelectedStaffList() { return selectedStaffList; }
     public void setSelectedStaffList(List<Staff> selectedStaffList) { this.selectedStaffList = selectedStaffList; }
     public Staff getSelectedStaff() { return selectedStaff; }
@@ -195,12 +199,15 @@ public class StaffBean implements Serializable {
     public String getSearchTerm() { return searchTerm; }
     public void setSearchTerm(String searchTerm) { this.searchTerm = searchTerm; }
     public List<Staff> getFilteredStaffList() {
-        if (filteredStaffList == null) {
-            filteredStaffList = new ArrayList<>(staffList);
+        if (filteredStaffList == null || filteredStaffList.isEmpty()) {
+            filteredStaffList = new ArrayList<>(getStaffList());
         }
         return filteredStaffList;
     }
     public List<Staff> getDeletedStaff() {
+        if (deletedStaff == null) {
+            deletedStaff = staffService.getDeletedStaff();
+        }
         return deletedStaff;
     }
 }

@@ -4,7 +4,9 @@ import com.pahappa.constants.AppointmentStatus;
 import com.pahappa.models.Appointment;
 import com.pahappa.models.Doctor;
 import com.pahappa.models.Patient;
-import com.pahappa.services.AppointmentServiceImpl;
+import com.pahappa.services.appointment.impl.AppointmentServiceImpl;
+import com.pahappa.services.patient.impl.PatientServiceImpl;
+import com.pahappa.services.doctor.impl.DoctorServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
@@ -29,6 +31,13 @@ public class AppointmentBean implements Serializable {
 
     @Inject
     private DoctorAuthBean doctorAuthBean;
+
+    @Inject
+    private PatientServiceImpl patientService;
+
+    @Inject
+    private DoctorServiceImpl doctorService;
+
 
     private List<Appointment> appointments = new ArrayList<>();
     private List<Appointment> selectedAppointments;
@@ -90,6 +99,25 @@ public class AppointmentBean implements Serializable {
         if (doctors == null) {
             doctors = new ArrayList<>();
         }
+        // Always load patients and doctors for dropdowns/autocomplete
+        try {
+            appointments = appointmentService != null ? (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null ? appointmentService.getAppointmentsByDoctor(doctorAuthBean.getLoggedInDoctor().getId()) : appointmentService.getAllActiveAppointments()) : new ArrayList<>();
+        } catch (Exception e) {
+            appointments = new ArrayList<>();
+        }
+        try {
+            patients = patientService != null ? patientService.getAllActivePatient() : new ArrayList<>();
+        } catch (Exception e) {
+            patients = new ArrayList<>();
+        }
+        try {
+            doctors = doctorService != null ? doctorService.getAllActiveDoctors() : new ArrayList<>();
+        } catch (Exception e) {
+            doctors = new ArrayList<>();
+        }
+        if (appointments == null) appointments = new ArrayList<>();
+        if (patients == null) patients = new ArrayList<>();
+        if (doctors == null) doctors = new ArrayList<>();
         selectedAppointment = new Appointment();
     }
 
@@ -97,15 +125,32 @@ public class AppointmentBean implements Serializable {
         this.selectedAppointment = new Appointment();
         this.selectedPatientId = null;
         this.selectedDoctorId = null;
+        // If doctor is logged in, set selectedDoctor to logged-in doctor
+        if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
+            this.selectedDoctor = doctorAuthBean.getLoggedInDoctor();
+            this.selectedDoctorId = this.selectedDoctor.getId();
+        } else {
+            this.selectedDoctor = null;
+        }
     }
 
     public void saveAppointment() {
+        boolean success = false;
         try {
-            // Set IDs from selected objects
-            if (selectedPatient != null) selectedPatientId = selectedPatient.getId();
-            if (selectedDoctor != null) selectedDoctorId = selectedDoctor.getId();
-
-            // Validation for required fields
+            // Defensive: log patient/doctor state
+            System.out.println("DEBUG: selectedPatient=" + selectedPatient + ", selectedDoctor=" + selectedDoctor);
+            if (selectedPatient == null || selectedPatient.getId() == null) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please select a patient."));
+                FacesContext.getCurrentInstance().validationFailed();
+                return;
+            }
+            if (selectedDoctor == null || selectedDoctor.getId() == null) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please select a doctor."));
+                FacesContext.getCurrentInstance().validationFailed();
+                return;
+            }
             if (selectedAppointment.getAppointmentTime() == null) {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please select a date and time."));
@@ -120,6 +165,7 @@ public class AppointmentBean implements Serializable {
             if (selectedAppointment.getReasonForVisit() == null || selectedAppointment.getReasonForVisit().trim().isEmpty()) {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please enter a reason for the visit."));
+                FacesContext.getCurrentInstance().validationFailed();
                 return;
             }
             if (selectedPatientId == null) {
@@ -155,8 +201,8 @@ public class AppointmentBean implements Serializable {
                 }
                 managedAppointment.setAppointmentTime(selectedAppointment.getAppointmentTime());
                 managedAppointment.setReasonForVisit(selectedAppointment.getReasonForVisit());
-                managedAppointment.setPatient(managedPatient);
-                managedAppointment.setDoctor(managedDoctor);
+                managedAppointment.setPatient(selectedPatient);
+                managedAppointment.setDoctor(selectedDoctor);
                 managedAppointment.setStatus(selectedAppointment.getStatus());
                 managedAppointment.setDeleted(selectedAppointment.isDeleted());
                 appointmentService.updateAppointment(managedAppointment);
@@ -166,6 +212,8 @@ public class AppointmentBean implements Serializable {
             appointments = appointmentService.getAllActiveAppointments();
             // Reset selectedAppointment after save/update
             selectedAppointment = new Appointment();
+            selectedPatient = null;
+            selectedDoctor = null;
             selectedPatientId = null;
             selectedDoctorId = null;
         } catch (Exception e) {
@@ -243,6 +291,26 @@ public class AppointmentBean implements Serializable {
         this.selectedAppointment = appointmentService.getAppointmentById(appointment.getId());
         this.selectedPatientId = this.selectedAppointment.getPatient() != null ? this.selectedAppointment.getPatient().getId() : null;
         this.selectedDoctorId = this.selectedAppointment.getDoctor() != null ? this.selectedAppointment.getDoctor().getId() : null;
+        this.selectedAppointment = appointmentService.getAppointmentById(appointment.getId());
+        if (this.selectedAppointment.getPatient() != null) {
+            this.selectedPatientId = this.selectedAppointment.getPatient().getId();
+            this.selectedPatient = patientService.getPatientById(this.selectedPatientId);
+        } else {
+            this.selectedPatientId = null;
+            this.selectedPatient = null;
+        }
+        if (this.selectedAppointment.getDoctor() != null) {
+            this.selectedDoctorId = this.selectedAppointment.getDoctor().getId();
+            this.selectedDoctor = doctorService.getDoctorById(this.selectedDoctorId);
+        } else {
+            this.selectedDoctorId = null;
+            this.selectedDoctor = null;
+        }
+        // If doctor is logged in, set selectedDoctor to logged-in doctor
+        if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
+            this.selectedDoctor = doctorAuthBean.getLoggedInDoctor();
+            this.selectedDoctorId = this.selectedDoctor.getId();
+        }
     }
 
     public void restoreAppointment(Long id) {
@@ -273,8 +341,27 @@ public class AppointmentBean implements Serializable {
     public void setSelectedAppointments(List<Appointment> selectedAppointments) { this.selectedAppointments = selectedAppointments; }
     public Appointment getSelectedAppointment() { return selectedAppointment; }
     public void setSelectedAppointment(Appointment selectedAppointment) { this.selectedAppointment = selectedAppointment; }
-    public List<Patient> getPatients() { return patients; }
-    public List<Doctor> getDoctors() { return doctors; }
+    public List<Patient> getPatients() {
+        // Always reload if null or empty
+        if (patients == null || patients.isEmpty()) {
+            try {
+                patients = appointmentService != null ? patientService.getAllActivePatient() : new ArrayList<>();
+            } catch (Exception e) {
+                patients = new ArrayList<>();
+            }
+        }
+        return patients;
+    }
+    public List<Doctor> getDoctors() {
+        if (doctors == null || doctors.isEmpty()) {
+            try {
+                doctors = appointmentService != null ? doctorService.getAllActiveDoctors() : new ArrayList<>();
+            } catch (Exception e) {
+                doctors = new ArrayList<>();
+            }
+        }
+        return doctors;
+    }
     public List<Appointment> getCancelledAppointments() { return cancelledAppointments; }
     public Long getSelectedPatientId() { return selectedPatientId; }
     public void setSelectedPatientId(Long selectedPatientId) { this.selectedPatientId = selectedPatientId; }

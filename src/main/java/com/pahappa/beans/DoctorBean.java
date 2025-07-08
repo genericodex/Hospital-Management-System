@@ -2,7 +2,8 @@ package com.pahappa.beans;
 
 import com.pahappa.constants.Specialization;
 import com.pahappa.models.Doctor;
-import com.pahappa.services.DoctorServiceImpl;
+import com.pahappa.services.HospitalService;
+import com.pahappa.services.doctor.impl.DoctorServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
@@ -155,8 +156,8 @@ public class DoctorBean implements Serializable {
 
     // Getters and Setters
     public List<Doctor> getDoctors() {
-        if (doctors == null) {
-            doctors = new java.util.ArrayList<>();
+        if (doctors == null || doctors.isEmpty()) {
+            doctors = doctorService.getAllActiveDoctors();
         }
         return doctors;
     }

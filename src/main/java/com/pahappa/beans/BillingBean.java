@@ -4,7 +4,8 @@ import com.pahappa.constants.BillingStatus;
 import com.pahappa.constants.PaymentMethod;
 import com.pahappa.models.Billing;
 import com.pahappa.models.Patient;
-import com.pahappa.services.BillingServiceImpl;
+import com.pahappa.services.billing.impl.BillingServiceImpl;
+import com.pahappa.services.patient.impl.PatientServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
@@ -26,6 +27,9 @@ public class BillingBean implements Serializable {
 
     @Inject
     private BillingServiceImpl billingService;
+
+    @Inject
+    private PatientServiceImpl patientService;
 
     private List<Billing> billings;
     private List<Billing> selectedBillings;
@@ -54,7 +58,7 @@ public class BillingBean implements Serializable {
             billings = new java.util.ArrayList<>();
         }
         try {
-            patients = billingService.getAllPatients();
+            patients = patientService.getAllPatients();
         } catch (Exception e) {
             patients = new java.util.ArrayList<>();
         }
@@ -212,7 +216,16 @@ public class BillingBean implements Serializable {
     public void setSelectedBillings(List<Billing> selectedBillings) { this.selectedBillings = selectedBillings; }
     public Billing getSelectedBilling() { return selectedBilling; }
     public void setSelectedBilling(Billing selectedBilling) { this.selectedBilling = selectedBilling; }
-    public List<Patient> getPatients() { return patients; }
+    public List<Patient> getPatients() {
+        if (patients == null || patients.isEmpty()) {
+            try {
+                patients = patientService != null ? patientService.getAllActivePatient() : new java.util.ArrayList<>();
+            } catch (Exception e) {
+                patients = new java.util.ArrayList<>();
+            }
+        }
+        return patients;
+    }
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public boolean isNewBilling() { return newBilling; }
