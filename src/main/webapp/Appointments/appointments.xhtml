@@ -40,7 +40,7 @@
 
             <p:dataTable id="appointmentTable" var="appointment" value="#{appointmentBean.appointments}"
                          paginator="true" rows="10" selection="#{appointmentBean.selectedAppointments}"
-                         rowKey="#{appointment.id}" emptyMessage="No appointments found" lazy="false">
+                         rowKey="#{appointment.id}" emptyMessage="No appointments found" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
 
                 <p:column selectionMode="multiple" style="width:3%"/>
 
@@ -58,7 +58,7 @@
 
                 <p:column headerText="Date &amp; Time" sortBy="#{appointment.appointmentTime}">
                     <h:outputText value="#{appointment.appointmentTime}">
-                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
+                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm" timeZone="Africa/Nairobi"/>
                     </h:outputText>
                 </p:column>
 
@@ -92,21 +92,28 @@
             </p:dataTable>
 
             <!-- Add/Edit Appointment Dialog -->
-            <p:dialog id="appointmentDialog"  header="Appointment Details" widgetVar="appointmentDialog" modal="true" resizable="false" width="600">
+            <p:dialog id="appointmentDialog"  header="Appointment Details" widgetVar="appointmentDialog" modal="true"
+                      resizable="false" width="600">
                 <h:panelGrid columns="2" cellpadding="5">
                     <h:outputLabel for="patient" value="Patient:"/>
-                    <p:autoComplete id="patient" value="#{appointmentBean.selectedPatient}" completeMethod="#{appointmentBean.completePatient}" var="patient" itemLabel="#{patient.firstName} #{patient.lastName}" itemValue="#{patient}" forceSelection="true" dropdown="true" required="true" converter="patientConverter"/>
+                    <p:autoComplete id="patient" value="#{appointmentBean.selectedPatient}" completeMethod="#{appointmentBean.completePatient}"
+                                    var="patient" itemLabel="#{patient.firstName} #{patient.lastName}" itemValue="#{patient}" forceSelection="true"
+                                    dropdown="true" required="true" converter="patientConverter"/>
 
                     <h:outputLabel for="doctor" value="Doctor:"/>
-                    <p:autoComplete id="doctor" value="#{appointmentBean.selectedDoctor}" completeMethod="#{appointmentBean.completeDoctor}" var="doctor" itemLabel="Dr. #{doctor.firstName} #{doctor.lastName}" itemValue="#{doctor}" forceSelection="true" dropdown="true" required="true" converter="doctorConverter"/>
+                    <p:autoComplete id="doctor" value="#{appointmentBean.selectedDoctor}" completeMethod="#{appointmentBean.completeDoctor}"
+                                    var="doctor" itemLabel="Dr. #{doctor.firstName} #{doctor.lastName}" itemValue="#{doctor}"
+                                    forceSelection="true" dropdown="true" required="true" converter="doctorConverter"/>
 
                     <h:outputLabel for="appointmentTime" value="Date &amp; Time:"/>
                     <p:calendar id="appointmentTime" value="#{appointmentBean.selectedAppointment.appointmentTime}"
-                                pattern="yyyy-MM-dd HH:mm" showTime="true" required="true" requiredMessage="Please select a date and time." mindate="#{now}">
+                                pattern="yyyy-MM-dd HH:mm" showTime="true" showOn="button" mask="true" placeholder="YYYY-MM-DD HH:MM"
+                                required="true" requiredMessage="Please select a date and time." mindate="#{now}" timeZone="Africa/Nairobi">
                     </p:calendar>
 
                     <h:outputLabel for="reason" value="Reason:"/>
-                    <p:inputTextarea id="reason" value="#{appointmentBean.selectedAppointment.reasonForVisit}" required="true" requiredMessage="Please enter a reason for the visit."/>
+                    <p:inputTextarea id="reason" value="#{appointmentBean.selectedAppointment.reasonForVisit}" required="true"
+                                     requiredMessage="Please enter a reason for the visit."/>
 
                     <h:outputLabel for="status" value="Status:"/>
                     <p:selectOneMenu id="status" value="#{appointmentBean.selectedAppointment.status}">
@@ -118,6 +125,7 @@
                 <f:facet name="footer">
                     <p:commandButton value="Save" action="#{appointmentBean.saveAppointment}"
                                      update=":appointmentForm:messages,:appointmentForm:appointmentTable"
+                                     process="@form"
                                      oncomplete="if(!args.validationFailed) PF('appointmentDialog').hide()"/>
                     <p:commandButton value="Cancel" onclick="PF('appointmentDialog').hide()" type="button"/>
                 </f:facet>
