@@ -106,16 +106,16 @@ public class Appointment {
         this.notes = notes;
     }
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
+
+
+
+
+
+
+
+
+
     public boolean isDeleted() {
         return isDeleted;
     }
@@ -124,18 +124,18 @@ public class Appointment {
         isDeleted = deleted;
     }
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
+
+
+
+
     public boolean isValidAppointmentTime() {
         return appointmentTime != null && !appointmentTime.before(new java.util.Date());
     }
 
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
+
+
+
     @Override
     public String toString() {
         return "Appointment{" +
