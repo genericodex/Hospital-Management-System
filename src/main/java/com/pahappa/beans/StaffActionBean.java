@@ -1,7 +1,7 @@
 package com.pahappa.beans;
 
 import com.pahappa.models.StaffAction;
-import com.pahappa.services.StaffActionService;
+import com.pahappa.services.staff.StaffActionService;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.view.ViewScoped;

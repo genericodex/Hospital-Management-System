@@ -2,7 +2,8 @@ package com.pahappa.beans;
 
 import com.pahappa.dao.DoctorDao;
 import com.pahappa.models.Doctor;
-import com.pahappa.services.AppointmentServiceImpl;
+import com.pahappa.services.appointment.AppointmentService;
+import com.pahappa.services.appointment.impl.AppointmentServiceImpl;
 import com.pahappa.services.HospitalService;
 import com.pahappa.dao.AuditLogDao;
 import com.pahappa.models.AuditLog;
@@ -41,7 +42,7 @@ public class DoctorAuthBean implements Serializable {
             auditLogDao.saveAuditLog(log);
             // Put bean in session map for EL compatibility
             jakarta.faces.context.FacesContext.getCurrentInstance().getExternalContext().getSessionMap().put("doctorAuthBean", this);
-            return "/doctor-dashboard.xhtml?faces-redirect=true";
+            return "doctor-dashboard";
         } else {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login Failed", "Invalid credentials or account deleted."));
@@ -56,7 +57,7 @@ public class DoctorAuthBean implements Serializable {
 
     public int getAppointmentCount() {
         if (loggedInDoctor == null) return 0;
-        HospitalService hospitalService = new AppointmentServiceImpl();
+        AppointmentService hospitalService = new AppointmentServiceImpl();
         List<?> appointments = hospitalService.getAppointmentsByDoctor(loggedInDoctor.getId());
         return appointments != null ? appointments.size() : 0;
     }
