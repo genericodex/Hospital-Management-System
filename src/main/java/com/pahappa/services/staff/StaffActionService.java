@@ -1,4 +1,4 @@
-package com.pahappa.services;
+package com.pahappa.services.staff;
 
 import com.pahappa.dao.StaffActionDao;
 import com.pahappa.models.StaffAction;
