@@ -45,7 +45,7 @@
 
             <p:dataTable id="staffTable" var="staff" value="#{staffBean.filteredStaffList}"
                          paginator="true" rows="10" selection="#{staffBean.selectedStaffList}"
-                         rowKey="#{staff.id}" emptyMessage="No staff members found">
+                         rowKey="#{staff.id}" emptyMessage="No staff members found" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
 
                 <p:column selectionMode="multiple" style="width:3%"/>
 
