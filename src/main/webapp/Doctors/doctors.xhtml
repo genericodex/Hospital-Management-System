@@ -47,7 +47,7 @@
 
             <p:dataTable id="doctorTable" var="doctor" value="#{doctorBean.filteredDoctors}"
                          paginator="true" rows="10" selection="#{doctorBean.selectedDoctors}"
-                         rowKey="#{doctorBean.selectedDoctor.id}" emptyMessage="No doctors found" lazy="false">
+                         rowKey="#{doctorBean.selectedDoctor.id}" emptyMessage="No doctors found" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
 
                 <p:column selectionMode="multiple" style="width:3%"/>
 
