@@ -1,15 +1,15 @@
 package com.pahappa.beans;
 
 import com.pahappa.models.Appointment;
-import com.pahappa.services.PatientServiceImpl;
-import com.pahappa.services.DoctorServiceImpl;
-import com.pahappa.services.AppointmentServiceImpl;
-import com.pahappa.services.StaffServiceImpl;
+
+import com.pahappa.services.patient.impl.PatientServiceImpl;
+import com.pahappa.services.doctor.impl.DoctorServiceImpl;
+import com.pahappa.services.appointment.impl.AppointmentServiceImpl;
+import com.pahappa.services.staff.impl.StaffServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Comparator;
