@@ -34,7 +34,7 @@
 
             <p:dataTable id="billingTable" var="billing" value="#{billingBean.billings}"
                          paginator="true" rows="10" selection="#{billingBean.selectedBillings}"
-                         rowKey="#{billing.id}" emptyMessage="No bills found">
+                         rowKey="#{billing.id}" emptyMessage="No bills found" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
 
                 <p:column headerText="ID" sortBy="#{billing.id}">
                     <h:outputText value="#{billing.id}"/>
