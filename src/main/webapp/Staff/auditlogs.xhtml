@@ -15,7 +15,7 @@
                     <p:dataTable id="auditLogTable" var="log" value="#{auditLogBean.auditLogs}"
                                  paginator="true" rows="5" emptyMessage="No audit logs found"
                                  style="min-width:1200px;" styleClass="min-w-full divide-y divide-gray-200 text-sm rounded-lg
-                                 overflow-hidden shadow">
+                                 overflow-hidden shadow" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="Timestamp" sortBy="#{log.timestamp}">
                             <h:outputText value="#{log.timestamp}">
                                 <f:convertDateTime type="localDateTime" pattern="yyyy-MM-dd HH:mm:ss"/>
