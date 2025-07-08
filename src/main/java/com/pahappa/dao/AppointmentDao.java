@@ -10,14 +10,14 @@ import java.util.List;
 public class AppointmentDao {
 
     // Create
-    public void saveAppointment(Appointment appointment) {
+    public Appointment saveAppointment(Appointment appointment) {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         // Null checks for referenced entities
         Long patientId = appointment.getPatient() != null ? appointment.getPatient().getId() : null;
         Long doctorId = appointment.getDoctor() != null ? appointment.getDoctor().getId() : null;
         if (patientId == null || doctorId == null) {
             throw new IllegalArgumentException("Patient and Doctor must not be null and must have an ID.");
         }
-        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Appointment newAppointment = new Appointment();
         Patient managedPatient = session.get(Patient.class, patientId);
         Doctor managedDoctor = session.get(Doctor.class, doctorId);
@@ -28,6 +28,8 @@ public class AppointmentDao {
         newAppointment.setReasonForVisit(appointment.getReasonForVisit());
         newAppointment.setDeleted(appointment.isDeleted());
         session.save(newAppointment);
+        session.flush(); // Ensure ID is generated
+        return newAppointment;
     }
 
     // Read
@@ -41,7 +43,10 @@ public class AppointmentDao {
 
     public List<Appointment> getAllAppointments() {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-        return session.createQuery("FROM Appointment", Appointment.class).list();
+        return session.createQuery(
+            "SELECT a FROM Appointment a LEFT JOIN FETCH a.patient LEFT JOIN FETCH a.doctor",
+            Appointment.class
+        ).list();
     }
 
     // Update
@@ -120,18 +125,16 @@ public class AppointmentDao {
     public List<Appointment> getAppointmentsByDoctor(Long doctorId) {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         return session.createQuery(
-                        "FROM Appointment WHERE doctor.id = :doctorId",
-                        Appointment.class)
-                .setParameter("doctorId", doctorId)
-                .list();
+            "SELECT a FROM Appointment a LEFT JOIN FETCH a.patient LEFT JOIN FETCH a.doctor WHERE a.doctor.id = :doctorId",
+            Appointment.class
+        ).setParameter("doctorId", doctorId).list();
     }
 
     public List<Appointment> getAppointmentsByPatient(Long patientId) {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         return session.createQuery(
-                        "FROM Appointment WHERE patient.id = :patientId AND isDeleted = false", Appointment.class)
-                .setParameter("patientId", patientId)
-                .list();
+            "SELECT a FROM Appointment a LEFT JOIN FETCH a.patient LEFT JOIN FETCH a.doctor WHERE a.patient.id = :patientId AND a.isDeleted = false",
+            Appointment.class
+        ).setParameter("patientId", patientId).list();
     }
 }
-

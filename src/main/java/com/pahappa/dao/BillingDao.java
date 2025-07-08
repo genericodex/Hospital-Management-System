@@ -9,7 +9,7 @@ import java.util.List;
 public class BillingDao {
 
     // Create
-    public void saveBilling(Billing billing) {
+    public Billing saveBilling(Billing billing) {
         // Null check for referenced Patient
         Long patientId = billing.getPatient() != null ? billing.getPatient().getId() : null;
         if (patientId == null) {
@@ -25,6 +25,7 @@ public class BillingDao {
         newBilling.setStatus(billing.getStatus());
         newBilling.setPaymentMethod(billing.getPaymentMethod());
         session.save(newBilling);
+        return newBilling;
     }
 
     // Read
@@ -38,8 +39,10 @@ public class BillingDao {
 
     public List<Billing> getAllBillings() {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-
-        return session.createQuery("FROM Billing b WHERE b.isDeleted = false", Billing.class).list();
+        return session.createQuery(
+            "SELECT b FROM Billing b LEFT JOIN FETCH b.patient WHERE b.isDeleted = false",
+            Billing.class
+        ).list();
     }
 
     // Update
@@ -102,15 +105,17 @@ public class BillingDao {
     public List<Billing> getDeletedBillings() {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         return session.createQuery(
-                "FROM Billing WHERE isDeleted = true", Billing.class).list();
+            "SELECT b FROM Billing b LEFT JOIN FETCH b.patient WHERE b.isDeleted = true",
+            Billing.class
+        ).list();
     }
 
     // Special Queries
     public List<Billing> getBillingsByPatient(Long patientId) {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         return session.createQuery(
-                        "FROM Billing WHERE patient.id = :patientId", Billing.class)
-                .setParameter("patientId", patientId)
-                .list();
+            "SELECT b FROM Billing b LEFT JOIN FETCH b.patient WHERE b.patient.id = :patientId",
+            Billing.class
+        ).setParameter("patientId", patientId).list();
     }
 }
