@@ -21,8 +21,9 @@ public class Patient {
      * Unique identifier for the patient.
      * @Id marks this as the primary key
      * @GeneratedValue specifies auto-increment strategy
+     * <p>
      * The IDENTITY strategy relies on the database to generate new identifier values
-     *
+     *</p>
      * Using Long for entity IDs allows for null values before
      * persistence, which is necessary for Hibernate/JPA to
      * manage entity lifecycle and primary key generation properly.
@@ -57,22 +58,9 @@ public class Patient {
     @Column(name = "insurance_number")
     private String insuranceNumber;
 
-<<<<<<< Updated upstream
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
-=======
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-    @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted = false;
-
-=======
-<<<<<<< Updated upstream
-=======
-    @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted = false;
 
     @Column(name = "created_by")
     private Long createdBy;
@@ -88,10 +76,6 @@ public class Patient {
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
     // Constructors
 
     /**
@@ -103,45 +87,19 @@ public class Patient {
     public Patient() {}
 
     public Patient(String firstName, String lastName, Date dateOfBirth, String contactNumber,
-<<<<<<< Updated upstream
-                   String address, String email, Boolean isDeleted) {
-=======
-<<<<<<< Updated upstream
-                   String address, String email) {
-=======
-<<<<<<< Updated upstream
-                   String address, String email, Boolean isDeleted) {
-=======
-<<<<<<< Updated upstream
-                   String address, String email) {
-=======
                    String address, String email, Boolean isDeleted, String medicalHistory) {
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
         this.firstName = firstName;
         this.lastName = lastName;
         this.dateOfBirth = dateOfBirth;
         this.contactNumber = contactNumber;
         this.address = address;
         this.email = email;
-<<<<<<< Updated upstream
         this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
-=======
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
-=======
-<<<<<<< Updated upstream
-=======
+
+
+
+
         this.medicalHistory = medicalHistory;
-        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
     }
 
     // Getters and Setters
@@ -193,13 +151,13 @@ public class Patient {
         this.address = address;
     }
 
-//    public String getMedicalHistory() {
-//        return medicalHistory;
-//    }
-//
-//    public void setMedicalHistory(String medicalHistory) {
-//        this.medicalHistory = medicalHistory;
-//    }
+    public String getMedicalHistory() {
+        return medicalHistory;
+    }
+
+    public void setMedicalHistory(String medicalHistory) {
+        this.medicalHistory = medicalHistory;
+    }
 
     public String getEmail() {
         return email;
@@ -209,24 +167,8 @@ public class Patient {
         this.email = email;
     }
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
     public boolean isDeleted() {return isDeleted;}
-
     public void setDeleted(boolean deleted) {isDeleted = deleted;}
-
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
     public Date getCreatedAt() { return createdAt; }
@@ -236,22 +178,14 @@ public class Patient {
     public Date getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 
->>>>>>> Stashed changes
->>>>>>> Stashed changes
     /**
      *  The toString() method, which provides a string representation of the Patient object.
      *  It is annotated with @Override because it overrides
      *  the default toString() method from the Object class.
      * @return
      */
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
+
     @Override
     public String toString() {
         return "Patient{" +
@@ -261,21 +195,14 @@ public class Patient {
                 ", email='" + email + '\'' +
                 '}';
     }
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
 
     /**
+     *
      * The equals() method is overridden to provide a custom equality check
      * for Patient objects based on their ID.
      * It is annotated with @Override because it overrides the default equals() method
      * from the Object class.
-     *
+     * <p>
      * @param o The object to compare with this Patient instance
      * <p>
      * The selected code overrides the equals and hashCode methods for the Patient entity in your Java project.
@@ -284,25 +211,27 @@ public class Patient {
      * Set or as keys in a Map, and for JPA entity identity management.
      */
 
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+    /**
+     *
+     * This equals method says: “If the IDs are the same, these are the same patient.”
+     * Then this hashCode method uses the ID, so two patients with the same ID get the same hash number.
+     * In plain terms:
+     * Imagine you have two ID cards for the same person. Even if the cards are printed at different times,
+     * if the ID number is the same, it’s the same person. That’s what your code is doing for Patient objects.
+     */
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Patient patient = (Patient) o;
-        return id != null && id.equals(patient.id);
+        Patient other = (Patient) o;
+        return id != null && id.equals(other.id);
     }
 
     @Override
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
     }
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
 
     public boolean isValidPhoneNumber() {
         return contactNumber != null && contactNumber.matches("\\d{10}");
@@ -311,8 +240,4 @@ public class Patient {
     public boolean isValidBirthDate() {
         return dateOfBirth != null && !dateOfBirth.after(new java.util.Date());
     }
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 }
