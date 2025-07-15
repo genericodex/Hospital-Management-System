@@ -13,43 +13,52 @@
             <p:growl id="messages" showDetail="true" autoUpdate="true"/>
 
             <p:toolbar>
-                <f:facet name="left">
+                <p:toolbarGroup name="left">
                     <p:commandButton value="Add New" icon="pi pi-plus"
                                      action="#{doctorBean.initNewDoctor}"
+                                     process="@this"
                                      update=":doctorForm:doctorDialog"
                                      oncomplete="PF('doctorDialog').show()"
-                                     styleClass="!bg-blue-600 hover:!bg-blue-900 text-white font-semibold py-1 px-2 rounded
-                                         shadow mr-2 text-xs !max-w-[150px] max-h-[50px]"/>
+                                     styleClass="!bg-green-600 !border-green-600 text-white font-semibold  rounded
+                                         shadow mr-2 text-xs"
+                                     rendered="#{authBean.hasPermission('DOCTOR_CREATE')}"/>
 
                     <span style="display:inline-block; width:0.75rem;"/>
 
-                    <p:commandButton value="Delete Selected" icon="pi pi-trash"
-                                     disabled="#{empty doctorBean.selectedDoctors}"
-                                     action="#{doctorBean.deleteSelectedDoctors}"
-                                     update=":doctorForm:messages,:doctorForm:doctorTable"
-                                     styleClass="!bg-red-500 hover:!bg-red-600 text-white font-semibold py-1 px-2 rounded
-                                         !border !border-red-500 shadow text-xs min-w-[28px] min-h-[28px]"/>
-                </f:facet>
+                </p:toolbarGroup>
 
-                <f:facet name="right">
+                <p:toolbarGroup name="center">
+                    <div class="text-2xl font-bold text-green-700/20  " style="letter-spacing: 3rem">
+                        DOCTORS
+                    </div>
+                </p:toolbarGroup>
+
+                <p:toolbarGroup name="right">
                     <p:commandButton value="View Deleted" icon="pi pi-history"
                                      action="#{doctorBean.loadDeletedDoctors}"
+                                     styleClass="!bg-green-600 !border-green-600"
                                      update=":doctorForm:deletedDoctorsDialog"
-                                     oncomplete="PF('deletedDoctorsDialog').show()"/>
-                </f:facet>
+                                     oncomplete="PF('deletedDoctorsDialog').show()"
+                                     rendered="#{authBean.staff.role.name == 'ADMIN' || authBean.staff.role.name == 'IT SUPPORT'}"/>
+                </p:toolbarGroup>
             </p:toolbar>
 
             <!-- Search Bar -->
             <div class="mb-4 pt-2 flex items-center gap-2">
-                <p:inputText value="#{doctorBean.searchTerm}" placeholder="Search by name or specialization....." styleClass="w-64"/>
-                <p:commandButton value="Search" icon="pi pi-search" action="#{doctorBean.searchDoctors}" update="doctorForm:doctorTable"/>
+                <p:inputText id="searchInput"  value="#{doctorBean.searchTerm}" placeholder="Search by name or specialization....."
+                             styleClass="w-64"/>
+                <p:commandButton value="Search" icon="pi pi-search" process="searchInput @this"
+                                 action="#{doctorBean.searchDoctors}"
+                                 styleClass="!bg-green-600 !border-green-600"
+                                 update="doctorForm:doctorTable"/>
             </div>
 
-            <p:dataTable id="doctorTable" var="doctor" value="#{doctorBean.filteredDoctors}"
+            <p:dataTable id="doctorTable" var="doctor"
+                         value="#{doctorBean.filteredDoctors}"
                          paginator="true" rows="10" selection="#{doctorBean.selectedDoctors}"
                          rowKey="#{doctorBean.selectedDoctor.id}" emptyMessage="No doctors found" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
 
-                <p:column selectionMode="multiple" style="width:3%"/>
+                <p:column selectionMode="multiple" style="width:3%" rendered="#{authBean.staff.role.name == 'ADMIN'}"/>
 
                 <p:column headerText="ID" sortBy="#{doctor.id}">
                     <h:outputText value="#{doctor.id}"/>
@@ -71,22 +80,31 @@
                     <h:outputText value="#{doctor.contactNumber}"/>
                 </p:column>
 
-                <p:column headerText="Actions" style="width:10%">
+                <p:column headerText="Actions" style="width:10%" rendered="#{authBean.hasPermission('DOCTOR_EDIT')}">
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
 
                     <p:commandButton icon="pi pi-pencil" title="Edit"
                                      action="#{doctorBean.editDoctor(doctor)}"
                                      update=":doctorForm:doctorDialog"
+                                     process="@this"
+                                     styleClass="!bg-gray-300 hover:!bg-gray-400 !border-gray-300 !text-black !font-medium"
                                      oncomplete="PF('doctorDialog').show()"
                                     />
 
                     <p:commandButton icon="pi pi-trash" title="Delete"
                                      action="#{doctorBean.deleteDoctor(doctor)}"
                                      update=":doctorForm:messages,:doctorForm:doctorTable"
-                                     styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+                                     styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]">
+                        <p:confirm header="Confirmation" message="Are you sure you want to delete this doctor?" icon="pi pi-exclamation-circle"/>
+                    </p:commandButton>
                     </div>
                 </p:column>
             </p:dataTable>
+
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" styleClass="bg-white rounded-lg shadow-lg">
+                <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes !bg-green-500 hover:!bg-green-600 text-white font-semibold py-2 px-4 rounded shadow"/>
+                <p:commandButton value="Cancel" type="button" styleClass="ui-confirmdialog-no !bg-gray-500 hover:!bg-red-300 text-white font-semibold py-2 px-4 rounded shadow"/>
+            </p:confirmDialog>
 
             <!-- Add/Edit Doctor Dialog -->
             <p:dialog id="doctorDialog"  header="Doctor Details" widgetVar="doctorDialog" modal="true" resizable="false"
@@ -122,8 +140,12 @@
                 <f:facet name="footer">
                     <p:commandButton value="Save" action="#{doctorBean.saveDoctor}"
                                      update=":doctorForm:messages,:doctorForm:doctorTable,:doctorForm:doctorDialog"
-                                     oncomplete="if(!args.validationFailed) PF('doctorDialog').hide()"/>
-                    <p:commandButton value="Cancel" onclick="PF('doctorDialog').hide()" type="button"/>
+                                     styleClass="!bg-green-600 !border-green-600 !font-medium hover:!bg-green-500"
+                                     oncomplete="if(!args.validationFailed) PF('doctorDialog').hide()"
+                                     rendered="#{authBean.staff.role.name == 'ADMIN' || authBean.staff.role.name == 'IT SUPPORT'}"/>
+                    <p:commandButton value="Cancel" onclick="PF('doctorDialog').hide()"
+                                     styleClass="!bg-green-200 !border-green-200  !font-medium !text-black hover:!bg-green-300"
+                                     type="button"/>
                 </f:facet>
             </p:dialog>
 
@@ -153,15 +175,4 @@
         </h:form>
     </ui:define>
 </ui:composition>
-
-<script type="text/javascript">
-    function jsfajaxResetDoctorForm() {
-        jsf.ajax.request(null, null, {execute:'@this', render:'doctorForm:doctorDialog', onevent:function(data){
-            if(data.status==='success') {
-                // Optionally, you can add more JS here if needed
-            }
-        }});
-    }
-</script>
-
 </html>

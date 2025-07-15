@@ -13,7 +13,9 @@ import com.pahappa.models.Appointment;
 
 import com.pahappa.services.patient.PatientService;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Named;
 
+@Named
 @ApplicationScoped
 public class PatientServiceImpl implements PatientService {
     private final PatientDao patientDao = new PatientDao();
@@ -114,5 +116,8 @@ public class PatientServiceImpl implements PatientService {
     public List<Patient> getAllActivePatient() { return patientDao.getAllActivePatient(); }
     @Override
     public List<Patient> getDeletedPatient() { return patientDao.getDeletedPatients(); }
-
+    @Override
+    public long countActivePatients() {
+        return patientDao.countActivePatients();
+    }
 }

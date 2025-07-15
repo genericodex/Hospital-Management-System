@@ -1,11 +1,14 @@
 package com.pahappa.dao;
 import com.pahappa.models.Staff;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.pahappa.models.Patient;
 import com.pahappa.util.HibernateUtil;
 import org.hibernate.Session;
+
+import java.io.Serializable;
 import java.util.List;
 
 
@@ -18,8 +21,8 @@ import java.util.List;
  * <p>
  *     - 'rollback()': Reverts changes if something goes wrong
  */
-
-public class PatientDao {
+@ApplicationScoped
+public class PatientDao implements Serializable {
 
     private static final Logger logger = LoggerFactory.getLogger(PatientDao.class);
 
@@ -79,7 +82,7 @@ public class PatientDao {
             managedPatient.setDeleted(patient.isDeleted());
             managedPatient.setUpdatedBy(patient.getUpdatedBy());
             managedPatient.setUpdatedAt(patient.getUpdatedAt());
-            session.update(managedPatient);
+            session.merge(managedPatient);
         }
     }
 
@@ -92,7 +95,7 @@ public class PatientDao {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Patient patient = session.get(Patient.class, id);
         if (patient != null) {
-            session.delete(patient);
+            session.remove(patient);
             logger.info("Successfully deleted patient with ID: {}", id);
         } else {
             logger.warn("No patient found with ID: {}", id);
@@ -107,7 +110,7 @@ public class PatientDao {
         Patient patient = session.get(Patient.class, id);
         if (patient != null && !patient.isDeleted()) {
             patient.setDeleted(true);
-            session.update(patient);
+            session.merge(patient);
         }
     }
 
@@ -117,6 +120,14 @@ public class PatientDao {
         return session.createQuery(
                 "FROM com.pahappa.models.Patient WHERE isDeleted = false", Patient.class).list();
     }
+
+    public long countActivePatients() {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        String hql = "SELECT count(p.id) FROM Patient p WHERE p.isDeleted = false";
+        Long count = session.createQuery(hql, Long.class).uniqueResult();
+        return count != null ? count : 0L; // Return 0 if the result is null
+    }
+
 
     // Get all deleted patients (bin)
     public List<Patient> getDeletedPatients() {
@@ -134,7 +145,7 @@ public class PatientDao {
         Patient patient = session.get(Patient.class, id);
         if (patient != null && patient.isDeleted()) {
             patient.setDeleted(false);
-            session.update(patient);
+            session.merge(patient);
         }
     }
 

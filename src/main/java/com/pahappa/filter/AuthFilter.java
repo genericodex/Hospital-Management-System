@@ -1,48 +1,56 @@
 package com.pahappa.filter;
 
 import jakarta.servlet.*;
+import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
+// It's good practice to use the @WebFilter annotation
+@WebFilter(filterName = "AuthFilter", urlPatterns = {"/*"})
 public class AuthFilter implements Filter {
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
+
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
-
-        // Allow access to login page and resources without authentication
         String uri = req.getRequestURI();
-        boolean loginPage = uri.contains("Auth/login.xhtml");
-        boolean resource = uri.contains("/resources/");
 
-        // Always allow login page and static resources
-        if (loginPage || resource) {
+        // 1. Check if the requested page is public (login page or a resource like CSS/JS)
+        // This prevents an infinite redirect loop.
+        boolean isPublicResource = uri.contains("/Auth/login.xhtml") || uri.contains("/jakarta.faces.resource/");
+
+        if (isPublicResource) {
+            // If it's a public page, let the request continue without checking for a session.
             chain.doFilter(request, response);
             return;
         }
 
-        // Only check session for protected pages
-        if (!loginPage && !resource) {
-            Object auth = req.getSession().getAttribute("authBean");
-            if (auth == null) {
-                Object staffAuth = req.getSession().getAttribute("authBean");
-                Object doctorAuth = req.getSession().getAttribute("doctorAuthBean");
-                if (staffAuth == null && doctorAuth == null) {
-                    res.sendRedirect(req.getContextPath() + "/Auth/login.xhtml");
-                    return;
-                }
-                chain.doFilter(request, response);
-            }
+        // 2. For all other protected pages, check if a user is logged in.
+        HttpSession session = req.getSession(false); // 'false' means don't create a new session if one doesn't exist.
 
+        boolean isLoggedIn = (session != null) &&
+                (session.getAttribute("authBean") != null || session.getAttribute("doctorAuthBean") != null);
+
+        if (isLoggedIn) {
+            // User is authenticated, so allow the request to proceed to the requested page.
+            chain.doFilter(request, response);
+        } else {
+            // User is not authenticated, redirect them to the login page.
+            res.sendRedirect(req.getContextPath() + "/Auth/login.xhtml");
         }
     }
-            @Override
-            public void init (FilterConfig filterConfig) throws ServletException {
-            }
 
-            @Override
-            public void destroy () {
-            }
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        // Initialization code can go here if needed.
+    }
+
+    @Override
+    public void destroy() {
+        // Cleanup code can go here if needed.
+    }
 }

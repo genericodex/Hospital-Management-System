@@ -6,7 +6,7 @@
     <session-factory>
         <!-- Database connection settings -->
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
-        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/HospitalDB</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/HospitalDB?serverTimezone=Africa/Nairobi</property>
         <property name="hibernate.connection.username">root</property>
         <property name="hibernate.connection.password"></property>
 
@@ -34,6 +34,8 @@
         <mapping class="com.pahappa.models.Appointment"/>
         <mapping class="com.pahappa.models.Billing"/>
         <mapping class="com.pahappa.models.Staff"/>
+        <mapping class="com.pahappa.models.Role"/>
         <mapping class="com.pahappa.models.AuditLog"/>
+        <mapping class="com.pahappa.models.Permissions"/>
     </session-factory>
 </hibernate-configuration>

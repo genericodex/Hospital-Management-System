@@ -5,19 +5,65 @@
               version="4.0">
 
     <navigation-rule>
-        <from-view-id>/login.xhtml</from-view-id>
-        <navigation-case>
-            <from-outcome>/dashboard.xhtml?faces-redirect=true</from-outcome>
-            <to-view-id>/dashboard.xhtml</to-view-id>
-        </navigation-case>
-    </navigation-rule>
-
-    <navigation-rule>
         <from-view-id>*</from-view-id>
         <navigation-case>
+            <from-outcome>dashboard</from-outcome>
+            <to-view-id>/Dashboards/dashboard.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>doctor-dashboard</from-outcome>
+            <to-view-id>/Doctors/doctor-dashboard.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
             <from-outcome>login</from-outcome>
-            <to-view-id>/login.xhtml</to-view-id>
+            <to-view-id>/Auth/login.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>patients</from-outcome>
+            <to-view-id>/Patients/patients.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>appointments</from-outcome>
+            <to-view-id>/Appointments/appointments.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>billings</from-outcome>
+            <to-view-id>/Billings/billings.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>doctors</from-outcome>
+            <to-view-id>/Doctors/doctors.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>staff</from-outcome>
+            <to-view-id>/Staff/staff.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>settings</from-outcome>
+            <to-view-id>/Settings/settings.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>auditlogs</from-outcome>
+            <to-view-id>/Staff/auditlogs.xhtml</to-view-id>
+            <redirect/>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>doctor-profile</from-outcome>
+            <to-view-id>/Doctors/doctor-profile.xhtml</to-view-id>
             <redirect/>
         </navigation-case>
     </navigation-rule>
+    <converter>
+        <converter-for-class>java.time.LocalDateTime</converter-for-class>
+        <converter-class>com.pahappa.converters.LocalDateTimeConverter</converter-class>
+    </converter>
 </faces-config>

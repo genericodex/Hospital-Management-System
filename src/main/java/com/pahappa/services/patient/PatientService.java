@@ -17,5 +17,5 @@ public interface PatientService {
     void restorePatient(Long id, Staff staff);
     List<Patient> getAllActivePatient();
     List<Patient> getDeletedPatient();
-
+    long countActivePatients();
 }

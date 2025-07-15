@@ -8,7 +8,9 @@
 <h:head>
     <title>Hospital Management System - Dashboard</title>
     <h:outputStylesheet library="css" name="styles.css"/>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"/>
+    <!-- NEW: Add Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </h:head>
 
 <ui:composition template="../template.xhtml">
@@ -16,169 +18,432 @@
 
     <ui:define name="content" >
         <h:form id="dashboardForm">
-            <p:panel styleClass="border-0  !rounded-lg mb-4 !shadow-lg bg-blue-100">
+            <!-- NEW: Remote command to load chart data on page load -->
+            <p:remoteCommand name="loadCharts"
+                             actionListener="#{dashboardBean.loadChartData}"
+                             autoRun="true" />
+            <p:panel styleClass="border-0  !rounded-lg mb-4 !shadow-lg bg-blue-100 !w-full">
                 <div class="flex items-center gap-2 mb-4">
-                    <i class="pi pi-calendar text-blue-600 text-xl"/>
-                    <span class="font-semibold text-blue-700 text-lg">Dashboard Overview</span>
+                    <i class="pi pi-calendar text-green-600 text-xl"/>
+                    <span class="font-semibold text-green-700 text-lg">Dashboard Overview</span>
                 </div>
-                <div class="border border-red-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 p-2 mt-1">
-                    <p:panel styleClass=" !bg-gradient-to-br !from-blue-100 !to-blue-200
-                    !flex !flex-col !items-center !justify-center !rounded-2xl !shadow-xl !w-full
-                    !border !border-blue-300 hover:scale-105 hover:shadow-2xl transition-transform duration-300 cursor-pointer group"
-                             style="cursor:pointer;"
-                             onclick="window.location='patients'">
-                        <f:facet name="header">
-                            <div class="flex flex-col items-center">
-                                <span class="bg-blue-500 text-white rounded-full p-4 shadow-lg mb-2">
-                                    <i class="pi pi-users text-3xl"/>
-                                </span>
-                                <span class="font-semibold text-lg">Patients</span>
-                            </div>
-                        <div class="flex flex-col items-center justify-center  w-full">
-                            <div class="flex flex-col items-center rounded-xl ">
-                                <span class="text-4xl font-extrabold text-blue-900 drop-shadow">
-                                    <h:outputText value="#{dashboardBean.patientCount}">
-                                        <f:convertNumber type="number" groupingUsed="true"/>
-                                    </h:outputText>
-                                </span>
-                                <span class="uppercase text-xs text-blue-500 tracking-widest mt-1">Total</span>
-                            </div>
-                        <p:commandLink value="View All" action="patients"  styleClass="!items-center !justify-center !text-blue-600 !text-sm !mt-3 !font-semibold "/>
-                        </div>
-                        </f:facet>
-                    </p:panel>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-                    <p:panel styleClass="!ui-card !bg-gradient-to-br !from-green-100 !to-green-200
-                    !flex !flex-col !items-center !justify-center !p-6 !rounded-2xl !shadow-xl !w-full !max-w-xs !mx-auto
-                    !border !border-green-300 hover:scale-105 hover:shadow-2xl transition-transform duration-300 cursor-pointer group"
-                             style="cursor:pointer;"
-                             onclick="window.location='doctors.xhtml'">
-                        <f:facet name="header">
-                            <div class="flex flex-col items-center">
-                                <span class="bg-green-500 text-white rounded-full p-4 shadow-lg mb-2">
-                                    <i class="pi pi-user-plus text-3xl"/>
-                                </span>
-                                <span class="font-semibold text-lg">Doctors</span>
-                            </div>
-                        <div class="flex flex-col items-center justify-center ">
-                            <div class="flex flex-col items-center rounded-xl ">
-                                <span class="text-4xl font-extrabold text-green-700  drop-shadow">
-                                    <h:outputText value="#{dashboardBean.doctorCount}">
-                                        <f:convertNumber type="number" groupingUsed="true"/>
-                                    </h:outputText>
-                                </span>
-                                <span class="uppercase text-xs text-green-500 tracking-widest mt-1">Total</span>
-                            </div>
-                        <p:commandLink value="View All" action="doctors"  styleClass="dashboard-link !text-green-600 !text-sm !mt-3 !font-semibold "/>
-                        </div>
-                        </f:facet>
-                    </p:panel>
+                    <!-- Patients Card -->
+                    <ui:fragment rendered="#{authBean.hasPermission('PATIENT_VIEW')}">
 
-                    <p:panel styleClass="!ui-card !bg-gradient-to-br !from-yellow-100 !to-yellow-200 !flex !flex-col !items-center
-                    !justify-center !p-6 !rounded-2xl !shadow-xl !w-full !max-w-xs !mx-auto !border !border-yellow-300 hover:scale-105
-                    hover:shadow-2xl transition-transform duration-300 cursor-pointer group"
-                             style="cursor:pointer;"
-                             onclick="window.location='appointments.xhtml'">
-                    <f:facet name="header">
-                            <div class="flex flex-col items-center">
-                                <span class="bg-yellow-500 text-white rounded-full p-4 shadow-lg mb-2">
-                                    <i class="pi pi-calendar text-3xl"/>
-                                </span>
-                                <span class="font-semibold text-lg">Appointments</span>
+                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:bg-blue-300/10 hover:shadow-xl hover:shadow-blue-200 ">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <h:outputText value="Patients" styleClass="text-blue-900 font-semibold"/>
+                                <h:outputText value="#{dashboardBean.patientCount}" styleClass="text-3xl font-bold text-blue-500 mt-1"/>
                             </div>
-                        <div class="flex flex-col items-center justify-center mt-2 mb-1">
-                            <span class="text-4xl font-extrabold text-yellow-700 tracking-tight drop-shadow">
-                                <h:outputText value="#{dashboardBean.appointmentCount}">
-                                    <f:convertNumber type="number" groupingUsed="true"/>
+                            <div class="bg-blue-100 rounded-xl p-3">
+                                <i class="pi pi-users text-3xl text-blue-500"/>
+                            </div>
+                        </div>
+                        <h:link outcome="patients" value="View Details" styleClass="block text-sm text-blue-500 hover:text-blue-700 mt-4 font-medium"/>
+                    </div>
+                    </ui:fragment>
+
+                    <!-- Doctors Card -->
+                    <ui:fragment rendered="#{authBean.hasPermission('DOCTOR_VIEW')}">
+
+                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-green-200 hover:bg-green-300/10">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <h:outputText value="Doctors" styleClass="text-green-900 font-semibold"/>
+                                <h:outputText value="#{dashboardBean.doctorCount}" styleClass="text-3xl font-bold text-green-500 mt-1"/>
+                            </div>
+                            <div class="bg-green-100 rounded-xl p-3">
+                                <i class="pi pi-user-plus text-3xl text-green-500"/>
+                            </div>
+                        </div>
+                        <h:link outcome="doctors" value="View Details" styleClass="block text-sm text-green-500 hover:text-green-700 mt-4 font-medium"/>
+                    </div>
+                    </ui:fragment>
+
+                    <!-- Appointments Card -->
+                    <ui:fragment rendered="#{authBean.hasPermission('APPOINTMENT_VIEW')}">
+
+                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-yellow-200 hover:bg-yellow-300/10">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <h:outputText value="Appointments" styleClass="text-yellow-900 font-semibold"/>
+                                <h:outputText value="#{dashboardBean.appointmentCount}" styleClass="text-3xl font-bold text-yellow-500 mt-1"/>
+                            </div>
+                            <div class="bg-yellow-100 rounded-xl p-3">
+                                <i class="pi pi-calendar text-3xl text-yellow-500"/>
+                            </div>
+                        </div>
+                        <h:link outcome="appointments" value="View Details" styleClass="block text-sm text-yellow-500 hover:text-yellow-700 mt-4 font-medium"/>
+                    </div>
+                    </ui:fragment>
+
+                    <!-- Staff Card -->
+                    <ui:fragment rendered="#{authBean.hasPermission('STAFF_VIEW')}">
+
+                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-purple-200 hover:bg-purple-300/10">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <h:outputText value="Staff" styleClass="text-purple-900 font-semibold"/>
+                                <h:outputText value="#{dashboardBean.staffCount}" styleClass="text-3xl font-bold text-purple-500 mt-1"/>
+                            </div>
+                            <div class="bg-purple-100 rounded-xl p-3">
+                                <i class="pi pi-id-card text-3xl text-purple-500"/>
+                            </div>
+                        </div>
+                        <h:link outcome="staff" value="View Details" styleClass="block text-sm text-purple-500 hover:text-purple-700 mt-4 font-medium"/>
+                    </div>
+                    </ui:fragment>
+
+                    <ui:fragment rendered="#{authBean.hasPermission('BILLING_VIEW')}">
+
+                <div class="mt-3 bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-teal-200 hover:bg-teal-300/10">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <h:outputText value="Total Revenue" styleClass="text-teal-900 font-semibold"/>
+                            <div class="text-3xl font-bold text-teal-500 mt-1">
+                                <!-- Use f:convertNumber to format it as currency -->
+                                <h:outputText value="#{dashboardBean.totalRevenue}">
+                                    <f:convertNumber type="currency" currencySymbol="shs " maxFractionDigits="1"/>
                                 </h:outputText>
-                            </span>
-                            <span class="uppercase text-xs text-yellow-500 tracking-widest mt-1">Total</span>
-                        <p:commandLink value="View All" action="appointments"  styleClass="dashboard-link !text-yellow-600 !text-sm !mt-3 !font-semibold "/>
-                        </div>
-                        </f:facet>
-                    </p:panel>
-
-                    <p:panel styleClass="!ui-card !bg-gradient-to-br !from-purple-100 !to-purple-200 !flex !flex-col !items-center
-                    !justify-center !p-6 !rounded-2xl !shadow-xl !w-full !max-w-xs !mx-auto !border !border-purple-300 hover:scale-105
-                    hover:shadow-2xl transition-transform duration-300 cursor-pointer group"
-                             style="cursor:pointer;"
-                             onclick="window.location='staff.xhtml'">
-                        <f:facet name="header" styleClass="!bg-purple-100 !rounded-tl-lg !rounded-tr-lg">
-                            <div class="flex flex-col bg-purple-100 p-0 items-center">
-                                <span class="bg-purple-500 text-white rounded-full p-4 shadow-lg mb-2">
-                                    <i class="pi pi-id-card text-3xl"/>
-                                </span>
-                                <span class="font-semibold text-lg">Staff</span>
                             </div>
-                        <div class="flex flex-col items-center p-0 w-full">
-                            <span class="text-4xl font-extrabold text-purple-700 tracking-tight drop-shadow">
-                                <h:outputText value="#{dashboardBean.staffCount}">
-                                    <f:convertNumber type="number" groupingUsed="true"/>
-                                </h:outputText>
-                            </span>
-                            <span class="uppercase text-xs text-purple-500 tracking-widest mt-1">Total</span>
-                        <p:commandLink value="View All" action="staff"  styleClass="dashboard-link !text-purple-600 !text-sm !mt-3 !font-semibold "/>
                         </div>
-                        </f:facet>
-                    </p:panel>
+                        <div class="bg-teal-100 rounded-xl p-3">
+                            <i class="pi pi-money-bill text-3xl text-teal-500"/>
+                        </div>
+                    </div>
+                    <h:link outcome="/Billings/billings" value="View Details" styleClass="block text-sm text-teal-500 hover:text-teal-700 mt-4 font-medium"/>
+                </div>
+                    </ui:fragment>
                 </div>
             </p:panel>
 
-            <p:panel styleClass="!border-0 shadow-lg !bg-transparent !rounded-lg">
-                <div class="flex items-center gap-2 mb-4">
-                    <i class="pi pi-calendar text-blue-600 text-xl"/>
-                    <span class="font-semibold text-blue-700 text-lg">Recent Appointments</span>
+            <!-- ============================================= -->
+            <!-- === NEW: SECTION FOR CHARTS === -->
+            <!-- ============================================= -->
+<ui:fragment rendered="#{authBean.hasPermission('APPOINTMENT_VIEW')}">
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <!-- Daily Appointments Bar Chart -->
+                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="pi pi-chart-bar text-green-600 text-xl"/>
+                        <span class="font-semibold text-green-700 text-lg">Weekly Appointment Volume</span>
+                    </div>
+                    <!-- The canvas for the bar chart -->
+                    <canvas id="dailyAppointmentsChart" style="width: 100%; height: 350px;"></canvas>
                 </div>
-                <div class="overflow-x-auto rounded-2xl shadow-0 bg-white">
-                    <table id="dashboardTable" class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-blue-600">
-                            <tr>
-                                <th class="px-4  text-left font-bold text-white uppercase tracking-wider rounded-tl-lg">Patient</th>
-                                <th class="px-4  text-left font-bold text-white uppercase tracking-wider">Doctor</th>
-                                <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider">Date</th>
-                                <th class="px-4 py-2 text-left font-bold text-white uppercase tracking-wider rounded-tr-lg">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-100">
-                            <ui:repeat var="appointment" value="#{dashboardBean.recentAppointments}">
-                                <tr class="hover:bg-blue-50 transition">
-                                    <td class="px-4 py-2 whitespace-nowrap text-gray-800 font-medium">
-                                        <h:outputText value="#{appointment.patient.firstName} #{appointment.patient.lastName}"/>
-                                    </td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-gray-700">
-                                        <h:outputText value="Dr. #{appointment.doctor.firstName} #{appointment.doctor.lastName}"/>
-                                    </td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-gray-600">
-                                        <h:outputText value="#{appointment.appointmentTime}">
-                                            <f:convertDateTime pattern="MMM dd, yyyy hh:mm a"/>
-                                        </h:outputText>
-                                    </td>
-                                    <td class="px-4 py-2 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                                        #{appointment.status eq 'SCHEDULED' ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                        : appointment.status eq 'COMPLETED' ? 'bg-green-100 text-green-700 border border-green-200'
-                                        : 'bg-gray-100 text-gray-700 border border-gray-200'}">
-                                            <h:outputText value="#{appointment.status}"/>
-                                        </span>
-                                    </td>
-                                </tr>
-                            </ui:repeat>
-                        </tbody>
-                    </table>
-                    <div class="flex justify-center mt-2">
-                        <p:commandButton icon="pi pi-angle-left" disabled="#{dashboardBean.page == 0}"
-                                    actionListener="#{dashboardBean.prevPage}" update="@parent"
-                                    styleClass="mr-5 !bg-transparent !border-0 !shadow-none !text-blue-700 hover:!bg-blue-100 hover:!text-blue-800
-                                    transition-all duration-200 !w-8 !h-8 flex items-center justify-center"/>
-                                <span class="mx-5 font-normal text-blue-900">Page #{dashboardBean.page + 1} of #{dashboardBean.totalPages}</span>
-                                <p:commandButton icon="pi pi-angle-right" disabled="#{dashboardBean.page + 1 >= dashboardBean.totalPages}"
-                                    actionListener="#{dashboardBean.nextPage}" update="@parent"
-                                    styleClass="!bg-transparent !border-0 !shadow-none !text-blue-600 hover:!bg-blue-100 hover:!text-blue-800
-                                    transition-all duration-200 !w-8 !h-8 flex items-center justify-center"/>
+
+                <!-- Appointment Status Doughnut Chart -->
+                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="pi pi-chart-pie text-blue-600 text-xl"/>
+                        <span class="font-semibold text-blue-700 text-lg">Appointment Status</span>
+                    </div>
+                    <!-- The canvas for the doughnut chart -->
+                    <div class="relative" style="height: 350px;">
+                        <canvas id="statusDoughnutChart"></canvas>
                     </div>
                 </div>
+            </div>
+</ui:fragment>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+<ui:fragment rendered="#{authBean.hasPermission('BILLING_CREATE')}">
+
+            <div class="grid grid-cols-1 gap-6 mt-6">
+                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="pi pi-chart-line text-teal-600 text-xl"/>
+                        <span class="font-semibold text-teal-700 text-lg">Revenue (Last 30 Days)</span>
+                    </div>
+                    <div class="relative" style="height: 350px;">
+                        <canvas id="monthlyRevenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+</ui:fragment>
+
+                <ui:fragment rendered="#{authBean.hasPermission('DOCTOR_VIEW')}">
+
+            <div class="grid grid-cols-1 gap-6 mt-6">
+                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="pi pi-users text-purple-600 text-xl"/>
+                        <span class="font-semibold text-purple-700 text-lg">Doctor Appointment Workload</span>
+                    </div>
+                    <div class="relative" style="height: 400px;">
+                        <canvas id="doctorWorkloadChart"></canvas>
+                    </div>
+                </div>
+            </div>
+                </ui:fragment>
+            </div>
+
+            <!-- ======================================================= -->
+            <!-- === UPDATED: Interactive Recent Appointments Section === -->
+            <!-- ======================================================= -->
+            <!-- Interactive Recent Appointments Section -->
+            <p:panel styleClass="!border-0 shadow mt-6 rounded-lg !w-full" rendered="#{authBean.hasPermission('APPOINTMENT_VIEW')}">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-calendar-times text-green-600 text-xl"/>
+                        <span class="font-semibold text-green-700 text-lg">Recent Appointments</span>
+                    </div>
+                    <!-- Controls to change appointment count -->
+                    <div class="flex items-center gap-2">
+                        <p:outputLabel for="recentCount" value="Show:" styleClass="font-semibold"/>
+                        <p:spinner id="recentCount" value="#{dashboardBean.recentCount}" min="1" max="50" downButtonStyleClass="!bg-green-600 !border-green-800" upButtonStyleClass="!bg-green-600 !border-green-800" styleClass="w-16"/>
+                        <p:commandButton value="Refresh"
+                                         actionListener="#{dashboardBean.refreshRecentAppointmentsList}"
+                                         update="recentAppointmentsTable"
+                                         icon="pi pi-refresh"
+                                         styleClass="ui-button-outlined !border-green-700 !text-green-700"/>
+                    </div>
+                </div>
+                <p:dataTable id="recentAppointmentsTable" var="appointment" value="#{dashboardBean.recentAppointments}"
+                             selectionMode="single" selection="#{dashboardBean.selectedAppointment}"
+                             rowKey="#{appointment.id}"
+                             styleClass="rounded-lg"
+                             paginator="true" rows="5" paginatorPosition="bottom"
+                             rowsPerPageTemplate="5,10,20"
+                             emptyMessage="No recent appointments found.">
+
+                    <p:ajax event="rowSelect" listener="#{dashboardBean.onRowSelect}"
+                            update=":dashboardForm:appointmentDetailsDialog"
+                            oncomplete="PF('appointmentDialogWidget').show()" />
+
+                    <p:column headerText="Patient" sortBy="#{appointment.patient.lastName}">
+                        <h:outputText value="#{appointment.patient.firstName} #{appointment.patient.lastName}"/>
+                    </p:column>
+                    <p:column headerText="Doctor" sortBy="#{appointment.doctor.lastName}">
+                        <h:outputText value="Dr. #{appointment.doctor.firstName} #{appointment.doctor.lastName}"/>
+                    </p:column>
+                    <p:column headerText="Date" sortBy="#{appointment.appointmentTime}">
+                        <h:outputText value="#{appointment.appointmentTime}">
+                            <f:convertDateTime type="localDateTime" pattern="MMM dd, yyyy hh:mm a"/>
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="Status" sortBy="#{appointment.status}">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                     #{appointment.status eq 'SCHEDULED' ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                     : appointment.status eq 'COMPLETED' ? 'bg-green-100 text-green-700 border border-green-200'
+                                     : 'bg-gray-100 text-gray-700 border border-gray-200'}">
+                            <h:outputText value="#{appointment.status}"/>
+                        </span>
+                    </p:column>
+                </p:dataTable>
             </p:panel>
+            <p:dialog id="appointmentDetailsDialog" widgetVar="appointmentDialogWidget"
+                      header="Appointment Details" modal="true" responsive="true" style="min-width: 450px;">
+
+                <h:panelGrid columns="2" cellpadding="10" rendered="#{not empty dashboardBean.selectedAppointment}">
+                    <h:outputText value="Patient:" styleClass="font-bold"/>
+                    <h:outputText value="#{dashboardBean.selectedAppointment.patient.firstName} #{dashboardBean.selectedAppointment.patient.lastName}"/>
+
+                    <h:outputText value="Doctor:" styleClass="font-bold"/>
+                    <h:outputText value="Dr. #{dashboardBean.selectedAppointment.doctor.firstName} #{dashboardBean.selectedAppointment.doctor.lastName}"/>
+
+                    <h:outputText value="Time:" styleClass="font-bold"/>
+                    <h:outputText value="#{dashboardBean.selectedAppointment.appointmentTime}">
+                        <f:convertDateTime type="localDateTime" pattern="EEEE, MMM dd, yyyy 'at' hh:mm a"/>
+                    </h:outputText>
+
+                    <p:outputLabel for="status" value="Status:" styleClass="font-bold"/>
+                    <p:selectOneMenu id="status" value="#{dashboardBean.selectedAppointment.status}">
+                        <f:selectItems value="#{appointmentBean.statuses}" var="s"
+                                       itemLabel="#{s.displayName}" itemValue="#{s}"/>
+                    </p:selectOneMenu>
+                </h:panelGrid>
+
+                <f:facet name="footer">
+                    <p:commandButton value="Save Changes"
+                                     actionListener="#{dashboardBean.updateSelectedAppointment}"
+                                     icon="pi pi-check"
+                                     process="appointmentDetailsDialog @this"
+                                     update=":dashboardForm:recentAppointmentsTable :dashboardForm:messages"
+                                     styleClass="ui-button-success"/>
+                    <p:commandButton value="Cancel" icon="pi pi-times"
+                                     onclick="PF('appointmentDialogWidget').hide()"
+                                     type="button" styleClass="ui-button-secondary"/>
+                </f:facet>
+            </p:dialog>
         </h:form>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- ======================================================= -->
+        <!-- === NEW: JavaScript to render the charts === -->
+        <!-- ======================================================= -->
+        <h:outputScript>
+        // This global function will be called by the remoteCommand
+        function initStaffDashboardCharts(barData, donutData, revenueData, workloadData) {
+            console.log("Initializing all staff charts...");
+            renderBarChart(barData);
+            renderDonutChart(donutData);
+            renderRevenueChart(revenueData);
+            renderDoctorWorkloadChart(workloadData);
+        }
+
+        // Renders the bar chart for daily appointments
+        function renderBarChart(data) {
+        if (!data || data.length === 0) return;
+
+        const labels = data.map(item => item.date);
+        const counts = data.map(item => item.count);
+        const ctx = document.getElementById('dailyAppointmentsChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.dailyAppointmentsBarChart instanceof Chart) {
+        window.dailyAppointmentsBarChart.destroy();
+        }
+        window.dailyAppointmentsBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+        labels: labels,
+        datasets: [{
+        label: 'Appointments',
+        data: counts,
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgb(75, 192, 192)',
+        borderWidth: 1
+        }]
+        },
+        options: {
+        scales: {
+        y: {
+        beginAtZero: true
+        }
+        },
+        responsive: true,
+        maintainAspectRatio: true
+        }
+        });
+        }
+        // Renders the doughnut chart for appointment statuses
+        function renderDonutChart(data) {
+        if (!data || data.length === 0) return;
+
+        const labels = data.map(item => item.status);
+        const counts = data.map(item => item.count);
+        const ctx = document.getElementById('statusDoughnutChart').getContext('2d');
+
+        const backgroundColors = data.map(item => {
+        switch (item.status.toUpperCase()) {
+            case "SCHEDULED": return "rgb(54, 162, 235)"; // Blue
+            case "COMPLETED": return "rgb(75, 192, 192)"; // Green
+            case "CANCELLED": return "rgb(255, 99, 132)"; // Red
+            default: return "rgb(201, 203, 207)";       // Grey
+        }
+        });
+
+        // Destroy existing chart if it exists
+        if (window.statusDoughnutChart instanceof Chart) {
+        window.statusDoughnutChart.destroy();
+        }
+
+            window.statusDoughnutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Appointment Status',
+                        data: counts,
+                        backgroundColor: backgroundColors,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function renderRevenueChart(data) {
+            if (!data || data.length === 0) {
+                console.log("No revenue data to render.");
+                return;
+            }
+
+            const labels = data.map(item => item.date);
+            const amounts = data.map(item => item.amount);
+            const ctx = document.getElementById('monthlyRevenueChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (window.monthlyRevenueChart instanceof Chart) {
+                window.monthlyRevenueChart.destroy();
+            }
+            window.monthlyRevenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Revenue',
+                        data: amounts,
+                        fill: true,
+                        backgroundColor: 'rgba(20, 184, 166, 0.2)', // Tailwind Teal-500
+                        borderColor: 'rgb(20, 184, 166)',
+                        tension: 0.3 // Makes the line smooth
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                // Optional: Format ticks as currency
+                                callback: function(value, index, values) {
+                                    return 'Shs ' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio:true
+                }
+            });
+        }
+        function renderDoctorWorkloadChart(data) {
+            if (!data || data.length === 0) {
+                console.log("No doctor workload data to render.");
+                return;
+            }
+
+            const labels = data.map(item => item.doctorName);
+            const counts = data.map(item => item.count);
+            const ctx = document.getElementById('doctorWorkloadChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (window.doctorWorkloadChart instanceof Chart) {
+                window.doctorWorkloadChart.destroy();
+            }
+            window.doctorWorkloadChart = new Chart(ctx, {
+                type: 'bar', // It's still a 'bar' chart type
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Appointments',
+                        data: counts,
+                        backgroundColor: 'rgba(147, 51, 234, 0.2)', // Tailwind Purple
+                        borderColor: 'rgb(147, 51, 234)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // This is what makes it a horizontal bar chart!
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: true
+                }
+            });
+        }
+        </h:outputScript>
     </ui:define>
 </ui:composition>
 </html>

@@ -14,38 +14,41 @@
                 <p:growl id="messages" showDetail="true" autoUpdate="true" styleClass="mb-4"/>
 
                 <p:toolbar styleClass="bg-blue-50 rounded-lg mb-4 p-4 flex flex-wrap gap-4 items-center justify-between">
-                    <f:facet name="left">
+                    <p:toolbarGroup name="left">
                     <p:commandButton value="Add New" icon="pi pi-plus"
                                      action="#{patientBean.initNewPatient}"
                                      update="patientForm:patientDialog"
+                                     process="@this"
                                      oncomplete="PF('patientDialog').show()"
-                                     styleClass="!bg-blue-600 hover:!bg-blue-900 text-white font-semibold py-1 px-2 rounded
-                                         shadow mr-2 text-xs !max-w-[150px] max-h-[50px]"/>
+                                     styleClass="!bg-green-600 text-white font-semibold rounded !border-green-600 shadow mr-2 text-xs "
+                                     rendered="#{authBean.hasPermission('PATIENT_CREATE')}"/>
 
                         <span style="display:inline-block; width:0.75rem;"/>
 
-                        <p:commandButton value="Delete Selected" icon="pi pi-trash"
-                                         disabled="#{!patientBean.hasSelectedPatients()}"
-                                         action="#{patientBean.deleteSelectedPatients}"
-                                         update="patientForm:messages,patientForm:patientTable"
-                                         styleClass="!bg-red-500 hover:!bg-red-600 text-white font-semibold py-1 px-2 rounded
-                                         !border !border-red-500 shadow text-xs min-w-[28px] min-h-[28px]"/>
-                    </f:facet>
+                    </p:toolbarGroup>
+                    <p:toolbarGroup name="center">
+                        <div class="text-2xl font-bold text-green-700/20  " style="letter-spacing: 3rem">
+                            PATIENTS
+                        </div>
+                    </p:toolbarGroup>
 
-                    <f:facet name="right">
+                    <p:toolbarGroup name="right">
                         <p:commandButton value="View Deleted" icon="pi pi-history"
                                          action="#{patientBean.loadDeletedPatients}"
                                          update="patientForm:deletedPatientsDialog"
                                          oncomplete="PF('deletedPatientsDialog').show()"
-                                         styleClass="bg-gray-500 hover:bg-gray-700 text-white font-semibold py-1 px-2 rounded
-                                         shadow text-xs min-w-[80px] min-h-[28px]"/>
-                    </f:facet>
+                                         styleClass="!bg-green-600 !border-green-600 text-white font-semibold rounded
+                                         shadow text-xs "
+                                         rendered="#{authBean.hasPermission('PATIENT_VIEW_DELETED')}"/>
+                    </p:toolbarGroup>
                 </p:toolbar>
 
                 <!-- Search Bar -->
                 <div class="mb-4 flex items-center gap-2">
                     <p:inputText value="#{patientBean.searchTerm}" placeholder="Search by name..." styleClass="w-64"/>
-                    <p:commandButton value="Search" icon="pi pi-search" action="#{patientBean.searchPatients}" update="patientForm:patientTable"/>
+                    <p:commandButton value="Search" icon="pi pi-search" action="#{patientBean.searchPatients}"
+                                     styleClass="!bg-green-600 !border-green-600"
+                                     update="patientForm:patientTable"/>
                 </div>
                 <div style="overflow-x:auto;">
                     <p:dataTable id="patientTable" var="patient" value="#{patientBean.filteredPatients}"
@@ -56,7 +59,7 @@
                                  styleClass="divide-y divide-gray-200 text-sm rounded-lg overflow-hidden shadow"
                                  tableStyleClass="w-full"
                                  paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
-                        <p:column selectionMode="multiple" style="width:3%"/>
+                        <p:column selectionMode="multiple" style="width:3%" rendered="#{authBean.staff.role.name == 'ADMIN'|| authBean.staff.role.name == 'RECEPTIONIST' || authBean.staff.role.name == 'IT SUPPORT'}"/>
 
                         <p:column headerText="ID" sortBy="#{patientBean.selectedPatient.id}">
                             <h:outputText value="#{patient.id}" styleClass="font-semibold text-blue-700"/>
@@ -88,35 +91,47 @@
                             <h:outputText value="#{patient.medicalHistory}" styleClass="text-gray-600"/>
                         </p:column>
 
-                        <p:column headerText="Actions" style="width:10%">
+                        <p:column headerText="Actions" style="width:10%" rendered="#{authBean.staff.role.name == 'ADMIN' || authBean.staff.role.name == 'RECEPTIONIST' || authBean.staff.role.name == 'IT SUPPORT'}">
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
                                 <p:commandButton icon="pi pi-pencil" title="Edit"
+                                                 rendered="#{authBean.hasPermission('PATIENT_EDIT')}"
                                                  action="#{patientBean.editPatient(patient)}"
                                                  update="patientForm:patientDialog"
+                                                 process="@this"
                                                  oncomplete="PF('patientDialog').show()"
-                                                 styleClass="p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+                                                 styleClass=" !bg-gray-300 hover:!bg-gray-400 !border-gray-300 !text-black !font-medium p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
 
                                 <p:commandButton icon="pi pi-trash" title="Delete"
+                                                 rendered="#{authBean.hasPermission('PATIENT_DELETE_SOFT')}"
                                                  action="#{patientBean.deletePatient(patient)}"
                                                  update="patientForm:messages,patientForm:patientTable"
-                                                 styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+                                                 styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]">
+                                    <p:confirm header="Confirmation" message="Are you sure you want to delete this patient?" icon="pi pi-exclamation-triangle"/>
+                                </p:commandButton>
                             </div>
                         </p:column>
                     </p:dataTable>
                 </div>
 
+                <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" styleClass="bg-white rounded-lg shadow-lg">
+                    <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes !bg-green-500 hover:!bg-green-600 text-white font-semibold py-2 px-4 rounded shadow"/>
+                    <p:commandButton value="Cancel" type="button" styleClass="ui-confirmdialog-no !bg-gray-500 hover:!bg-red-300 text-white font-semibold py-2 px-4 rounded shadow"/>
+                </p:confirmDialog>
+
                 <!-- Add/Edit Patient Dialog -->
                 <p:dialog id="patientDialog" header="Patient Details" widgetVar="patientDialog" modal="true" resizable="false" dynamic="true">
                     <h:panelGrid columns="2" cellpadding="5" style="width:100%;">
                         <h:outputLabel for="firstName" value="First Name:"/>
-                        <p:inputText id="firstName" value="#{patientBean.selectedPatient.firstName}" required="true"/>
+                        <p:inputText id="firstName" value="#{patientBean.selectedPatient.firstName}" required="true" validatorMessage="Enter a valid first name"/>
 
                         <h:outputLabel for="lastName" value="Last Name:"/>
-                        <p:inputText id="lastName" value="#{patientBean.selectedPatient.lastName}" required="true"/>
+                        <p:inputText id="lastName" value="#{patientBean.selectedPatient.lastName}" required="true" validatorMessage="Enter a valid last name"/>
 
                         <h:outputLabel for="dob" value="Date of Birth:"/>
                         <p:calendar id="dob" value="#{patientBean.selectedPatient.dateOfBirth}" pattern="yyyy-MM-dd"
-                                    required="true" navigator="true" yearRange="c-100:c" maxdate="#{now}"/>
+                                    required="true" navigator="true" yearRange="c-100:c" maxdate="#{now}" validatorMessage="Enter a valid date of birth">
+                        <f:ajax event="blur" render=":patientForm:messages"/>
+                        </p:calendar>
 
                         <h:outputLabel for="email" value="Email:"/>
                         <p:inputText id="email" value="#{patientBean.selectedPatient.email}" required="true" validatorMessage="Enter a valid email address format"
@@ -129,6 +144,7 @@
                         <p:inputText id="phone" value="#{patientBean.selectedPatient.contactNumber}" required="true" maxlength="10"
                                      pattern="\d{10}" title="Phone number must be exactly 10 digits." validatorMessage="Phone number must be exactly 10 digits.">
                             <f:validateRegex pattern="\d{10}" />
+                            <f:ajax event="blur" render=":patientForm:messages"/>
                         </p:inputText>
 
                         <h:outputLabel for="address" value="Address:"/>
@@ -142,8 +158,12 @@
                     <f:facet name="footer">
                         <p:commandButton value="Save" action="#{patientBean.savePatient}"
                                          update="patientForm:messages,patientForm:patientTable"
-                                         oncomplete="if(!args.validationFailed) PF('patientDialog').hide()"/>
-                        <p:commandButton value="Cancel" onclick="PF('patientDialog').hide()" type="button"/>
+                                         styleClass="!bg-green-600 !border-green-600 !font-medium hover:!bg-green-500"
+                                         oncomplete="if(!args.validationFailed) PF('patientDialog').hide()"
+                                         rendered="#{authBean.staff.role.name == 'ADMIN'|| authBean.staff.role.name == 'RECEPTIONIST' || authBean.staff.role.name == 'IT SUPPORT'}"/>
+                        <p:commandButton value="Cancel" onclick="PF('patientDialog').hide()"
+                                         styleClass="!bg-green-200 !border-green-200  !font-medium !text-black hover:!bg-green-300"
+                                         type="button"/>
                     </f:facet>
                 </p:dialog>
 

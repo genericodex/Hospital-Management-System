@@ -3,7 +3,6 @@ package com.pahappa.services;
 import com.pahappa.constants.AppointmentStatus;
 import com.pahappa.constants.BillingStatus;
 import com.pahappa.constants.Specialization;
-import com.pahappa.constants.StaffRoles;
 import com.pahappa.models.*;
 import java.util.Date;
 import java.util.List;
@@ -45,7 +44,7 @@ public interface HospitalService {
     List<Appointment> getDeletedAppointments();
 
     // Staff operations
-    Staff createStaff(String firstName, String lastName, String email, String contact, StaffRoles role, String department, Date hireDate, String password, Boolean isDeleted, Staff performedBy);
+    Staff createStaff(String firstName, String lastName, String email, String contact, Role role, String department, Date hireDate, String password, Boolean isDeleted, Staff performedBy);
     List<Staff> getAllStaff();
     Staff getStaffById(Long id);
     Staff authenticateStaff(String email, String password);

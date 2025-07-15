@@ -13,8 +13,14 @@ public interface DoctorService {
     List<Doctor> getAllActiveDoctors();
     List<Doctor> getDeletedDoctors();
     void updateDoctor(Doctor doctor, Staff staff);
+    void updateDoctor(Doctor doctor); // The new method for self-service
     void deleteDoctor(Long id, Staff staff);
     void softDeleteDoctor(Long id, Staff staff);
     void restoreDoctor(Long id, Staff staff);
+    // --- FIX: Add the new method contract ---
+    void changePassword(Long doctorId, String oldPassword, String newPassword);
+    // --- FIX: Add the new authentication method contract ---
+    Doctor authenticateDoctor(String email, String password);
+    long countActiveDoctors();
 
 }

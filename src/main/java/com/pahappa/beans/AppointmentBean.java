@@ -4,11 +4,13 @@ import com.pahappa.constants.AppointmentStatus;
 import com.pahappa.models.Appointment;
 import com.pahappa.models.Doctor;
 import com.pahappa.models.Patient;
+import com.pahappa.services.appointment.AppointmentService;
 import com.pahappa.services.appointment.impl.AppointmentServiceImpl;
+import com.pahappa.services.doctor.DoctorService;
+import com.pahappa.services.patient.PatientService;
 import com.pahappa.services.patient.impl.PatientServiceImpl;
 import com.pahappa.services.doctor.impl.DoctorServiceImpl;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -17,6 +19,7 @@ import jakarta.inject.Named;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,17 +30,19 @@ public class AppointmentBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Inject
-    private AppointmentServiceImpl appointmentService;
+    private transient AppointmentService appointmentService;
 
     @Inject
-    private DoctorAuthBean doctorAuthBean;
+    private transient DoctorAuthBean doctorAuthBean;
 
     @Inject
-    private PatientServiceImpl patientService;
+    private transient PatientService patientService;
 
     @Inject
-    private DoctorServiceImpl doctorService;
+    private transient DoctorService doctorService;
 
+    @Inject
+    private transient AuthBean authBean; // Injected to get the current user's role
 
     private List<Appointment> appointments = new ArrayList<>();
     private List<Appointment> selectedAppointments;
@@ -57,74 +62,70 @@ public class AppointmentBean implements Serializable {
 
     private Long appointmentToDeleteId;
 
+    private Patient filterPatient;
+    private Doctor filterDoctor;
+    private LocalDateTime filterStartDate;
+    private LocalDateTime filterEndDate;
+    private String filterStatus;
+    private boolean newAppointment;
+
     @PostConstruct
     public void init() {
-        // Defensive: ensure all injected beans are not null
-        if (appointmentService == null) {
-            appointments = new ArrayList<>();
-            patients = new ArrayList<>();
-            doctors = new ArrayList<>();
+        try {
+
             selectedAppointment = new Appointment();
-            return;
-        }
-        if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
-            try {
-                appointments = appointmentService.getAppointmentsByDoctor(doctorAuthBean.getLoggedInDoctor().getId());
-            } catch (Exception e) {
-                appointments = new ArrayList<>();
+            // Load lists for dropdowns/autocomplete fields ONCE.
+            patients = patientService.getAllActivePatient();
+            doctors = doctorService.getAllActiveDoctors();
+
+
+            // --- THIS IS THE FIX ---
+            // If a doctor is logged in (from DoctorAuthBean), automatically set them
+            // as the filter criteria before loading the appointment list.
+            if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
+                this.filterDoctor = doctorAuthBean.getLoggedInDoctor();
             }
-        } else {
-            try {
-                appointments = appointmentService.getAllActiveAppointments();
-            } catch (Exception e) {
-                appointments = new ArrayList<>();
-            }
-        }
-        if (appointments == null) {
+            // --- END OF FIX ---
+
+            // Load the main list of appointments using the filter method.
+            // On first load, filters are null, so it gets all active appointments.
+            filterAppointments();
+
+        } catch (Exception e) {
+            System.out.println("Error during AppointmentBean initialization");
+            // Initialize with empty lists to prevent NullPointerExceptions on the page
             appointments = new ArrayList<>();
-        }
-        try {
-            patients = appointmentService.getAllPatients();
-        } catch (Exception e) {
             patients = new ArrayList<>();
-        }
-        if (patients == null) {
-            patients = new ArrayList<>();
-        }
-        try {
-            doctors = appointmentService.getAllDoctors();
-        } catch (Exception e) {
             doctors = new ArrayList<>();
+
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR,"Error", "Could not load appointment data."));
         }
-        if (doctors == null) {
-            doctors = new ArrayList<>();
-        }
-        // Always load patients and doctors for dropdowns/autocomplete
-        try {
-            appointments = appointmentService != null ? (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null ? appointmentService.getAppointmentsByDoctor(doctorAuthBean.getLoggedInDoctor().getId()) : appointmentService.getAllActiveAppointments()) : new ArrayList<>();
-        } catch (Exception e) {
-            appointments = new ArrayList<>();
-        }
-        try {
-            patients = patientService != null ? patientService.getAllActivePatient() : new ArrayList<>();
-        } catch (Exception e) {
-            patients = new ArrayList<>();
-        }
-        try {
-            doctors = doctorService != null ? doctorService.getAllActiveDoctors() : new ArrayList<>();
-        } catch (Exception e) {
-            doctors = new ArrayList<>();
-        }
-        if (appointments == null) appointments = new ArrayList<>();
-        if (patients == null) patients = new ArrayList<>();
-        if (doctors == null) doctors = new ArrayList<>();
-        selectedAppointment = new Appointment();
     }
 
+    // --- Helper methods for security ---
+    private boolean isAdmin() {
+        if (authBean != null && authBean.getStaff() != null && authBean.getStaff().getRole() != null) {
+            return "ADMIN".equals(authBean.getStaff().getRole().getName())|| "IT SUPPORT".equals(authBean.getStaff().getRole().getName());
+        }
+        if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
+                return true;
+                 }
+
+        return false;
+    }
+
+    private void showAccessDeniedMessage() {
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "You do not have permission to perform this action."));
+    }
+
+    // --- Action Methods ---
+
     public void initNewAppointment() {
-        this.selectedAppointment = new Appointment();
+        selectedAppointment = new Appointment();
         this.selectedPatientId = null;
         this.selectedDoctorId = null;
+        this.newAppointment = true;
         // If doctor is logged in, set selectedDoctor to logged-in doctor
         if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
             this.selectedDoctor = doctorAuthBean.getLoggedInDoctor();
@@ -135,99 +136,54 @@ public class AppointmentBean implements Serializable {
     }
 
     public void saveAppointment() {
-        boolean success = false;
+        if (!authBean.hasPermission("APPOINTMENT_EDIT") && doctorAuthBean.getLoggedInDoctor() == null) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
-            // Defensive: log patient/doctor state
-            System.out.println("DEBUG: selectedPatient=" + selectedPatient + ", selectedDoctor=" + selectedDoctor);
-            if (selectedPatient == null || selectedPatient.getId() == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please select a patient."));
-                FacesContext.getCurrentInstance().validationFailed();
-                return;
-            }
-            if (selectedDoctor == null || selectedDoctor.getId() == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please select a doctor."));
-                FacesContext.getCurrentInstance().validationFailed();
-                return;
-            }
-            if (selectedAppointment.getAppointmentTime() == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please select a date and time."));
-                return;
-            }
-            // Backend validation: appointment cannot be in the past
+            // The required="true" on the JSF components handles most null checks.
+            // We just need to check for logical errors.
             if (!selectedAppointment.isValidAppointmentTime()) {
                 FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Appointment date/time cannot be in the past."));
-                return;
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Validation Error", "Appointment date/time cannot be in the past."));
+                return; // Stop processing
             }
-            if (selectedAppointment.getReasonForVisit() == null || selectedAppointment.getReasonForVisit().trim().isEmpty()) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please enter a reason for the visit."));
-                FacesContext.getCurrentInstance().validationFailed();
-                return;
-            }
-            if (selectedPatientId == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please select a patient."));
-                return;
-            }
-            if (selectedDoctorId == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Please select a doctor."));
-                return;
-            }
-            Patient managedPatient = appointmentService.getPatientById(selectedPatientId);
-            Doctor managedDoctor = appointmentService.getDoctorById(selectedDoctorId);
-            if (selectedAppointment.getId() == null) {
-                // Create new appointment
-                appointmentService.createAppointment(
-                        managedPatient,
-                        managedDoctor,
-                        selectedAppointment.getAppointmentTime(),
-                        selectedAppointment.getReasonForVisit(),
-                        false
-                );
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage("Appointment created successfully"));
+
+            // Assign the objects from the autocomplete components to the appointment
+            selectedAppointment.setPatient(selectedPatient);
+            selectedAppointment.setDoctor(selectedDoctor);
+
+            String message;
+            if (selectedAppointment.getId() == null && newAppointment) {
+                appointmentService.createAppointment(selectedAppointment);
+                message = "Appointment created successfully.";
             } else {
-                // Update existing appointment
-                Appointment managedAppointment = appointmentService.getAppointmentById(selectedAppointment.getId());
-                if (managedAppointment == null) {
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Appointment not found for update."));
-                    return;
-                }
-                managedAppointment.setAppointmentTime(selectedAppointment.getAppointmentTime());
-                managedAppointment.setReasonForVisit(selectedAppointment.getReasonForVisit());
-                managedAppointment.setPatient(selectedPatient);
-                managedAppointment.setDoctor(selectedDoctor);
-                managedAppointment.setStatus(selectedAppointment.getStatus());
-                managedAppointment.setDeleted(selectedAppointment.isDeleted());
-                appointmentService.updateAppointment(managedAppointment);
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage("Appointment updated successfully"));
+                appointmentService.updateAppointment(selectedAppointment);
+                message = "Appointment updated successfully.";
             }
-            appointments = appointmentService.getAllActiveAppointments();
-            // Reset selectedAppointment after save/update
-            selectedAppointment = new Appointment();
-            selectedPatient = null;
-            selectedDoctor = null;
-            selectedPatientId = null;
-            selectedDoctorId = null;
+
+            // The single most reliable way to refresh the page state
+            init();
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", message));
+
         } catch (Exception e) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
+            // Log the exception for debugging
+            // log.error("Error saving appointment", e);
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "An unexpected error occurred."));
         }
     }
 
     public void cancelAppointment(Appointment appointment) {
+        if (!authBean.hasPermission("APPOINTMENT_EDIT") && doctorAuthBean.getLoggedInDoctor() == null) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
             appointmentService.cancelAppointment(appointment.getId());
             appointments = appointmentService.getAllActiveAppointments();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Appointment cancelled successfully"));
+            filterAppointments();
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
@@ -235,6 +191,10 @@ public class AppointmentBean implements Serializable {
     }
 
     public void cancelSelectedAppointments() {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
             for (Appointment appointment : selectedAppointments) {
                 appointmentService.cancelAppointment(appointment.getId());
@@ -250,6 +210,10 @@ public class AppointmentBean implements Serializable {
     }
 
     public void completeAppointment(Appointment appointment) {
+        if (!authBean.hasPermission("APPOINTMENT_EDIT") && doctorAuthBean.getLoggedInDoctor() == null) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
             Appointment managedAppointment = appointmentService.getAppointmentById(appointment.getId());
             if (managedAppointment == null) {
@@ -262,6 +226,7 @@ public class AppointmentBean implements Serializable {
             appointments = appointmentService.getAllActiveAppointments();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Appointment marked as completed"));
+            filterAppointments();
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
@@ -269,10 +234,24 @@ public class AppointmentBean implements Serializable {
     }
 
     public void loadCancelledAppointments() {
+        if (!authBean.hasPermission("APPOINTMENT_VIEW_DELETED") && doctorAuthBean.getLoggedInDoctor() == null) {
+            showAccessDeniedMessage();
+            cancelledAppointments = new ArrayList<>();
+            return;
+        }
+        if (doctorAuthBean.getLoggedInDoctor() != null) {
+            // A doctor is logged in, so fetch only their cancelled appointments.
+            Long doctorId = doctorAuthBean.getLoggedInDoctor().getId();
+            cancelledAppointments = appointmentService.getDeletedAppointmentsByDoctor(doctorId);
+        }
         cancelledAppointments = appointmentService.getDeletedAppointments();
     }
 
-    public void rescheduleAppointment(Appointment appointment) {
+    public void rescheduleAppointment(Appointment appointment){
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
             selectedAppointment = appointment;
             selectedAppointment.setStatus(AppointmentStatus.SCHEDULED);
@@ -288,32 +267,39 @@ public class AppointmentBean implements Serializable {
     }
 
     public void editAppointment(Appointment appointment) {
-        this.selectedAppointment = appointmentService.getAppointmentById(appointment.getId());
-        this.selectedPatientId = this.selectedAppointment.getPatient() != null ? this.selectedAppointment.getPatient().getId() : null;
-        this.selectedDoctorId = this.selectedAppointment.getDoctor() != null ? this.selectedAppointment.getDoctor().getId() : null;
-        this.selectedAppointment = appointmentService.getAppointmentById(appointment.getId());
-        if (this.selectedAppointment.getPatient() != null) {
-            this.selectedPatientId = this.selectedAppointment.getPatient().getId();
-            this.selectedPatient = patientService.getPatientById(this.selectedPatientId);
-        } else {
-            this.selectedPatientId = null;
-            this.selectedPatient = null;
+        if (!authBean.hasPermission("APPOINTMENT_EDIT") && doctorAuthBean.getLoggedInDoctor() == null) {
+            showAccessDeniedMessage();
+            return;
         }
-        if (this.selectedAppointment.getDoctor() != null) {
-            this.selectedDoctorId = this.selectedAppointment.getDoctor().getId();
-            this.selectedDoctor = doctorService.getDoctorById(this.selectedDoctorId);
-        } else {
-            this.selectedDoctorId = null;
-            this.selectedDoctor = null;
+        // Step 1: Fetch a fresh, complete appointment object from the database ONCE.
+        // This ensures we have the most up-to-date data to edit.
+        Appointment managedAppointment = appointmentService.getAppointmentById(appointment.getId());
+        if (managedAppointment == null) {
+            // Handle the case where the appointment might have been deleted by another user.
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Not Found", "The selected appointment could not be found. It may have been deleted."));
+            return;
         }
-        // If doctor is logged in, set selectedDoctor to logged-in doctor
-        if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
-            this.selectedDoctor = doctorAuthBean.getLoggedInDoctor();
-            this.selectedDoctorId = this.selectedDoctor.getId();
-        }
+        // Step 2: Set ALL the bean properties that the dialog is bound to.
+        this.selectedAppointment = managedAppointment;
+
+        // --- THIS IS THE FIX ---
+        // You must also set the objects for the p:autoComplete components.
+        this.selectedPatient = managedAppointment.getPatient();
+        this.selectedDoctor = managedAppointment.getDoctor();
+        this.newAppointment = false;
+        // That's it! All unnecessary ID fields and redundant database calls are removed.
+    }
+
+    public boolean isNewAppointment() {
+        return newAppointment;
     }
 
     public void restoreAppointment(Long id) {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
             appointmentService.restoreAppointment(id);
             appointments = appointmentService.getAllActiveAppointments();
@@ -331,38 +317,14 @@ public class AppointmentBean implements Serializable {
     }
 
     // Getters and Setters
-    public List<Appointment> getAppointments() {
-        if (appointments == null) {
-            appointments = new ArrayList<>();
-        }
-        return appointments;
-    }
+    public List<Appointment> getAppointments() {return appointments;}
     public List<Appointment> getSelectedAppointments() { return selectedAppointments; }
     public void setSelectedAppointments(List<Appointment> selectedAppointments) { this.selectedAppointments = selectedAppointments; }
     public Appointment getSelectedAppointment() { return selectedAppointment; }
     public void setSelectedAppointment(Appointment selectedAppointment) { this.selectedAppointment = selectedAppointment; }
-    public List<Patient> getPatients() {
-        // Always reload if null or empty
-        if (patients == null || patients.isEmpty()) {
-            try {
-                patients = appointmentService != null ? patientService.getAllActivePatient() : new ArrayList<>();
-            } catch (Exception e) {
-                patients = new ArrayList<>();
-            }
-        }
-        return patients;
-    }
-    public List<Doctor> getDoctors() {
-        if (doctors == null || doctors.isEmpty()) {
-            try {
-                doctors = appointmentService != null ? doctorService.getAllActiveDoctors() : new ArrayList<>();
-            } catch (Exception e) {
-                doctors = new ArrayList<>();
-            }
-        }
-        return doctors;
-    }
-    public List<Appointment> getCancelledAppointments() { return cancelledAppointments; }
+    public List<Patient> getPatients() {return patients;}
+    public List<Doctor> getDoctors() {return doctors;}
+    public List<Appointment> getCancelledAppointments() {return cancelledAppointments;}
     public Long getSelectedPatientId() { return selectedPatientId; }
     public void setSelectedPatientId(Long selectedPatientId) { this.selectedPatientId = selectedPatientId; }
     public Long getSelectedDoctorId() { return selectedDoctorId; }
@@ -402,6 +364,10 @@ public class AppointmentBean implements Serializable {
     }
 
     public void hardDeleteAppointment(Long id) {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
             appointmentService.deleteAppointment(id); // Use hard delete method
             cancelledAppointments = appointmentService.getDeletedAppointments();
@@ -412,4 +378,57 @@ public class AppointmentBean implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
         }
     }
+
+    // --- NEW: Action method to apply filters ---
+    public void filterAppointments() {
+        System.out.println("Filtering appointments...");
+        // Extract IDs from the selected filter objects
+        Long patientId = (filterPatient != null) ? filterPatient.getId() : null;
+        Long doctorId = (filterDoctor != null) ? filterDoctor.getId() : null;
+
+        // Call the new service method with the filter values
+        this.appointments = appointmentService.getFilteredAppointments(patientId, doctorId, filterStartDate, filterEndDate, filterStatus);
+    }
+
+    // --- NEW: Action method to clear filters ---
+    public void clearFilters() {
+        System.out.println("Clearing appointment filters.");
+        this.filterPatient = null;
+        this.filterDoctor = null;
+        this.filterStartDate = null;
+        this.filterEndDate = null;
+        this.filterStatus = null;
+        // Reload the list with no filters applied
+        // --- THIS IS THE FIX ---
+        // If a doctor is logged in, reset the filter TO that doctor.
+        // Otherwise, for staff, clear the doctor filter completely.
+        if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
+            this.filterDoctor = doctorAuthBean.getLoggedInDoctor();
+        } else {
+            this.filterDoctor = null;
+        }
+        filterAppointments();
+    }
+
+    // --- NEW: Getter for the status enum values for the dropdown ---
+    //    an array ([]) containing AppointmentStatus objects.
+    public AppointmentStatus[] getAppointmentStatuses() {
+        return AppointmentStatus.values();
+    }
+
+    // ... all your other existing methods (initNewAppointment, saveAppointment, etc.) ...
+
+    // --- NEW: Getters and Setters for the filter properties ---
+    public Patient getFilterPatient() { return filterPatient; }
+    public void setFilterPatient(Patient filterPatient) { this.filterPatient = filterPatient; }
+    public Doctor getFilterDoctor() { return filterDoctor; }
+    public void setFilterDoctor(Doctor filterDoctor) { this.filterDoctor = filterDoctor; }
+    public LocalDateTime getFilterStartDate() { return filterStartDate; }
+    public void setFilterStartDate(LocalDateTime filterStartDate) { this.filterStartDate = filterStartDate; }
+    public LocalDateTime getFilterEndDate() { return filterEndDate; }
+    public void setFilterEndDate(LocalDateTime filterEndDate) { this.filterEndDate = filterEndDate; }
+    public String getFilterStatus() { return filterStatus; }
+    public void setFilterStatus(String filterStatus) { this.filterStatus = filterStatus; }
+
 }
+

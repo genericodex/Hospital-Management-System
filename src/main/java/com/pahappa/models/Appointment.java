@@ -1,6 +1,8 @@
 package com.pahappa.models;
 import com.pahappa.constants.AppointmentStatus;
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -20,7 +22,7 @@ public class Appointment {
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "appointment_time", nullable = false)
-    private Date appointmentTime;
+    private LocalDateTime appointmentTime;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -39,7 +41,7 @@ public class Appointment {
     // Constructors
     public Appointment() {}
 
-    public Appointment(Patient patient, Doctor doctor, Date appointmentTime, AppointmentStatus status, Boolean isDeleted
+    public Appointment(Patient patient, Doctor doctor, LocalDateTime appointmentTime, AppointmentStatus status, Boolean isDeleted
     ) {
         this.patient = patient;
         this.doctor = doctor;
@@ -74,11 +76,11 @@ public class Appointment {
         this.doctor = doctor;
     }
 
-    public Date getAppointmentTime() {
+    public LocalDateTime getAppointmentTime() {
         return appointmentTime;
     }
 
-    public void setAppointmentTime(Date appointmentTime) {
+    public void setAppointmentTime(LocalDateTime appointmentTime) {
         this.appointmentTime = appointmentTime;
     }
 
@@ -106,16 +108,6 @@ public class Appointment {
         this.notes = notes;
     }
 
-
-
-
-
-
-
-
-
-
-
     public boolean isDeleted() {
         return isDeleted;
     }
@@ -124,17 +116,10 @@ public class Appointment {
         isDeleted = deleted;
     }
 
-
-
-
-
     public boolean isValidAppointmentTime() {
-        return appointmentTime != null && !appointmentTime.before(new java.util.Date());
+        return appointmentTime != null && !appointmentTime.isBefore(LocalDateTime.now()
+ );
     }
-
-
-
-
 
     @Override
     public String toString() {

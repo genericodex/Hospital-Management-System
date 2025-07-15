@@ -3,7 +3,9 @@ package com.pahappa.services.billing;
 import com.pahappa.models.Billing;
 import com.pahappa.models.Patient;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface BillingService {
 
@@ -17,4 +19,8 @@ public interface BillingService {
     void softDeleteBilling(Long id);
     void restoreBilling(Long id);
 
+    List<Billing> getDeletedBillings();
+    List<Billing> findBillings(Long patientId, String paymentMethod);
+    Map<LocalDate, Double> getDailyRevenue(LocalDate startDate, LocalDate endDate);
+    double getTotalRevenue();
 }

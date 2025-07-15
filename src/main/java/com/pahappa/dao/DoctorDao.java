@@ -2,17 +2,20 @@ package com.pahappa.dao;
 
 import com.pahappa.models.Doctor;
 import com.pahappa.util.HibernateUtil;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.hibernate.Session;
+
+import java.io.Serializable;
 import java.util.List;
 
-public class DoctorDao {
+@ApplicationScoped
+public class DoctorDao implements Serializable {
 
     // Create
     public void saveDoctor(Doctor doctor) {
         // Persist doctor without strict null checks; validation should be handled in service or JSF layer
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         session.persist(doctor);
-        session.flush();
     }
 
     // Read
@@ -35,20 +38,9 @@ public class DoctorDao {
             throw new IllegalArgumentException("All doctor fields and ID must be provided and not null.");
         }
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-        Doctor managedDoctor = session.get(Doctor.class, doctor.getId());
-        if (managedDoctor != null) {
-            managedDoctor.setFirstName(doctor.getFirstName());
-            managedDoctor.setLastName(doctor.getLastName());
-            managedDoctor.setSpecialization(doctor.getSpecialization());
-            managedDoctor.setContactNumber(doctor.getContactNumber());
-            managedDoctor.setEmail(doctor.getEmail());
-            managedDoctor.setDeleted(doctor.isDeleted());
-            if (doctor.getPassword() != null && !doctor.getPassword().isEmpty()) {
-                managedDoctor.setPassword(doctor.getPassword());
-            }
-            session.update(managedDoctor);
-            session.flush();
-        }
+
+            session.merge(doctor);
+
     }
 
     // Delete
@@ -58,7 +50,7 @@ public class DoctorDao {
         }
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Doctor doctor = session.get(Doctor.class, id);
-        if (doctor != null) session.delete(doctor);
+        if (doctor != null) session.remove(doctor);
     }
 
     // Search Queries by doctor specialization
@@ -79,7 +71,7 @@ public class DoctorDao {
         Doctor doctor = session.get(Doctor.class, id);
         if (doctor != null && !doctor.isDeleted()) {
             doctor.setDeleted(true);
-            session.update(doctor);
+            session.merge(doctor);
         }
     }
 
@@ -106,20 +98,30 @@ public class DoctorDao {
         Doctor doctor = session.get(Doctor.class, id);
         if (doctor != null && doctor.isDeleted()) {
             doctor.setDeleted(false);
-            session.update(doctor);
+            session.merge(doctor);
         }
     }
 
-    // Authenticate doctor
-    public Doctor authenticate(String email, String password) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM Doctor WHERE email = :email AND password = :password AND isDeleted = false", Doctor.class)
-                    .setParameter("email", email)
-                    .setParameter("password", password)
-                    .uniqueResult();
-        } catch (Exception e) {
-            e.printStackTrace();
+    public long countActiveDoctors() {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        String hql = "SELECT count(d.id) FROM Doctor d WHERE d.isDeleted = false";
+        Long count = session.createQuery(hql, Long.class).uniqueResult();
+        return count != null ? count : 0L;
+    }
+
+    public Doctor getDoctorByEmail(String email) {
+        if (email == null || email.isEmpty()) {
             return null;
         }
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+                        return session.createQuery("FROM com.pahappa.models.Doctor WHERE email= :email AND isDeleted = false", Doctor.class)
+                                .setParameter("email", email)
+                                .uniqueResult();
+                   } catch (Exception e) {
+                       // It's good practice to log the exception
+                        e.printStackTrace();
+                       return null;
+                    }
+
     }
-}
+    }

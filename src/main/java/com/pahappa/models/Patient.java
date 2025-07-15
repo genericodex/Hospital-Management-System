@@ -29,6 +29,7 @@ public class Patient {
      * manage entity lifecycle and primary key generation properly.
      */
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

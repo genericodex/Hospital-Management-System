@@ -1,8 +1,8 @@
 package com.pahappa.models;
-import com.pahappa.constants.StaffRoles;
+
 import jakarta.persistence.*;
 import java.util.Date;
-
+import com.pahappa.models.Role;
 @Entity
 @Table(name = "staff")
 public class Staff {
@@ -22,9 +22,10 @@ public class Staff {
     @Column(name = "contact_number", nullable = false)
     private String contactNumber;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private StaffRoles role; // RECEPTIONIST, NURSE, PHARMACIST, ADMIN
+    @ManyToOne
+    @JoinColumn(name = "role_id") // This will be a foreign key in your 'staff' table
+    private Role role;
+
 
     @Column(nullable = false)
     private String department;
@@ -43,7 +44,7 @@ public class Staff {
     public Staff() {}
 
     public Staff(String firstName, String lastName, String email, String contactNumber,
-                 StaffRoles role, String department, Date hireDate, String password, Boolean isDeleted) {
+                 Role role, String department, Date hireDate, String password, Boolean isDeleted) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -96,11 +97,11 @@ public class Staff {
         this.contactNumber = contactNumber;
     }
 
-    public StaffRoles getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(StaffRoles role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 

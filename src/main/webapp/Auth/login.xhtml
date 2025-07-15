@@ -13,13 +13,13 @@
 
 </h:head>
 
-<h:body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-700">
+<h:body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 to-green-700">
     <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center">
         <div class="flex flex-col items-center mb-8">
-            <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-2">
-                <i class="pi pi-hospital text-blue-600 text-3xl"/>
+            <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-2">
+                <i class="pi pi-hospital text-green-600 text-3xl"/>
             </span>
-            <h2 class="text-3xl font-extrabold text-blue-700 mb-2 tracking-tight">Hospital Management System</h2>
+            <h2 class="text-3xl font-extrabold text-green-700 mb-2 tracking-tight">Hospital Management System</h2>
             <p class="text-gray-500 text-sm">Sign in to your account</p>
         </div>
         <h:form id="loginForm" styleClass="w-full">
@@ -28,18 +28,13 @@
                 autoUpdate="true"
                 rendered="#{not empty facesContext.messageList}"
                 styleClass="mb-4 text-red-600 font-medium"
-                pt:class="w-full bg-red-100 rounded-2xl text-red-500 font-normal py-4 px-6 mb-4 shadow-sm border-0"/>
+                />
             <div class="space-y-6">
                 <div>
                     <label for="role" class="block text-gray-700 font-medium mb-1">Role</label>
                     <p:selectOneMenu id="role" value="#{loginRoleBean.role}"
-                                     pt='{
-                                         "root": {"class": "w-full flex rounded-lg shadow-sm mt-1 border border-gray-300 focus-within:ring-2 focus-within:ring-blue-400"},
-                                         "label": {"class": "w-full px-4 py-2 !text-gray-800 font-normal border-0 bg-transparent focus:!outline-none"},
-                                         "trigger": {"class": "flex items-center justify-center px-3 bg-gray-50 rounded-r-lg border-l border-gray-300"},
-                                         "panel": {"class": "bg-white border border-gray-300 rounded-lg shadow-lg mt-1"},
-                                         "item": {"class": "px-4 py-2 hover:bg-blue-50 cursor-pointer"}
-                                     }'>
+                                     styleClass="focus:!outline-none focus:ring-2 focus:!ring-green-400"
+                                     appendTo="@(this)">
                         <f:selectItem itemLabel="Staff" itemValue="staff" />
                         <f:selectItem itemLabel="Doctor" itemValue="doctor"/>
                     </p:selectOneMenu>
@@ -47,21 +42,20 @@
                 <div>
                     <label for="email" class="block text-gray-700 font-medium mb-1">Email</label>
                     <p:inputText id="email" value="#{loginRoleBean.email}" required="true" styleClass="w-full px-4 py-2 border
-                    border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    border-gray-300 rounded-lg focus:!outline-none focus:ring-2 focus:!ring-green-400" validatorMessage="Please enter a valid email address (e.g.,user@example.com)">
                         <f:validateRegex pattern="^.+@.+\.com$"/>
                     </p:inputText>
                 </div>
                 <div>
                     <label for="password" class="block text-gray-700 font-medium mb-1">Password</label>
                     <div class="relative">
-                        <p:password id="password" value="#{loginRoleBean.password}" required="true" feedback="false" pt:id="passwordField"
-                            styleClass="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 pr-12"/>
+                        <p:password id="password" value="#{loginRoleBean.password}" required="true" feedback="false" pt:id="passwordField" validatorMessage="Please enter a valid password"
+                            styleClass="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:!ring-green-400 pr-12"/>
                         <span class="absolute right-3 top-3 cursor-pointer" onclick="hideshow()">
                         <i id="eyeIcon" class="pi pi-eye text-gray-500"/>
                         </span>
                     </div>
-                    <script>
-                        const hideshow = () => {
+                    <script>const hideshow = () => {
                             const field = document.getElementById('passwordField');
                             const icon = document.getElementById('eyeIcon');
                             if (field.type === 'password') {
@@ -71,13 +65,18 @@
                                 field.type = 'password';
                                 icon.className = 'pi pi-eye text-gray-500';
                             }
-                        }
-                    </script>
+                        }</script>
                 </div>
                 <div>
-                    <p:commandButton value="Login" action="#{loginRoleBean.login}" update="messages"
+                    <!--It will trigger a traditional,
+                        full-page form submission.
+                        The browser will not send a background request;
+                        it will send the entire form and wait for a completely new page.-->
+                    <p:commandButton value="Login"
+                                     action="#{loginRoleBean.login}"
+                                     update="@form"
                                      ajax="false"
-                                     styleClass="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg
+                                     styleClass="w-full !bg-green-600 hover:!bg-green-700 !border-green-600 text-white font-semibold py-3 rounded-lg
                                      shadow-lg transition duration-200"/>
 
                 </div>

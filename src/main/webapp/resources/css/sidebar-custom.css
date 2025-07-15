@@ -1,0 +1,50 @@
+/* Sidebar underline and dropdown highlight enhancements */
+/*.sidebar-link, .sidebar-link:visited {*/
+/*  @apply flex items-center gap-2 px-4 py-2 font-semibold text-gray-600 rounded transition-all duration-200;*/
+/*}*/
+/*.sidebar-link:hover, .sidebar-link.active {*/
+/*  @apply underline underline-offset-4 decoration-2 decoration-blue-600 bg-blue-50;*/
+/*}*/
+
+/*!* Dropdown child highlight by icon color *!*/
+/*.sidebar-dropdown-child {*/
+/*  @apply block px-4 py-2 rounded font-medium flex items-center gap-2 transition-all duration-200;*/
+/*}*/
+/*.sidebar-dropdown-child:hover {*/
+/*  @apply underline underline-offset-4;*/
+/*}*/
+/*.sidebar-dropdown-child.patients:hover {*/
+/*  @apply bg-blue-50 text-blue-700;*/
+/*}*/
+/*.sidebar-dropdown-child.doctors:hover {*/
+/*  @apply bg-green-50 text-green-700;*/
+/*}*/
+/*.sidebar-dropdown-child.appointments:hover {*/
+/*  @apply bg-yellow-50 text-yellow-700;*/
+/*}*/
+/*.sidebar-dropdown-child.billing:hover {*/
+/*  @apply bg-purple-50 text-purple-700;*/
+/*}*/
+/*.sidebar-dropdown-child.staff:hover {*/
+/*  @apply bg-pink-50 text-pink-700;*/
+/*}*/
+/* Keep the sidebar open on medium screens and
+      larger */
+ @media (min-width: 768px) {
+     #sidebar {
+         transform: translateX(0);
+     }
+ }
+
+ /* When the sidebar is toggled, it will slide in
+      from the left */
+ #sidebar.-translate-x-full {
+     transform: translateX(-100%);
+ }
+
+ /* The main content should have a margin to the
+      left when the sidebar is open */
+#main-content.md\\:ml-64 {
+          margin-left: 16rem; /* 64 * 0.25rem = 16rem */
+      }
+

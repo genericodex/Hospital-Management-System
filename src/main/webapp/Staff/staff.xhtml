@@ -13,41 +13,49 @@
             <p:growl id="messages" showDetail="true" autoUpdate="true"/>
 
             <p:toolbar>
-                <f:facet name="left">
+                <p:toolbarGroup name="left">
                     <p:commandButton value="Add New" icon="pi pi-plus"
+                                     process="@this"
+                                     styleClass="!bg-green-600 !border-green-600"
                                      action="#{staffBean.initNewStaff}"
                                      update=":staffForm:staffDialog"
-                                     oncomplete="PF('staffDialog').show()"/>
+                                     oncomplete="PF('staffDialog').show()"
+                                     rendered="#{authBean.staff.role.name == 'ADMIN' ||  authBean.staff.role.name == 'IT SUPPORT'}"/>
 
                     <span style="display:inline-block; width:0.75rem;"/>
 
-                    <p:commandButton value="Delete Selected" icon="pi pi-trash"
-                                     disabled="#{empty staffBean.selectedStaffList}"
-                                     action="#{staffBean.deleteSelectedStaff}"
-                                     update=":staffForm:messages,:staffForm:staffTable"
-                                     styleClass="!bg-red-500 hover:!bg-red-600 text-white font-semibold py-1 px-2 rounded
-                                         !border !border-red-500 shadow text-xs min-w-[28px] min-h-[28px]"/>
-                </f:facet>
+                </p:toolbarGroup>
 
-                <f:facet name="right">
+                <p:toolbarGroup name="center">
+                    <div class="text-2xl font-bold text-green-700/20 hover:text-green-700 " style="letter-spacing: 3rem">
+                        STAFF
+                    </div>
+                </p:toolbarGroup>
+
+                <p:toolbarGroup name="right">
                     <p:commandButton value="View Deleted" icon="pi pi-history"
+                                     process="@this"
                                      action="#{staffBean.loadDeletedStaff}"
+                                     styleClass="!bg-green-600 !border-green-600"
                                      update=":staffForm:deletedStaffDialog"
-                                     oncomplete="PF('deletedStaffDialog').show()"/>
-                </f:facet>
+                                     oncomplete="PF('deletedStaffDialog').show()"
+                                     rendered="#{authBean.staff.role.name == 'ADMIN' ||  authBean.staff.role.name == 'IT SUPPORT'}"/>
+                </p:toolbarGroup>
             </p:toolbar>
 
             <!-- Search Bar -->
             <div class="mb-2 pt-2 flex items-center gap-2">
-                <p:inputText value="#{staffBean.searchTerm}" placeholder="Search by name or department..." styleClass="w-64"/>
-                <p:commandButton value="Search" icon="pi pi-search" action="#{staffBean.searchStaff}" update="staffForm:staffTable"/>
+                <p:inputText id="searchInput" value="#{staffBean.searchTerm}" placeholder="Search by name or department..." styleClass="w-64"/>
+                <p:commandButton value="Search" icon="pi pi-search" action="#{staffBean.searchStaff}"
+                                 process="searchInput @this"
+                                 update="staffForm:staffTable" styleClass="!bg-green-600 !border-green-600"/>
             </div>
 
             <p:dataTable id="staffTable" var="staff" value="#{staffBean.filteredStaffList}"
                          paginator="true" rows="10" selection="#{staffBean.selectedStaffList}"
                          rowKey="#{staff.id}" emptyMessage="No staff members found" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
 
-                <p:column selectionMode="multiple" style="width:3%"/>
+                <p:column selectionMode="multiple" style="width:3%" rendered="#{authBean.staff.role.name == 'ADMIN'}"/>
 
                 <p:column headerText="ID" sortBy="#{staff.id}">
                     <h:outputText value="#{staff.id}"/>
@@ -57,8 +65,8 @@
                     <h:outputText value="#{staff.firstName} #{staff.lastName}"/>
                 </p:column>
 
-                <p:column headerText="Role" sortBy="#{staff.role}">
-                    <h:outputText value="#{staff.role}"/>
+                <p:column headerText="Role" sortBy="#{staff.role.name}">
+                    <h:outputText value="#{staff.role.name}"/>
                 </p:column>
 
                 <p:column headerText="Department" sortBy="#{staff.department}">
@@ -69,10 +77,12 @@
                     <h:outputText value="#{staff.email}"/>
                 </p:column>
 
-                <p:column headerText="Actions" style="width:10%">
+                <p:column headerText="Actions" style="width:10%" rendered="#{authBean.staff.role.name == 'ADMIN' || authBean.staff.role.name == 'IT SUPPORT'}">
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
 
                     <p:commandButton icon="pi pi-pencil" title="Edit"
+                                     process="@this"
+                                     styleClass="!bg-gray-300 hover:!bg-gray-400 !border-gray-300 !text-black !font-medium"
                                      action="#{staffBean.editStaff(staff)}"
                                      update=":staffForm:staffDialog"
                                      oncomplete="PF('staffDialog').show()"/>
@@ -88,6 +98,7 @@
 
             <!-- Add/Edit Staff Dialog -->
             <p:dialog id="staffDialog" header="Staff Details" widgetVar="staffDialog" modal="true" resizable="false">
+                <h:panelGroup id="staffDialogContent" layout="block">
                 <h:panelGrid columns="2" cellpadding="5">
                     <h:outputLabel for="firstName" value="First Name:"/>
                     <p:inputText id="firstName" value="#{staffBean.selectedStaff.firstName}" required="true"/>
@@ -96,28 +107,42 @@
                     <p:inputText id="lastName" value="#{staffBean.selectedStaff.lastName}" required="true"/>
 
                     <h:outputLabel for="email" value="Email:"/>
-                    <p:inputText id="email" value="#{staffBean.selectedStaff.email}" required="true"/>
+                    <p:inputText id="email" value="#{staffBean.selectedStaff.email}" required="true" validatorMessage="Enter a valid email address format"
+                                 placeholder="Enter email...">
+                        <f:validateRegex pattern="^.+@.+\.com$"/>
+                        <f:ajax event="blur" render=":staffForm:messages"/>
+                    </p:inputText>
 
                     <h:outputLabel for="phone" value="Phone:"/>
-                    <p:inputText id="phone" value="#{staffBean.selectedStaff.contactNumber}" required="true"/>
+                    <p:inputText id="phone" value="#{staffBean.selectedStaff.contactNumber}" required="true" maxlength="10"
+                                 pattern="\d{10}" title="Phone number must be exactly 10 digits." validatorMessage="Phone number must be exactly 10 digits.">
+                        <f:validateRegex pattern="\d{10}" />
+                        <f:ajax event="blur" render=":staffForm:messages"/>
+                    </p:inputText>
 
                     <h:outputLabel for="role" value="Role:"/>
-                    <p:selectOneMenu id="role" value="#{staffBean.selectedStaff.role}" required="true">
-                        <f:selectItems value="#{staffBean.availableRoles}" var="role" itemLabel="#{role}" itemValue="#{role}"/>
+                    <p:selectOneMenu id="role" value="#{staffBean.selectedStaff.role}" required="true" converter="roleConverter">
+                        <f:selectItems value="#{staffBean.availableRoles}" var="role"
+                                       itemLabel="#{role.name}" itemValue="#{role}"/>
                     </p:selectOneMenu>
 
                     <h:outputLabel for="department" value="Department:"/>
                     <p:inputText id="department" value="#{staffBean.selectedStaff.department}" required="true"/>
 
                     <h:outputLabel for="hireDate" value="Hire Date:"/>
-                    <p:calendar id="hireDate" value="#{staffBean.selectedStaff.hireDate}" pattern="yyyy-MM-dd" required="true"/>
+                    <p:calendar id="hireDate" value="#{staffBean.selectedStaff.hireDate}" pattern="yyyy-MM-dd" required="true" navigator="true" yearRange="c-100:c" maxdate="#{now}" validatorMessage="Enter a valid hire date">
+                        <f:ajax event="blur" render=":staffForm:messages"/>
+                    </p:calendar>
 
                     <h:outputLabel for="password" value="Password:" rendered="#{staffBean.newStaff}"/>
-                    <p:password id="password" value="#{staffBean.password}" rendered="#{staffBean.newStaff}" required="true" feedback="true"/>
+                    <p:password id="password" value="#{staffBean.password}" rendered="#{staffBean.newStaff}" required="true" toggleMask="true" feedback="true"/>
                 </h:panelGrid>
+                </h:panelGroup>
+
 
                 <f:facet name="footer">
                     <p:commandButton value="Save" action="#{staffBean.saveStaff}"
+                                     process="staffDialogContent @this"
                                      update=":staffForm:messages,:staffForm:staffTable"
                                      oncomplete="if(!args.validationFailed) PF('staffDialog').hide()"/>
                     <p:commandButton value="Cancel" onclick="PF('staffDialog').hide()" type="button"/>
@@ -136,13 +161,9 @@
                     </p:column>
 
                     <p:column headerText="Role">
-                        <h:outputText value="#{staff.role}"/>
+                        <h:outputText value="#{staff.role.name}"/>
                     </p:column>
 
-                    <p:column headerText="Actions">
-                        <p:commandButton value="Restore" action="#{staffBean.restoreStaff(staff.id)}"
-                                         update=":staffForm:messages,:staffForm:staffTable,:staffForm:deletedStaffDialog"/>
-                    </p:column>
                 </p:dataTable>
             </p:dialog>
         </h:form>

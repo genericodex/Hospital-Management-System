@@ -2,9 +2,10 @@ package com.pahappa.dao;
 
 import com.pahappa.models.Staff;
 import com.pahappa.util.HibernateUtil;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.hibernate.Session;
 import java.util.List;
-
+@ApplicationScoped //
 public class StaffDao {
 
     // Create
@@ -24,7 +25,7 @@ public class StaffDao {
         newStaff.setHireDate(staff.getHireDate());
         newStaff.setPassword(staff.getPassword());
         newStaff.setDeleted(staff.isDeleted());
-        session.save(newStaff);
+        session.persist(newStaff);
     }
 
     // Read
@@ -59,7 +60,7 @@ public class StaffDao {
             managedStaff.setHireDate(staff.getHireDate());
             managedStaff.setPassword(staff.getPassword());
             managedStaff.setDeleted(staff.isDeleted());
-            session.update(managedStaff);
+            session.merge(managedStaff);
         }
     }
 
@@ -70,7 +71,7 @@ public class StaffDao {
         }
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Staff staff = session.get(Staff.class, id);
-        if (staff != null) session.delete(staff);
+        if (staff != null) session.remove(staff);
     }
 
     public Staff authenticate(String email, String password) {
@@ -93,7 +94,7 @@ public class StaffDao {
         Staff staff = session.get(Staff.class, id);
         if (staff != null && !staff.isDeleted()) {
             staff.setDeleted(true);
-            session.update(staff);
+            session.merge(staff);
         }
     }
 
@@ -124,8 +125,15 @@ public class StaffDao {
         Staff staff = session.get(Staff.class, id);
         if (staff != null && staff.isDeleted()) {
             staff.setDeleted(false);
-            session.update(staff);
+            session.merge(staff);
         }
+    }
+
+    public long countActiveStaff() {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        String hql = "SELECT count(s.id) FROM Staff s WHERE s.isDeleted = false";
+        Long count = session.createQuery(hql, Long.class).uniqueResult();
+        return count != null ? count : 0L;
     }
 
     public Staff getStaffByEmail(String email) {
@@ -133,7 +141,7 @@ public class StaffDao {
             throw new IllegalArgumentException("Email must not be null or empty.");
         }
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM com.pahappa.models.Staff WHERE email = :email", Staff.class)
+            return session.createQuery("FROM com.pahappa.models.Staff WHERE email = :email AND isDeleted = false", Staff.class)
                     .setParameter("email", email)
                     .uniqueResult();
         } catch (Exception e) {

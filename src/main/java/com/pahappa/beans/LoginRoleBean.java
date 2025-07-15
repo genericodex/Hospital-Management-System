@@ -22,24 +22,38 @@ public class LoginRoleBean implements Serializable {
     private DoctorAuthBean doctorAuthBean;
 
     public String login() {
-        if ("doctor".equals(role)) {
-            doctorAuthBean.setEmail(email);
-            doctorAuthBean.setPassword(password);
-            String result = doctorAuthBean.login();
-            if (result == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login Failed", "Invalid doctor credentials or account deleted."));
+        String result = null;
+        try {
+            if ("doctor".equals(role)) {
+                authBean.reset();
+                doctorAuthBean.setEmail(email);
+                doctorAuthBean.setPassword(password);
+                System.out.println("The username is " + doctorAuthBean.getEmail() + " and the password is " + doctorAuthBean.getPassword());
+                result = doctorAuthBean.login();
+                System.out.println("The result is " + result);
+            } else {
+                doctorAuthBean.reset();
+                authBean.setEmail(email);
+                authBean.setPassword(password);
+                result = authBean.login();
             }
-            return result;
-        } else {
-            authBean.setEmail(email);
-            authBean.setPassword(password);
-            String result = authBean.login();
-            if (result == null) {
+
+            if (result != null) {
+                // On SUCCESS, append the redirect parameter and navigate.
+                return result + "?faces-redirect=true";
+            } else {
+                // On FAILURE, add the message and return null to stay on the same page.
                 FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login Failed", "Invalid staff credentials or account deleted."));
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Login Failed", "Invalid credentials or account is inactive."));
+                return null;
             }
-            return result;
+
+        } catch (Exception e) {
+            // Catch any unexpected errors from the backend
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_FATAL, "System Error", "An unexpected error occurred. Please contact support."));
+            e.printStackTrace();
+            return null;
         }
     }
 

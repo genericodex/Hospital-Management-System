@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<ui:composition template="/template.xhtml">
+    <ui:define name="title">My Profile</ui:define>
+
+    <ui:define name="content">
+        <!-- Growl component to display success/error messages -->
+        <p:growl id="messages" showDetail="true" skipDetailIfEqualsSummary="true" />
+
+        <div class="max-w-9xl bg-white rounded-2xl  shadow p-8 mb-8">
+            <div class="flex items-center mb-8">
+                <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mr-4">
+                    <i class="pi pi-user text-green-600 text-3xl"/>
+                </span>
+                <div>
+                    <h2 class="text-3xl font-extrabold text-green-700 tracking-tight">My Profile</h2>
+                    <p class="text-gray-500">Manage your personal and security settings.</p>
+                </div>
+            </div>
+
+
+            <h:form id="profileForm">
+                <h:panelGroup layout="block" styleClass="mb-6 text-right">
+                    <p:commandButton value="#{authBean.editMode ? 'Cancel' : 'Edit Profile'}"
+                                     action="#{authBean.toggleEditMode}"
+                                     update="profileForm"
+                                     styleClass="#{authBean.editMode ? '!bg-red-500' : '!bg-green-500'} #{authBean.editMode ? 'hover:!bg-red-700' : 'hover:!bg-green-700'} #{authBean.editMode ? '!border-red-500' : '!border-green-500'} text-white font-bold py-2 px-6 rounded-lg
+                                     shadow transition duration-200"/>
+                </h:panelGroup>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">First Name</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-id-card text-green-500 mr-2"/>
+                            <h:outputText value="#{authBean.staff.firstName}" styleClass="font-semibold text-gray-700"
+                                          rendered="#{!authBean.editMode}"/>
+                            <p:inputText value="#{authBean.staff.firstName}" rendered="#{authBean.editMode}"
+                                         styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0"/>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">Last Name</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-id-card text-green-500 mr-2"/>
+                            <h:outputText value="#{authBean.staff.lastName}" styleClass="font-semibold text-gray-700"
+
+                                          rendered="#{!authBean.editMode}"/>
+                            <p:inputText value="#{authBean.staff.lastName}" rendered="#{authBean.editMode}"
+
+                                         styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0"/>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">Email</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-envelope text-green-500 mr-2"/>
+                            <h:outputText value="#{authBean.staff.email}" styleClass="font-semibold text-gray-700"
+
+                                          rendered="#{!authBean.editMode}"/>
+                            <p:inputText value="#{authBean.staff.email}" rendered="#{authBean.editMode}"
+
+                                         styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0"/>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">Role</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-briefcase text-green-500 mr-2"/>
+                            <h:outputText value="#{authBean.staff.role}" styleClass="font-semibold text-gray-700" rendered="#{!authBean.editMode}"/>
+                            <p:selectOneMenu value="#{authBean.staff.role}" rendered="disabled" styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0">
+                                <f:selectItems value="#{settingsBean.roles}" var="spec" itemValue="#{spec}" itemLabel="#{spec}"/>
+                            </p:selectOneMenu>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-xs mb-1">Contact Number</span>
+                        <div class="flex items-center bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+                            <i class="pi pi-phone text-green-500 mr-2"/>
+                            <h:outputText value="#{authBean.staff.contactNumber}" styleClass="font-semibold text-gray-700"
+                                          rendered="#{!authBean.editMode}"/>
+                            <p:inputText value="#{authBean.staff.contactNumber}" rendered="#{authBean.editMode}"
+                                         styleClass="font-semibold text-gray-700 w-full bg-transparent border-0 focus:ring-0"/>
+                        </div>
+                    </div>
+
+                </div>
+                <h:panelGroup layout="block" styleClass="mt-8 text-right" rendered="#{authBean.editMode}">
+                    <p:commandButton value="Save Changes" action="#{authBean.saveProfile}" update="profileForm"
+                                     styleClass="!bg-green-500 hover:!bg-green-700 !border-green-300 hover:!border-green-500
+                                     text-white font-bold py-2 px-6 rounded-lg shadow transition duration-200 mr-2"/>
+                    <span style="display:inline-block; width:0.75rem;"/>
+                    <p:commandButton value="Cancel" action="#{authBean.toggleEditMode}" update="profileForm"
+                                     styleClass="!bg-gray-400 hover:!bg-gray-600 !border-gray-400 text-white font-bold py-2 px-6 rounded-lg shadow
+                                     transition duration-200"/>
+                </h:panelGroup>
+            </h:form>
+        <!-- FIX: Add a new, separate section for changing the password -->
+        <div class="border-t border-gray-200 mt-8 pt-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold text-green-700">Change Password</h3>
+                    <p class="text-gray-500 mt-1">Update your password for enhanced security.</p>
+                </div>
+                <h:form>
+                    <p:commandButton value="#{authBean.showPasswordChangeForm ? 'Cancel' : 'Change Password'}"
+                                     action="#{authBean.togglePasswordChange}"
+                                     update=":passwordChangeForm"
+                                     styleClass="#{authBean.showPasswordChangeForm ? '!bg-gray-500' : '!bg-green-500'} #{authBean.showPasswordChangeForm ? '!border-gray-500' : '!border-green-500'} text-white font-bold py-2 px-6 rounded-lg shadow transition duration-200"/>
+                </h:form>
+            </div>
+            <h:form id="passwordChangeForm">
+                <h:panelGroup layout="block" styleClass="mt-6" rendered="#{authBean.showPasswordChangeForm}">
+                    <div class="space-y-4 max-w-md">
+                        <div>
+                            <p:outputLabel for="currentPassword" value="Current Password" styleClass="font-semibold"/>
+                            <p:password id="currentPassword" value="#{authBean.currentPassword}" required="true"
+                                        styleClass="w-full mt-1 ml-9" toggleMask="true"/>
+                        </div>
+                        <div>
+                            <p:outputLabel for="newPassword" value="New Password" styleClass="font-semibold"/>
+                            <p:password id="newPassword" value="#{authBean.newPassword}" required="true"
+                                        styleClass="w-full mt-1 ml-14" feedback="true" toggleMask="true"
+                                        match="confirmPassword" validatorMessage="Passwords do not match."/>
+                        </div>
+                        <div>
+                            <p:outputLabel for="confirmPassword" value="Confirm New Password" styleClass="font-semibold"/>
+                            <p:password id="confirmPassword" value="#{authBean.confirmPassword}" required="true"
+                                        styleClass="w-full mt-1" toggleMask="true"/>
+                        </div>
+                        <div class="text-right">
+                            <p:commandButton value="Save New Password"
+                                             action="#{authBean.changePassword}"
+                                             update=":messages :passwordChangeForm"
+                                             styleClass="ui-button-success"/>
+                        </div>
+                    </div>
+                </h:panelGroup>
+            </h:form>
+        </div>
+        </div>
+    </ui:define>
+</ui:composition>
+</html>

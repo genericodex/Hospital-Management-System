@@ -20,7 +20,7 @@ import org.hibernate.cfg.Configuration;
  *                                      * In Hibernate: The complete understanding of your database structure
  *                  SessionFactory = The constructed house. The final usable structure built from the blueprint
  * So here, the object that creates database sessions is in HibernateUtil.java
-
+ * <p>
  *       1. Get building materials (MetadataSources)
  *      MetadataSources sources = new MetadataSources(registry);
  * <p>
@@ -33,12 +33,14 @@ import org.hibernate.cfg.Configuration;
  * <p>
  *      4. Build the house (SessionFactory)
  *      sessionFactory = metadata.getSessionFactoryBuilder().build();
- *          Key Concepts Explained Simply
+ *      <p>
+ *          Key Concepts Explained Simply<p>
  * 1. MetadataSources - The Raw Materials * What it is: A collection point for all your database mapping information
  *              What it contains: * Your entity classes (Patient.java, Doctor.java)
  *                                  * Configuration files (hibernate.cfg.xml)
  *                                  * Database connection settings
  *                                  * Analogy: Like gathering all your construction materials in one place before building
+ *                                  <p>
  * 2. Metadata - The Blueprint * What it is: The complete understanding of your database structure
  *                              * What it contains: How Java classes map to database tables,
  *                                                  Relationships between entities (e.g., Doctor has many Appointments)
@@ -61,6 +63,8 @@ public class HibernateUtil {
                 configuration.addAnnotatedClass(Appointment.class);
                 configuration.addAnnotatedClass(Billing.class);
                 configuration.addAnnotatedClass(Staff.class);
+                configuration.addAnnotatedClass(Role.class);
+                configuration.addAnnotatedClass(Permissions.class);
 
                 registry = new StandardServiceRegistryBuilder()
                         .applySettings(configuration.getProperties())
@@ -75,6 +79,8 @@ public class HibernateUtil {
                 sources.addAnnotatedClass(Billing.class);
                 sources.addAnnotatedClass(AuditLog.class);
                 sources.addAnnotatedClass(Staff.class);
+                sources.addAnnotatedClass(Role.class);
+                sources.addAnnotatedClass(Permissions.class);
 
                 Metadata metadata = sources.getMetadataBuilder().build();
                 sessionFactory = metadata.getSessionFactoryBuilder().build();

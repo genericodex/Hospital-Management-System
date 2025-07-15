@@ -1,10 +1,10 @@
 package com.pahappa.beans;
 
-import com.pahappa.constants.StaffRoles;
+import com.pahappa.dao.RoleDao;
+import com.pahappa.models.Role;
 import com.pahappa.models.Staff;
 import com.pahappa.services.staff.impl.StaffServiceImpl;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -26,7 +26,10 @@ public class StaffBean implements Serializable {
     private StaffServiceImpl staffService;
 
     @Inject
-    private SettingsBean settingsBean;
+    private AuthBean authBean; // Injected to get the current user's role
+
+    private final RoleDao roleDao = new RoleDao();
+    private List<Role> availableRoles;
 
     private List<Staff> staffList;
     private List<Staff> selectedStaffList;
@@ -40,9 +43,36 @@ public class StaffBean implements Serializable {
 
     @PostConstruct
     public void init() {
-        staffList = staffService.getAllActiveStaff();
-        selectedStaff = new Staff();
+        this.selectedStaff = new Staff();
+        try {
+            // Load all necessary data ONCE.
+            staffList = staffService.getAllActiveStaff();
+            filteredStaffList = new ArrayList<>(staffList);
+            availableRoles = roleDao.findAll(); // Assumes you add this to your service
+            deletedStaff = new ArrayList<>(); // Initialize to prevent nulls
+        } catch (Exception e) {
+            // Prevent page from crashing if DB is down
+            staffList = new ArrayList<>();
+            availableRoles = new ArrayList<>();
+            filteredStaffList = new ArrayList<>();
+            deletedStaff = new ArrayList<>();
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not load staff data."));
+        }
     }
+    // --- Helper methods for security ---
+    private boolean isAdmin() {
+        if (authBean != null && authBean.getStaff() != null && authBean.getStaff().getRole() != null) {
+            return "ADMIN".equals(authBean.getStaff().getRole().getName())|| "IT SUPPORT".equals(authBean.getStaff().getRole().getName());
+        }
+        return false;
+    }
+
+    private void showAccessDeniedMessage() {
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "You do not have permission to perform this action."));
+    }
+
+    // --- Action Methods ---
 
     public void initNewStaff() {
         selectedStaff = new Staff();
@@ -51,12 +81,15 @@ public class StaffBean implements Serializable {
     }
 
     public void editStaff(Staff staff) {
-        // Always fetch a fresh, managed entity from the DB for editing
         this.selectedStaff = staffService.getStaffById(staff.getId());
         this.newStaff = false;
     }
 
     public void saveStaff() {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
             if (selectedStaff.getId() == null) {
                 staffService.createStaff(
@@ -74,27 +107,12 @@ public class StaffBean implements Serializable {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Staff member created successfully"));
             } else {
-                Staff managedStaff = staffService.getStaffById(selectedStaff.getId());
-                if (managedStaff != null) {
-                    managedStaff.setFirstName(selectedStaff.getFirstName());
-                    managedStaff.setLastName(selectedStaff.getLastName());
-                    managedStaff.setEmail(selectedStaff.getEmail());
-                    managedStaff.setContactNumber(selectedStaff.getContactNumber());
-                    managedStaff.setRole(selectedStaff.getRole());
-                    managedStaff.setDepartment(selectedStaff.getDepartment());
-                    managedStaff.setHireDate(selectedStaff.getHireDate());
-                    managedStaff.setPassword(selectedStaff.getPassword());
-                    managedStaff.setDeleted(selectedStaff.isDeleted());
-                    // Pass current user as actor for audit log
-                    staffService.updateStaff(managedStaff, selectedStaff);
-                }
+                staffService.updateStaff(selectedStaff, authBean.getStaff()); // Pass current user as actor
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Staff member updated successfully"));
             }
-            staffList = staffService.getAllActiveStaff();
-            selectedStaff = new Staff();
+            init();
             password = null;
-            newStaff = false;
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
@@ -102,9 +120,12 @@ public class StaffBean implements Serializable {
     }
 
     public void deleteStaff(Staff staff) {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
-            // Pass current user as actor for audit log
-            staffService.softDeleteStaff(staff.getId(), selectedStaff);
+            staffService.softDeleteStaff(staff.getId(), authBean.getStaff()); // Pass current user as actor
             staffList = staffService.getAllActiveStaff();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Staff member deleted successfully"));
@@ -112,12 +133,17 @@ public class StaffBean implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage()));
         }
+        init();
     }
 
     public void deleteSelectedStaff() {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
             for (Staff staff : selectedStaffList) {
-                staffService.softDeleteStaff(staff.getId(), selectedStaff);
+                staffService.softDeleteStaff(staff.getId(), authBean.getStaff()); // Pass current user as actor
             }
             staffList = staffService.getAllActiveStaff();
             FacesContext.getCurrentInstance().addMessage(null,
@@ -130,8 +156,12 @@ public class StaffBean implements Serializable {
     }
 
     public void restoreStaff(Long id) {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
-            staffService.restoreStaff(id, selectedStaff);
+            staffService.restoreStaff(id, authBean.getStaff()); // Pass current user as actor
             staffList = staffService.getAllActiveStaff();
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Staff member restored successfully"));
@@ -142,8 +172,12 @@ public class StaffBean implements Serializable {
     }
 
     public void hardDeleteStaff(Long id) {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            return;
+        }
         try {
-            staffService.deleteStaff(id, selectedStaff);
+            staffService.deleteStaff(id, authBean.getStaff()); // Pass current user as actor
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage("Staff member permanently deleted"));
         } catch (Exception e) {
@@ -159,28 +193,26 @@ public class StaffBean implements Serializable {
             String lower = searchTerm.toLowerCase();
             filteredStaffList = staffList.stream()
                 .filter(s -> (s.getFirstName() + " " + s.getLastName()).toLowerCase().contains(lower)
-                    || (s.getDepartment() != null && s.getDepartment().toLowerCase().contains(lower)))
+                    || (s.getDepartment() != null && s.getDepartment().toLowerCase().contains(lower) || (s.getRole() != null && s.getRole().getName().toLowerCase().contains(lower))))
                 .toList();
         }
     }
 
     public void loadDeletedStaff() {
+        if (!isAdmin()) {
+            showAccessDeniedMessage();
+            // Also clear the list to prevent showing data from a previous admin session
+            deletedStaff = new ArrayList<>();
+            return;
+        }
         deletedStaff = staffService.getDeletedStaff();
     }
 
-    public StaffRoles[] getRoles() {
-        return StaffRoles.values();
+    public List<Role> getAvailableRoles() {
+        return availableRoles;
     }
 
-    public List<String> getAvailableRoles() {
-        return settingsBean.getRoles();
-    }
-
-    public List<String> getAvailableSpecializations() {
-        return settingsBean.getSpecializations();
-    }
-
-    // Getters and Setters
+    // --- Getters and Setters ---
     public List<Staff> getStaffList() {
         if (staffList == null || staffList.isEmpty()) {
             staffList = staffService.getAllActiveStaff();
@@ -199,15 +231,14 @@ public class StaffBean implements Serializable {
     public String getSearchTerm() { return searchTerm; }
     public void setSearchTerm(String searchTerm) { this.searchTerm = searchTerm; }
     public List<Staff> getFilteredStaffList() {
-        if (filteredStaffList == null || filteredStaffList.isEmpty()) {
-            filteredStaffList = new ArrayList<>(getStaffList());
-        }
         return filteredStaffList;
     }
     public List<Staff> getDeletedStaff() {
         if (deletedStaff == null) {
-            deletedStaff = staffService.getDeletedStaff();
+            deletedStaff = new ArrayList<>(); // Initialize to avoid nulls
         }
         return deletedStaff;
     }
+
+
 }

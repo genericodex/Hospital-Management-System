@@ -4,6 +4,8 @@ import com.pahappa.constants.BillingStatus;
 import com.pahappa.dao.BillingDao;
 import com.pahappa.models.Billing;
 import com.pahappa.models.Patient;
+
+import java.time.LocalDate;
 import java.util.List;
 
 import com.pahappa.services.HospitalService;
@@ -12,9 +14,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import com.pahappa.models.Doctor;
 import com.pahappa.models.Appointment;
 import com.pahappa.models.Staff;
-import com.pahappa.constants.StaffRoles;
-import java.util.Date;
+import jakarta.inject.Named;
 
+import java.util.Date;
+import java.util.Map;
+
+@Named
 @ApplicationScoped
 public class BillingServiceImpl implements BillingService {
     private final BillingDao billingDao = new BillingDao();
@@ -76,6 +81,21 @@ public class BillingServiceImpl implements BillingService {
     @Override
     public void restoreBilling(Long id) {
         billingDao.restoreBilling(id);
+    }
+
+    @Override
+    public List<Billing> findBillings(Long patientId, String paymentMethod) {
+        // The service layer's job is to delegate the call to the correct DAO method.
+        return billingDao.findBillings(patientId, paymentMethod);
+    }
+
+    @Override
+    public double getTotalRevenue() {
+        return billingDao.getTotalRevenue();
+    }
+    @Override
+    public Map<LocalDate, Double> getDailyRevenue(LocalDate startDate, LocalDate endDate) {
+        return billingDao.getDailyRevenue(startDate, endDate);
     }
 
     public List<Billing> getDeletedBillings() {

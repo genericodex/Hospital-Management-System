@@ -4,7 +4,9 @@ import com.pahappa.constants.BillingStatus;
 import com.pahappa.constants.PaymentMethod;
 import com.pahappa.models.Billing;
 import com.pahappa.models.Patient;
+import com.pahappa.services.billing.BillingService;
 import com.pahappa.services.billing.impl.BillingServiceImpl;
+import com.pahappa.services.patient.PatientService;
 import com.pahappa.services.patient.impl.PatientServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
@@ -16,6 +18,8 @@ import jakarta.inject.Named;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -26,13 +30,17 @@ public class BillingBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Inject
-    private BillingServiceImpl billingService;
+    private transient BillingService billingService;
 
     @Inject
-    private PatientServiceImpl patientService;
+    private transient PatientService patientService;
+
+    @Inject
+    private transient AuthBean authBean;
 
     private List<Billing> billings;
     private List<Billing> selectedBillings;
+    private PaymentMethod selectedPaymentMethod;
     private Billing selectedBilling;
     private List<Patient> patients;
     private String paymentMethod;
@@ -40,32 +48,26 @@ public class BillingBean implements Serializable {
     private Integer searchPatientId;
     private List<Billing> deletedBillings;
     private Long billingToDeleteId;
+    private String filterByPaymentMethod;
 
     @PostConstruct
     public void init() {
-        if (billingService == null) {
-            billings = new java.util.ArrayList<>();
-            patients = new java.util.ArrayList<>();
-            selectedBilling = new Billing();
-            return;
-        }
+        this.searchPatientId = null; // Reset search
+        this.filterByPaymentMethod = null; // NEW: Reset payment method filter
+        billings = billingService.getAllBillings();
         try {
+            this.selectedBilling = new Billing();
             billings = billingService.getAllBillings();
+            patients = patientService.getAllActivePatient();
+            deletedBillings = new ArrayList<>();
         } catch (Exception e) {
-            billings = new java.util.ArrayList<>();
+            System.out.println("Failed to initialize BillingBean");
+            billings = new ArrayList<>();
+            patients = new ArrayList<>();
+            deletedBillings = new ArrayList<>();
+
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not load billing data."));
         }
-        if (billings == null) {
-            billings = new java.util.ArrayList<>();
-        }
-        try {
-            patients = patientService.getAllPatients();
-        } catch (Exception e) {
-            patients = new java.util.ArrayList<>();
-        }
-        if (patients == null) {
-            patients = new java.util.ArrayList<>();
-        }
-        selectedBilling = new Billing();
     }
 
     public void initNewBilling() {
@@ -75,6 +77,10 @@ public class BillingBean implements Serializable {
     }
 
     public void saveBilling() {
+        if (!authBean.hasPermission("BILLING_CREATE")) {
+            FacesContext.getCurrentInstance().addMessage(null,new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "You do not have permission to perform this action."));
+            return;
+        }
         try {
             if (selectedBilling.getId() == null) { // New bill
                 billingService.createBilling(
@@ -111,7 +117,12 @@ public class BillingBean implements Serializable {
         paymentMethod = null;
     }
 
+
     public void processPayment() {
+        if (!authBean.hasPermission("BILLING_PROCESS_PAYMENT")) {
+            FacesContext.getCurrentInstance().addMessage(null,new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "You do not have permission to perform this action."));
+            return;
+        }
         try {
             if (selectedBilling == null || selectedBilling.getId() == null) {
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -120,7 +131,7 @@ public class BillingBean implements Serializable {
             }
             Billing managedBilling = billingService.getBillingById(selectedBilling.getId());
             if (managedBilling != null) {
-                billingService.processPayment(managedBilling, paymentMethod);
+                billingService.processPayment(managedBilling, selectedPaymentMethod.name());
                 billings = billingService.getAllBillings();
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage("Payment processed successfully"));
@@ -209,6 +220,52 @@ public class BillingBean implements Serializable {
     public PaymentMethod[] getPaymentMethods() {
         return PaymentMethod.values();
     }
+
+    // Add getter and setter for the new field
+    public PaymentMethod getSelectedPaymentMethod() {
+        return selectedPaymentMethod;
+    }
+
+    public void setSelectedPaymentMethod(PaymentMethod selectedPaymentMethod) {
+        this.selectedPaymentMethod = selectedPaymentMethod;
+    }
+
+    public String getPaymentMethodDisplayName(String paymentMethodName) {
+        // If there's no payment method name, return "Not Applicable" or an empty string.
+        if (paymentMethodName == null || paymentMethodName.trim().isEmpty()) {
+            return "N/A";
+        }
+        try {
+            // Find the enum constant corresponding to the string (e.g., "MOBILE_MONEY").
+            PaymentMethod method = PaymentMethod.valueOf(paymentMethodName);
+            // Return its user-friendly display name ("Mobile Money").
+            return method.getDisplayName();
+        } catch (IllegalArgumentException e) {
+            // This is a safety net. If the string from the database doesn't match any
+            // known enum, just show the raw value so you don't get an error.
+            return paymentMethodName;
+        }
+    }
+    public void filterBillings() {
+        // Call the new service method with all possible filter values.
+        // The service/DAO layer will handle the logic of which filters to apply.
+        Long patientId = (searchPatientId != null) ? searchPatientId.longValue() : null;
+        billings = billingService.findBillings(patientId, filterByPaymentMethod);
+    }
+
+    public void clearFilters() {
+        // The most reliable way to clear filters is to re-initialize the bean's state.
+        init();
+    }
+
+    public String getFilterByPaymentMethod() {
+        return filterByPaymentMethod;
+    }
+
+    public void setFilterByPaymentMethod(String filterByPaymentMethod) {
+        this.filterByPaymentMethod = filterByPaymentMethod;
+    }
+
 
     // Getters and Setters
     public List<Billing> getBillings() { return billings; }

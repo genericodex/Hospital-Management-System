@@ -2,19 +2,58 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://java.sun.com/jsf/core">
 <ui:composition template="/template.xhtml">
     <ui:define name="title">Doctor Dashboard</ui:define>
+    <!-- FIX: Add a new define block for custom head content -->
+    <ui:define name="head">
+        <style type="text/css">
+            /* --- Custom styles to color the entire event bar --- */
+
+            /* The .fc-event selector is from FullCalendar.js */
+            /* We use !important to override the default PrimeFaces theme styles */
+
+            .fc-event.status-scheduled,
+            .fc-event.status-scheduled .fc-event-main {
+                background-color: #2563eb !important;
+                border-color: #1d4ed8 !important;
+            }
+
+            .fc-event.status-completed,
+            .fc-event.status-completed .fc-event-main {
+                background-color: #16a34a !important;
+                border-color: #15803d !important;
+            }
+
+            .fc-event.status-cancelled,
+            .fc-event.status-cancelled .fc-event-main {
+                background-color: #dc2626 !important;
+                border-color: #b91c1c !important;
+            }
+
+            .fc-event.status-default,
+            .fc-event.status-default .fc-event-main {
+                background-color: #6b7280 !important;
+                border-color: #4b5563 !important;
+            }
+        </style>
+    </ui:define>
     <ui:define name="content">
-        <div class="flex">
+        <h:form id="doctorDashboardForm">
+            <p:growl id="messages" showDetail="true" life="4000"/>
+            <p:remoteCommand name="remoteCommand_loadChart"
+                             actionListener="#{doctorDashboardBean.loadChartData}"
+                             autoRun="true"/>
+
+        <div class="grid">
 
             <!-- Main Content -->
-            <div class="flex-1 p-10">
-                <h2 class="text-3xl font-bold text-blue-800 mb-6">Welcome, Dr. #{doctorAuthBean.loggedInDoctor.firstName} #{doctorAuthBean.loggedInDoctor.lastName}</h2>
+                <h2 class="text-3xl font-bold text-green-800 mb-6">Welcome, Dr. #{doctorAuthBean.loggedInDoctor.firstName} #{doctorAuthBean.loggedInDoctor.lastName}</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="bg-gradient-to-br from-blue-100 to-blue-300 rounded-2xl shadow-xl p-8 flex flex-col items-center hover:scale-105 transition-transform duration-300 border border-blue-200 cursor-pointer group"
                          style="cursor:pointer;"
-                         onclick="window.location='appointments.xhtml'">
+                         onclick="window.location='../Appointments/appointments.xhtml'">
                         <span class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-200 mb-3">
                             <i class="pi pi-calendar text-blue-700 text-3xl"/>
                         </span>
@@ -33,9 +72,206 @@
                         <p class="text-base text-gray-700 mb-3">Specialization: <span class="font-semibold">#{doctorAuthBean.loggedInDoctor.specialization}</span></p>
                         <span class="text-green-700 group-hover:underline font-semibold">View My Profile</span>
                     </div>
+
+
+
+
+            <!-- Appointment Status Chart -->
+                    <div class="grid grid-cols-1 gap-6 mt-6">
+                        <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
+                            <div class="flex items-center gap-2 mb-4">
+                                <i class="pi pi-users text-green-600 text-xl"/>
+                                <span class="font-semibold text-green-700 text-lg">Appointments by Status</span>
+                            </div>
+                            <div class="relative" style="height: 400px;">
+                                <canvas id="doctorPieChart" style="width: 100%; height: 350px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <div class="card">
+                <h3 class="text-2xl font-bold text-green-800 mb-4">Upcoming Agenda</h3>
+                <p:dataTable var="appt" value="#{doctorDashboardBean.upcomingAppointments}"
+                             emptyMessage="You have no appointments scheduled for today or tomorrow."
+                             styleClass="rounded-lg">
+
+                    <p:column headerText="Time" style="width:10rem">
+                        <h:outputText value="#{appt.appointmentTime}">
+                            <f:convertDateTime type="localDateTime" pattern="hh:mm a" />
+                        </h:outputText>
+                    </p:column>
+
+                    <p:column headerText="Patient">
+                        <h:outputText value="#{appt.patient.firstName} #{appt.patient.lastName}"/>
+                    </p:column>
+
+                    <p:column headerText="Status">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                   <h:outputText value="#{appt.status}"/>
+                </span>
+                    </p:column>
+
+                    <p:column headerText="Actions" style="width:12rem; text-align:center;">
+                        <!-- This button is a placeholder for future functionality -->
+                        <p:commandButton value="View Record" icon="pi pi-user"
+                                         actionListener="#{doctorDashboardBean.selectPatientForDetails(appt.patient)}"
+                                         update=":doctorDashboardForm:patientDetailsDialog"
+                                         oncomplete="PF('patientDetailsDialogWidget').show()"
+                                         styleClass="ui-button-outlined ui-button-secondary"/>
+                    </p:column>
+
+                </p:dataTable>
+            </div>
+
+            <!-- Upcoming Appointments Calendar -->
+            <div class="col-12 md:col-8 mt-12">
+                <div class="card">
+                    <h3 class="text-3xl font-bold text-green-800 mb-6">My Schedule</h3>
+                    <!-- FEATURE: Added initialDate and a cleaner headerToolbar for better UX -->
+                    <p:schedule value="#{doctorDashboardBean.scheduleModel}"
+                                view="dayGridMonth"
+                                initialDate="#{doctorDashboardBean.initialDate}"
+                                slotDuration="01:00:00"
+                                allDaySlot="false"
+                                locale="en"
+                                timeZone="UTC"
+                                clientTimeZone="local"
+                                height="auto"
+                                styleClass="rounded-lg shadow-md !border-blue-200"
+                                headerToolbar="{
+                                    left: 'prev,next today',
+                                    center: 'title',
+                                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                                }">
+                        <p:ajax event="eventSelect"
+                                listener="#{doctorDashboardBean.onEventSelect}"
+                                update="appointmentDetailsDialog"
+                                oncomplete="PF('appointmentDialogWidget').show()" />
+                    </p:schedule>
                 </div>
             </div>
+
+            <!-- ============================================= -->
+            <!-- === NEW: APPOINTMENT DETAILS DIALOG (POPUP) === -->
+            <!-- ============================================= -->
+            <p:dialog id="appointmentDetailsDialog" widgetVar="appointmentDialogWidget"
+                      header="Appointment Details" modal="true" responsive="true"
+                      style="min-width: 450px;">
+            <h:panelGroup id="dialogContent" layout="block" styleClass="p-fluid">
+            <h:panelGrid columns="2" cellpadding="10" rendered="#{not empty doctorDashboardBean.selectedAppointment}">
+                <h:outputText value="Patient:" styleClass="font-bold"/>
+                <h:outputText value="#{doctorDashboardBean.selectedAppointment.patient.firstName} #{doctorDashboardBean.selectedAppointment.patient.lastName}"/>
+
+                <h:outputText value="Time:" styleClass="font-bold"/>
+                <h:outputText value="#{doctorDashboardBean.selectedAppointment.appointmentTime}">
+                    <f:convertDateTime type="localDateTime" pattern="EEEE, MMM dd, yyyy 'at' hh:mm a"/>
+                </h:outputText>
+
+                <h:outputText value="Reason:" styleClass="font-bold"/>
+                <h:outputText value="#{doctorDashboardBean.selectedAppointment.reasonForVisit}"/>
+
+                <p:outputLabel for="status" value="Status:" styleClass="font-bold"/>
+                <p:selectOneMenu id="status" value="#{doctorDashboardBean.selectedAppointment.status}">
+                    <f:selectItems value="#{appointmentBean.statuses}" var="s"
+                                   itemLabel="#{s.displayName}" itemValue="#{s}"/>
+                </p:selectOneMenu>
+            </h:panelGrid>
+            </h:panelGroup>
+                <f:facet name="footer">
+                    <p:commandButton value="Save Changes"
+                                     actionListener="#{doctorDashboardBean.updateSelectedAppointment}"
+                                     icon="pi pi-check"
+                                     process="appointmentDetailsDialog @this"
+                                     update=":doctorDashboardForm:schedule :doctorDashboardForm:messages"
+                                     styleClass="!bg-green-500 !border-green-400"/>
+                    <p:commandButton value="Cancel"
+                                     icon="pi pi-times"
+                                     onclick="PF('appointmentDialogWidget').hide()"
+                                     type="button"
+                                     styleClass="ui-button-secondary"/>
+                </f:facet>
+            </p:dialog>
+            <p:dialog id="patientDetailsDialog" widgetVar="patientDetailsDialogWidget"
+                      header="Patient Details" modal="true" responsive="true"
+                      style="min-width: 450px;">
+                <h:panelGroup id="patientDialogContent" layout="block" styleClass="p-fluid">
+                    <p:panelGrid columns="2" layout="grid" styleClass="ui-panelgrid-blank" rendered="#{not empty doctorDashboardBean.selectedPatientForDetails}">
+                        <h:outputText value="Full Name:" styleClass="font-bold text-gray-600"/>
+                        <h:outputText value="#{doctorDashboardBean.selectedPatientForDetails.firstName} #{doctorDashboardBean.selectedPatientForDetails.lastName}" />
+
+                        <h:outputText value="Email:" styleClass="font-bold text-gray-600"/>
+                        <h:outputText value="#{doctorDashboardBean.selectedPatientForDetails.email}" />
+
+                        <h:outputText value="Phone Number:" styleClass="font-bold text-gray-600"/>
+                        <h:outputText value="#{doctorDashboardBean.selectedPatientForDetails.contactNumber}" />
+
+                        <h:outputText value="Date of Birth:" styleClass="font-bold text-gray-600"/>
+                        <h:outputText value="#{doctorDashboardBean.selectedPatientForDetails.dateOfBirth}">
+                            <f:convertDateTime pattern="MMMM dd, yyyy" type="localDate" />
+                        </h:outputText>
+
+                    </p:panelGrid>
+                </h:panelGroup>
+                <f:facet name="footer">
+                    <p:commandButton value="Close"
+                                     icon="pi pi-times"
+                                     onclick="PF('patientDetailsDialogWidget').hide()"
+                                     type="button"
+                                     styleClass="ui-button-secondary"/>
+                </f:facet>
+            </p:dialog>
+
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <h:outputScript>
+        // This function will be called by the remoteCommand
+        function renderDoctorChart(data) {
+        if (!data || data.length === 0) {
+        // Handle case with no data
+        console.log("No appointment data to render chart.");
+        return;
+        }
+
+        const labels = data.map(item => item.status);
+        const counts = data.map(item => item.count);
+
+        const backgroundColors = data.map(item => {
+        switch (item.status) {
+        case "SCHEDULED": return "rgb(54, 162, 235)"; // Blue
+        case "COMPLETED": return "rgb(75, 192, 192)"; // Green
+        case "CANCELLED": return "rgb(255, 99, 132)"; // Red
+        default: return "rgb(201, 203, 207)"; // Grey
+        }
+        });
+
+        const ctx = document.getElementById('doctorPieChart').getContext('2d');
+
+        // Destroy any existing chart on the canvas to prevent conflicts on AJAX updates
+        if (window.myDoctorPieChart instanceof Chart) {
+        window.myDoctorPieChart.destroy();
+        }
+            // Create the new chart
+            window.myDoctorPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Appointments',
+                        data: counts,
+                        backgroundColor: backgroundColors,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+        </h:outputScript>
         </div>
+        </h:form>
     </ui:define>
 </ui:composition>
 </html>

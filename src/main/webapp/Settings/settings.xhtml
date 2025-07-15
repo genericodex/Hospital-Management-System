@@ -4,17 +4,49 @@
       xmlns:p="http://primefaces.org/ui"
       xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+<head>
+    <style>
+       body .patients-tab .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a .ui-state-default {
+             background-color: green !important; /* Light Cyan for inactive */
+             color: green !important; /* Dark Cyan text */
+         }
 
+        body .patients-tab .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a .ui-state-active {
+                   background-color: green !important; /* Dark Cyan for active */
+                   color: green !important; /* White text */
+              }
+
+       /*
+          THE FIX: Add these new CSS rules to style the PickList buttons.
+          This targets the buttons within the picklist component.
+      */
+       body .ui-picklist .ui-picklist-buttons .ui-button {
+           background-color: #22c55e !important; /* A nice, modern green */
+           border-color: #16a34a !important;     /* A slightly darker green for the border */
+           color: white !important;              /* This makes the icon inside the button white */
+       }
+
+       /* This rule changes the button color when you hover over it */
+       body .ui-picklist .ui-picklist-buttons .ui-button:hover {
+           background-color: #16a34a !important; /* Darker green on hover */
+           border-color: #15803d !important;
+       }
+
+    </style>
+</head>
 <ui:composition template="/template.xhtml">
     <ui:define name="title">Settings - Restore Deleted Records</ui:define>
     <ui:define name="content">
         <h:form id="settingsForm">
             <p:growl id="messages" showDetail="true" autoUpdate="true"/>
-            <p:tabView>
-                <p:tab title="Patients">
+            <p:tabView styleClass="!text-black">
+                <p:tab title="Patients" rendered="#{authBean.hasPermission('PATIENT_VIEW_DELETED')}">
                     <p:commandButton value="Load Deleted Patients" icon="pi pi-refresh"
+                                     styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      action="#{patientBean.loadDeletedPatients}"
                                      update="@form"/>
+                    <span style="display:flex; height:0.75rem;"/>
+
                     <p:dataTable id="deletedPatientsTable" var="patient" value="#{patientBean.deletedPatients}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{patient.id}"/>
@@ -42,12 +74,17 @@
                             </h:outputText>
                         </p:column>
                         <p:column headerText="Actions">
-                            <p:commandButton value="Restore" icon="pi pi-undo" action="#{patientBean.restorePatient(patient.id)}"
+                            <div style="display: flex; gap: 0.5rem; align-items:center;">
+
+                            <p:commandButton  title="Restore" icon="pi pi-undo" action="#{patientBean.restorePatient(patient.id)}"
+                                             styleClass="!bg-green-500 border !border-green-700 !text-white !font-medium hover:!bg-green-300 hover:!text-black hover:!border-green-300"
                                              update="@form"/>
-                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                            <p:commandButton  title="Hard Delete" icon="pi pi-trash"
+                                             styleClass="!bg-red-500 border !border-red-500 !text-white !font-medium hover:!bg-red-300 hover:!text-black hover:!border-red-300"
                                              oncomplete="PF('confirmDeletePatientDialog').show()"
                                              actionListener="#{patientBean.setPatientToDeleteId(patient.id)}"
-                                             update="@form" styleClass="ui-button-danger ml-2"/>
+                                             update="@form"/>
+                            </div>
                         </p:column>
                     </p:dataTable>
                     <p:dialog id="confirmDeletePatientDialog" widgetVar="confirmDeletePatientDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
@@ -58,8 +95,9 @@
                         </f:facet>
                     </p:dialog>
                 </p:tab>
-                <p:tab title="Doctors">
+                <p:tab title="Doctors" rendered="#{authBean.hasPermission('DOCTOR_VIEW_DELETED')}">
                     <p:commandButton value="Load Deleted Doctors" icon="pi pi-refresh"
+                                     styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      action="#{doctorBean.loadDeletedDoctors}"
                                      update="@form"/>
                     <p:dataTable id="deletedDoctorsTable" var="doctor" value="#{doctorBean.deletedDoctors}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
@@ -73,12 +111,18 @@
                             <h:outputText value="#{doctor.specialization}"/>
                         </p:column>
                         <p:column headerText="Actions">
-                            <p:commandButton value="Restore" icon="pi pi-undo" action="#{doctorBean.restoreDoctor(doctor.id)}"
+                            <div style="display: flex; gap: 0.5rem; align-items:center;">
+
+                            <p:commandButton title="Restore" icon="pi pi-undo" action="#{doctorBean.restoreDoctor(doctor.id)}"
+                                             styleClass="!bg-green-500 border !border-green-700 !text-white !font-medium hover:!bg-green-300 hover:!text-black hover:!border-green-300"
                                              update="@form"/>
-                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                            <p:commandButton title="Hard Delete" icon="pi pi-trash"
                                              oncomplete="PF('confirmDeleteDoctorDialog').show()"
                                              actionListener="#{doctorBean.setDoctorToDeleteId(doctor.id)}"
-                                             update="@form" styleClass="ui-button-danger ml-2"/>
+                                             update="@form"
+                                             styleClass="!bg-red-500 border !border-red-500 !text-white !font-medium hover:!bg-red-300 hover:!text-black hover:!border-red-300"
+                            />
+                            </div>
                         </p:column>
                     </p:dataTable>
                     <p:dialog id="confirmDeleteDoctorDialog" widgetVar="confirmDeleteDoctorDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
@@ -89,8 +133,9 @@
                         </f:facet>
                     </p:dialog>
                 </p:tab>
-                <p:tab title="Appointments">
+                <p:tab title="Appointments" rendered="#{authBean.hasPermission('APPOINTMENT_VIEW_DELETED')}">
                     <p:commandButton value="Load Deleted Appointments" icon="pi pi-refresh"
+                                     styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      action="#{appointmentBean.loadCancelledAppointments}"
                                      update="@form"/>
                     <p:dataTable id="deletedAppointmentsTable" var="appointment" value="#{appointmentBean.cancelledAppointments}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
@@ -109,12 +154,18 @@
                             </h:outputText>
                         </p:column>
                         <p:column headerText="Actions">
-                            <p:commandButton value="Restore" icon="pi pi-undo" action="#{appointmentBean.restoreAppointment(appointment.id)}"
+                            <div style="display: flex; gap: 0.5rem; align-items:center;">
+
+                            <p:commandButton title="Restore" icon="pi pi-undo" action="#{appointmentBean.restoreAppointment(appointment.id)}"
+                                             styleClass="!bg-green-500 border !border-green-700 !text-white !font-medium hover:!bg-green-300 hover:!text-black hover:!border-green-300"
                                              update="@form"/>
-                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                            <p:commandButton title="Hard Delete" icon="pi pi-trash"
                                              oncomplete="PF('confirmDeleteAppointmentDialog').show()"
                                              actionListener="#{appointmentBean.setAppointmentToDeleteId(appointment.id)}"
-                                             update="@form" styleClass="ui-button-danger ml-2"/>
+                                             update="@form"
+                                             styleClass="!bg-red-500 border !border-red-500 !text-white !font-medium hover:!bg-red-300 hover:!text-black hover:!border-red-300"
+                            />
+                            </div>
                         </p:column>
                     </p:dataTable>
                     <p:dialog id="confirmDeleteAppointmentDialog" widgetVar="confirmDeleteAppointmentDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
@@ -125,9 +176,10 @@
                         </f:facet>
                     </p:dialog>
                 </p:tab>
-                <p:tab title="Staff">
+                <p:tab title="Staff" rendered="#{authBean.hasPermission('STAFF_VIEW_DELETED')}">
                     <p:commandButton value="Load Deleted Staff" icon="pi pi-refresh"
                                      action="#{staffBean.loadDeletedStaff}"
+                                     styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      update="@form"/>
                     <p:dataTable id="deletedStaffTable" var="staff" value="#{staffBean.deletedStaff}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
@@ -140,12 +192,18 @@
                             <h:outputText value="#{staff.role}"/>
                         </p:column>
                         <p:column headerText="Actions">
-                            <p:commandButton value="Restore" icon="pi pi-undo" action="#{staffBean.restoreStaff(staff.id)}"
+                            <div style="display: flex; gap: 0.5rem; align-items:center;">
+
+                            <p:commandButton title="Restore" icon="pi pi-undo" action="#{staffBean.restoreStaff(staff.id)}"
+                                             styleClass="!bg-green-500 border !border-green-700 !text-white !font-medium hover:!bg-green-300 hover:!text-black hover:!border-green-300"
                                              update="@form"/>
-                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                            <p:commandButton title="Hard Delete" icon="pi pi-trash"
                                              oncomplete="PF('confirmDeleteStaffDialog').show()"
                                              actionListener="#{staffBean.setStaffToDeleteId(staff.id)}"
-                                             update="@form" styleClass="ui-button-danger ml-2"/>
+                                             update="@form"
+                                             styleClass="!bg-red-500 border !border-red-500 !text-white !font-medium hover:!bg-red-300 hover:!text-black hover:!border-red-300"
+                            />
+                            </div>
                         </p:column>
                     </p:dataTable>
                     <p:dialog id="confirmDeleteStaffDialog" widgetVar="confirmDeleteStaffDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
@@ -156,8 +214,9 @@
                         </f:facet>
                     </p:dialog>
                 </p:tab>
-                <p:tab title="Billings">
+                <p:tab title="Billings" rendered="#{authBean.hasPermission('BILLING_VIEW_DELETED')}">
                     <p:commandButton value="Load Deleted Billings" icon="pi pi-refresh"
+                                     styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      action="#{billingBean.loadDeletedBillings}"
                                      update="@form"/>
                     <p:dataTable id="deletedBillingsTable" var="billing" value="#{billingBean.deletedBillings}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
@@ -174,12 +233,18 @@
                             <h:outputText value="#{billing.serviceDescription}"/>
                         </p:column>
                         <p:column headerText="Actions">
-                            <p:commandButton value="Restore" icon="pi pi-undo" action="#{billingBean.restoreBilling(billing.id)}"
+                            <div style="display: flex; gap: 0.5rem; align-items:center;">
+
+                            <p:commandButton title="Restore" icon="pi pi-undo" action="#{billingBean.restoreBilling(billing.id)}"
+                                             styleClass="!bg-green-500 border !border-green-700 !text-white !font-medium hover:!bg-green-300 hover:!text-black hover:!border-green-300"
                                              update="@form"/>
-                            <p:commandButton value="Hard Delete" icon="pi pi-trash"
+                            <p:commandButton title="Hard Delete" icon="pi pi-trash"
                                              oncomplete="PF('confirmDeleteBillingDialog').show()"
                                              actionListener="#{billingBean.setBillingToDeleteId(billing.id)}"
-                                             update="@form" styleClass="ui-button-danger ml-2"/>
+                                             update="@form"
+                                             styleClass="!bg-red-500 border !border-red-500 !text-white !font-medium hover:!bg-red-300 hover:!text-black hover:!border-red-300"
+                            />
+                            </div>
                         </p:column>
                     </p:dataTable>
                     <p:dialog id="confirmDeleteBillingDialog" widgetVar="confirmDeleteBillingDialog" modal="true" header="Confirm Delete" closable="false" resizable="false" width="350">
@@ -190,14 +255,14 @@
                         </f:facet>
                     </p:dialog>
                 </p:tab>
-                <p:tab title="Roles and Specializations">
+                <p:tab title="Roles and Specializations" rendered="#{authBean.hasPermission('MANAGE_ROLES')}">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- Specializations Management -->
                         <div class="bg-white rounded-2xl shadow p-6">
-                            <h3 class="text-xl font-bold mb-4 text-blue-500">Manage Specializations</h3>
+                            <h3 class="text-xl font-bold mb-4 text-green-600">Manage Specializations</h3>
                             <h:panelGroup layout="block" styleClass="mb-4 flex gap-2">
                                 <p:inputText value="#{settingsBean.newSpecialization}" placeholder="Add new specialization..." styleClass="w-full px-3 py-2 border rounded"/>
-                                <p:commandButton value="Add" action="#{settingsBean.addSpecialization}" update="specializationsTable specializationsMsg" styleClass="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"/>
+                                <p:commandButton value="Add" action="#{settingsBean.addSpecialization}" update="specializationsTable specializationsMsg" styleClass="!border-green-500 !bg-green-600 hover:!bg-green-700 text-white font-semibold px-4 py-2 rounded"/>
                             </h:panelGroup>
                             <p:messages id="specializationsMsg" autoUpdate="true" closable="true"/>
                             <p:dataTable id="specializationsTable" var="spec" value="#{settingsBean.specializations}" styleClass="mt-2">
@@ -211,21 +276,122 @@
                         </div>
                         <!-- Roles Management -->
                         <div class="bg-white rounded-2xl shadow p-6">
-                            <h3 class="text-xl font-bold mb-4 text-blue-500">Manage Roles</h3>
+                            <h3 class="text-xl font-bold mb-4 text-green-600">Manage Roles</h3>
                             <h:panelGroup layout="block" styleClass="mb-4 flex gap-2">
                                 <p:inputText value="#{settingsBean.newRole}" placeholder="Add new role..." styleClass="w-full px-3 py-2 border rounded"/>
-                                <p:commandButton value="Add" action="#{settingsBean.addRole}" update="rolesTable rolesMsg" styleClass="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded"/>
+                                <p:commandButton value="Add" action="#{settingsBean.addRole}" update="rolesTable rolesMsg" styleClass="!border-green-500 !bg-green-600 hover:!bg-green-700 text-white font-semibold px-4 py-2 rounded"/>
                             </h:panelGroup>
                             <p:messages id="rolesMsg" autoUpdate="true" closable="true"/>
                             <p:dataTable id="rolesTable" var="role" value="#{settingsBean.roles}" styleClass="mt-2">
                                 <p:column headerText="Role">
-                                    <h:outputText value="#{role}"/>
+                                    <h:outputText value="#{role.name}"/>
                                 </p:column>
                                 <p:column headerText="Actions" style="width: 100px;">
                                     <p:commandButton icon="pi pi-trash" action="#{settingsBean.removeRole(role)}" update="rolesTable rolesMsg" styleClass="ui-button-danger"/>
                                 </p:column>
                             </p:dataTable>
                         </div>
+                    </div>
+                </p:tab>
+                <p:tab title="User permissions" rendered="#{authBean.hasPermission('MANAGE_PERMISSIONS')}">
+                    <div class="card">
+                    <h2 class="text-2xl font-bold text-green-700 mb-2">Manage Role Permissions</h2>
+                    <p class="text-gray-600">Select a role to view and edit its system permissions.</p>
+                    <div class="p-fluid grid formgrid mt-6">
+                        <div class="field col-12 md:col-4">
+                            <p:outputLabel for="roleSelector" value="Select Role:" styleClass="font-semibold"/>
+                            <p:selectOneMenu id="roleSelector" value="#{settingsBean.selectedRole}" converter="roleConverter" styleClass="mt-1 ml-3">
+                                <f:selectItem itemLabel="Select a Role..." itemValue="#{null}" noSelectionOption="true"/>
+                                <f:selectItems value="#{settingsBean.roles}" var="role" itemLabel="#{role.name}" itemValue="#{role}"/>
+                                <p:ajax event="change" listener="#{settingsBean.onRoleSelect}" update="permissionsPickList saveButton"/>
+                            </p:selectOneMenu>
+                        </div>
+                    </div>
+
+                    <h:panelGroup id="permissionsPickList" layout="block" styleClass="mt-4">
+                        <p:pickList value="#{settingsBean.permissionsModel}" var="p"
+                                    itemValue="#{p}"
+                                    styleClass=" ui-picklist-buttons ui-picklist"
+                                    converter="permissionConverter"
+                                    showSourceControls="true" showTargetControls="true"
+                                    responsive="true" disabled="#{settingsBean.selectedRole == null}">
+
+                            <f:facet name="sourceCaption">Available Permissions</f:facet>
+                            <f:facet name="targetCaption">Assigned Permissions</f:facet>
+
+                            <p:column style="width:95%;">
+                                <h:outputText value="#{p.permissionKey}" styleClass="font-bold text-gray-800"/>
+                                <br/>
+                                <h:outputText value="#{p.description}" styleClass="text-sm text-gray-500"/>
+                            </p:column>
+                        </p:pickList>
+                    </h:panelGroup>
+                        <div class="mt-6 text-right">
+                            <p:commandButton id="saveButton" value="Save Changes"
+                                             action="#{settingsBean.savePermissions}"
+                                             process="@this permissionsPickList"
+                                             update=":settingsForm:messages"
+                                             disabled="#{settingsBean.selectedRole == null}"
+                                             icon="pi pi-save"
+                                             styleClass="ui-button-success"/>
+                        </div>
+                    </div>
+                    <!-- SEPARATOR -->
+                    <hr class="my-8"/>
+
+                    <!-- SECTION 2: Create and Delete Permissions (New Section) -->
+                    <div class="card">
+                    <h2 class="text-2xl font-bold text-green-700 mb-2">System Permission Management</h2>
+                    <p class="text-gray-600">Create new permissions or permanently delete existing ones from the system.</p>
+
+                    <!-- Create New Permission Panel -->
+                    <p:panel id="createPanel" header="Create New Permission" styleClass="mt-6" rendered="#{authBean.hasPermission('MANAGE_PERMISSIONS')}">
+                        <p:panelGrid columns="3" layout="grid" styleClass="ui-panelgrid-blank"
+                                     columnClasses="ui-grid-col-2,ui-grid-col-8,ui-grid-col-2">
+                            <p:outputLabel for="key" value="Permission Key:" styleClass="font-bold"/>
+                            <p:inputText id="key" value="#{settingsBean.newPermission.permissionKey}" required="true"
+                                         placeholder="e.g., VIEW_FINANCIAL_REPORTS" styleClass="w-full"/>
+                            <p:message for="key"/>
+
+                            <p:outputLabel for="desc" value="Description:" styleClass="font-bold"/>
+                            <p:inputText id="desc" value="#{settingsBean.newPermission.description}" required="true"
+                                         placeholder="e.g., Allows user to view financial reports" styleClass="w-full"/>
+                            <p:message for="desc"/>
+
+                            <h:panelGroup/>
+                            <p:commandButton value="Create Permission"
+                                             actionListener="#{settingsBean.createPermission}"
+                                             icon="pi pi-plus"
+                                             styleClass="ui-button-success"
+                                             update="permissionsTable createPanel @form:messages"/>
+                            <h:panelGroup/>
+                        </p:panelGrid>
+                    </p:panel>
+                        <!-- List of Existing Permissions -->
+                        <p:dataTable id="permissionsTable" var="perm" value="#{settingsBean.permissions}"
+                                     paginator="true" rows="10" paginatorPosition="bottom"
+                                     paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10,15" styleClass="mt-6">
+                            <f:facet name="header">
+                                <span class="font-bold text-xl">Existing System Permissions</span>
+                            </f:facet>
+
+                            <p:column headerText="Permission Key" sortBy="#{perm.permissionKey}" filterBy="#{perm.permissionKey}" filterMatchMode="contains">
+                                <h:outputText value="#{perm.permissionKey}"/>
+                            </p:column>
+
+                            <p:column headerText="Description" sortBy="#{perm.description}">
+                                <h:outputText value="#{perm.description}"/>
+                            </p:column>
+
+                            <p:column style="width:6rem;text-align: center">
+                                <p:commandButton icon="pi pi-trash" styleClass="rounded-button ui-button-danger ui-button-flat"
+                                                 actionListener="#{settingsBean.deletePermission(perm)}"
+                                                 update="@form:permissionsTable @form:messages">
+                                    <p:confirm header="Confirmation" message="Delete '#{perm.permissionKey}'? This cannot be undone." icon="pi pi-exclamation-triangle"/>
+                                </p:commandButton>
+                            </p:column>
+                        </p:dataTable>
                     </div>
                 </p:tab>
             </p:tabView>

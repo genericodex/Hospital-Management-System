@@ -9,7 +9,7 @@ import java.io.IOException;
 
         /**
          * <p>
-         * The doFilter() method is the most important method in any filter.
+         * The doFilter() method is the most important method in this filter.
          * <p>
          *   It's called by the web server for every single
          *   request that matches the filter's mapping in the

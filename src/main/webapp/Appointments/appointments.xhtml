@@ -13,36 +13,116 @@
             <p:growl id="messages" showDetail="true" autoUpdate="true"/>
 
             <p:toolbar styleClass="bg-blue-50 rounded-lg mb-4 p-4 flex flex-wrap gap-4 items-center justify-between">
-                <f:facet name="left">
+                <p:toolbarGroup name="left">
                     <p:commandButton value="Schedule New" icon="pi pi-plus"
+                                     process="@this"
                                      action="#{appointmentBean.initNewAppointment}"
                                      update=":appointmentForm:appointmentDialog"
                                      oncomplete="PF('appointmentDialog').show()"
-                                     styleClass="bg-blue-600 hover:!bg-blue-900 text-white font-semibold py-1 px-2 rounded
-                                         shadow mr-2 text-xs !max-w-[250px] max-h-[50px]"/>
+                                     styleClass="!bg-green-600 hover:!bg-green-500 !border-green-600 text-white
+                                     font-semibold rounded shadow mr-2 text-xs"
+                                     rendered="#{authBean.hasPermission('APPOINTMENT_CREATE') || doctorAuthBean.loggedInDoctor != null}"/>
 
                 <span style="display:inline-block; width:0.75rem;"/>
-                    <p:commandButton value="Cancel Selected" icon="pi pi-times"
-                                     disabled="#{empty appointmentBean.selectedAppointments}"
-                                     action="#{appointmentBean.cancelSelectedAppointments}"
-                                     update=":appointmentForm:messages,:appointmentForm:appointmentTable"
-                                     process="@this" immediate="true"
-                                     styleClass="!bg-red-500 hover:!bg-red-600 text-white font-semibold py-1 px-2 rounded !border !border-red-500 shadow text-xs min-w-[28px] min-h-[28px]"/>
-                </f:facet>
+                </p:toolbarGroup>
 
-                <f:facet name="right">
+                <p:toolbarGroup name="center">
+                    <div class="text-2xl font-bold text-green-700/20 " style="letter-spacing: 3rem">
+                        APPOINTMENTS
+                    </div>
+                </p:toolbarGroup>
+
+                <p:toolbarGroup name="right">
                     <p:commandButton value="View Cancelled" icon="pi pi-history"
+                                     process="@this"
                                      action="#{appointmentBean.loadCancelledAppointments}"
                                      update=":appointmentForm:cancelledAppointmentsDialog"
-                                     oncomplete="PF('cancelledAppointmentsDialog').show()"/>
-                </f:facet>
+                                     styleClass="!bg-green-600 hover:!bg-green-500 !border-green-600 !font-medium"
+                                     oncomplete="PF('cancelledAppointmentsDialog').show()"
+                                     rendered="#{authBean.hasPermission('APPOINTMENT_VIEW_DELETED') || doctorAuthBean.loggedInDoctor != null}"/>
+                </p:toolbarGroup>
             </p:toolbar>
+
+            <!-- In your appointments.xhtml file, before the <p:dataTable> -->
+
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                    <h:panelGroup id="filterPanel" layout="block" styleClass="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Filter Appointments</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <!-- Patient Filter -->
+                        <div>
+                            <p:outputLabel for="patientFilter" value="Patient" styleClass="font-medium text-sm"/>
+                            <p:autoComplete id="patientFilter" value="#{appointmentBean.filterPatient}"
+                                            completeMethod="#{appointmentBean.completePatient}"
+                                            var="p" itemLabel="#{p.firstName} #{p.lastName}" itemValue="#{p}"
+                                            converter="patientConverter" forceSelection="true"
+                                            styleClass="w-full mt-1" inputStyleClass="w-full"/>
+                        </div>
+
+                        <!-- Doctor Filter -->
+                        <div>
+                            <p:outputLabel for="doctorFilter" value="Doctor" styleClass="font-medium text-sm"/>
+                            <p:autoComplete id="doctorFilter" value="#{appointmentBean.filterDoctor}"
+                                            disabled="#{doctorAuthBean.loggedInDoctor != null}"
+                                            completeMethod="#{appointmentBean.completeDoctor}"
+                                            var="d" itemLabel="#{d.firstName} #{d.lastName}" itemValue="#{d}"
+                                            converter="doctorConverter" forceSelection="true"
+                                            styleClass="w-full mt-1" inputStyleClass="w-full"/>
+                        </div>
+
+                        <!-- Start Date Filter -->
+                        <div>
+                            <p:outputLabel for="startDateFilter" value="From Date" styleClass="font-medium text-sm"/>
+                            <p:calendar id="startDateFilter" value="#{appointmentBean.filterStartDate}"
+                                        pattern="yyyy-MM-dd" showOn="button" styleClass="w-full mt-1" navigator="true" yearRange="c-100:c"
+                                        buttonStyleClass="!bg-green-600 !border-green-600 !font-semibold hover:!bg-green-700"
+                                        inputStyleClass="w-full" converter="localDateTimeConverter"/>
+                        </div>
+
+                        <!-- End Date Filter -->
+                        <div>
+                            <p:outputLabel for="endDateFilter" value="To Date" styleClass="font-medium text-sm"/>
+                            <p:calendar id="endDateFilter" value="#{appointmentBean.filterEndDate}" navigator="true" yearRange="c-100:c"
+                                        pattern="yyyy-MM-dd" showOn="button" styleClass="w-full mt-1"
+                                        inputStyleClass="w-full" converter="localDateTimeConverter"/>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div>
+                            <p:outputLabel for="statusFilter" value="Status" styleClass="font-medium text-sm"/>
+                            <p:selectOneMenu id="statusFilter" value="#{appointmentBean.filterStatus}"
+                                             styleClass="w-full mt-1" appendTo="@(this)">
+                                <f:selectItem itemLabel="All Statuses" itemValue="#{null}"/>
+                                <f:selectItems value="#{appointmentBean.appointmentStatuses}" var="status"
+                                               itemLabel="#{status.displayName}" itemValue="#{status.name()}"/>
+                            </p:selectOneMenu>
+                        </div>
+                    </div>
+
+                    <!-- Filter Buttons -->
+                    <div class="mt-4">
+                        <p:commandButton value="Apply Filters" action="#{appointmentBean.filterAppointments}"
+                                         process="filterPanel @this"
+                                         update="appointmentTable "
+                                         styleClass="!bg-green-600 !border-green-600 !font-semibold hover:!bg-green-700"/>
+                        <span style="display:inline-block; width:0.75rem;"/>
+                        <p:commandButton value="Clear Filters" action="#{appointmentBean.clearFilters}"
+                                         process="@this"
+                                         update="appointmentTable patientFilter doctorFilter startDateFilter endDateFilter statusFilter"
+                                         styleClass="!bg-gray-200 hover:!bg-gray-300 !text-gray-800 !font-semibold !border-gray-300 ml-2"/>
+                    </div>
+
+                    </h:panelGroup>
+                </div>
+
+            <!-- Your existing <h:form id="appointmentForm"> with the <p:dataTable> goes here -->
+            <!-- Make sure the 'update' attributes on the buttons above correctly target your data table -->
 
             <p:dataTable id="appointmentTable" var="appointment" value="#{appointmentBean.appointments}"
                          paginator="true" rows="10" selection="#{appointmentBean.selectedAppointments}"
                          rowKey="#{appointment.id}" emptyMessage="No appointments found" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
 
-                <p:column selectionMode="multiple" style="width:3%"/>
+                <p:column selectionMode="multiple" style="width:3%" rendered="#{authBean.hasPermission('APPOINTMENT_VIEW') || doctorAuthBean.loggedInDoctor != null}"/>
 
                 <p:column headerText="ID" sortBy="#{appointment.id}">
                     <h:outputText value="#{appointment.id}"/>
@@ -58,7 +138,7 @@
 
                 <p:column headerText="Date &amp; Time" sortBy="#{appointment.appointmentTime}">
                     <h:outputText value="#{appointment.appointmentTime}">
-                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm" timeZone="Africa/Nairobi"/>
+                        <f:convertDateTime type="localDateTime" pattern="yyyy-MM-dd HH:mm" timeZone="Africa/Nairobi"/>
                     </h:outputText>
                 </p:column>
 
@@ -68,12 +148,12 @@
                                      appointment.status == 'COMPLETED' ? 'success' : 'danger'}"/>
                 </p:column>
 
-                <p:column headerText="Actions" style="width:10%">
+                <p:column headerText="Actions" style="width:10%" rendered="#{authBean.hasPermission('APPOINTMENT_EDIT') || doctorAuthBean.loggedInDoctor != null}">
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <p:commandButton icon="pi pi-pencil" title="Edit" action="#{appointmentBean.editAppointment(appointment)}"
-                                     update=":appointmentForm:appointmentDialog"
+                                     update=":appointmentForm:messages, :appointmentForm:appointmentDialog"
                                      oncomplete="PF('appointmentDialog').show()"
-                                     styleClass="p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+                                     styleClass="!bg-gray-300 hover:!bg-gray-400 !border-gray-300 !text-black !font-medium p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
 
                     <p:commandButton icon="pi pi-times" title="Cancel"
                                      action="#{appointmentBean.cancelAppointment(appointment)}"
@@ -84,6 +164,7 @@
 
                     <p:commandButton icon="pi pi-check" title="Complete"
                                      action="#{appointmentBean.completeAppointment(appointment)}"
+                                     process="@this"
                                      update=":appointmentForm:messages,:appointmentForm:appointmentTable"
                                      rendered="#{appointment.status == 'SCHEDULED'}"
                                      styleClass="!bg-green-500 border !border-green-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
@@ -93,41 +174,49 @@
 
             <!-- Add/Edit Appointment Dialog -->
             <p:dialog id="appointmentDialog"  header="Appointment Details" widgetVar="appointmentDialog" modal="true"
-                      resizable="false" width="600">
+                      resizable="false" width="600" dynamic="true">
+                <h:panelGroup id="appointmentDialogContent" layout="block">
                 <h:panelGrid columns="2" cellpadding="5">
                     <h:outputLabel for="patient" value="Patient:"/>
                     <p:autoComplete id="patient" value="#{appointmentBean.selectedPatient}" completeMethod="#{appointmentBean.completePatient}"
                                     var="patient" itemLabel="#{patient.firstName} #{patient.lastName}" itemValue="#{patient}" forceSelection="true"
-                                    dropdown="true" required="true" converter="patientConverter"/>
+                                    dropdown="true" required="true" styleClass="!bg-green-600 !border-green-600 !font-medium hover:!bg-green-500"
+                                    converter="patientConverter"/>
 
                     <h:outputLabel for="doctor" value="Doctor:"/>
                     <p:autoComplete id="doctor" value="#{appointmentBean.selectedDoctor}" completeMethod="#{appointmentBean.completeDoctor}"
                                     var="doctor" itemLabel="Dr. #{doctor.firstName} #{doctor.lastName}" itemValue="#{doctor}"
-                                    forceSelection="true" dropdown="true" required="true" converter="doctorConverter"/>
+                                    forceSelection="true" dropdown="true" required="true" converter="doctorConverter" disabled="#{doctorAuthBean.loggedInDoctor != null}"/>
 
                     <h:outputLabel for="appointmentTime" value="Date &amp; Time:"/>
                     <p:calendar id="appointmentTime" value="#{appointmentBean.selectedAppointment.appointmentTime}"
                                 pattern="yyyy-MM-dd HH:mm" showTime="true" showOn="button" mask="true" placeholder="YYYY-MM-DD HH:MM"
-                                required="true" requiredMessage="Please select a date and time." mindate="#{now}" timeZone="Africa/Nairobi">
+                                required="true" requiredMessage="Please select a date and time." mindate="#{now}">
                     </p:calendar>
 
                     <h:outputLabel for="reason" value="Reason:"/>
                     <p:inputTextarea id="reason" value="#{appointmentBean.selectedAppointment.reasonForVisit}" required="true"
                                      requiredMessage="Please enter a reason for the visit."/>
 
-                    <h:outputLabel for="status" value="Status:"/>
-                    <p:selectOneMenu id="status" value="#{appointmentBean.selectedAppointment.status}">
-                        <f:selectItems value="#{appointmentBean.statuses}" var="status"
-                                       itemLabel="#{status}" itemValue="#{status}"/>
-                    </p:selectOneMenu>
+                        <h:outputLabel for="status" value="Status:" rendered="#{!appointmentBean.newAppointment}"/>
+                        <p:selectOneMenu id="status" rendered="#{!appointmentBean.newAppointment}" value="#{appointmentBean.selectedAppointment.status}">
+                            <!-- It's good practice to use the more specific getAppointmentStatuses() -->
+                            <f:selectItems value="#{appointmentBean.appointmentStatuses}" var="s"
+                                           itemLabel="#{s.displayName}" itemValue="#{s}"/>
+                        </p:selectOneMenu>
                 </h:panelGrid>
+                </h:panelGroup>
 
                 <f:facet name="footer">
                     <p:commandButton value="Save" action="#{appointmentBean.saveAppointment}"
+                                     process="appointmentDialogContent @this"
                                      update=":appointmentForm:messages,:appointmentForm:appointmentTable"
-                                     process="@form"
-                                     oncomplete="if(!args.validationFailed) PF('appointmentDialog').hide()"/>
-                    <p:commandButton value="Cancel" onclick="PF('appointmentDialog').hide()" type="button"/>
+                                     styleClass="!bg-green-600 hover:!bg-green-500 !border-green-600 !font-medium"
+                                     oncomplete="if(!args.validationFailed) PF('appointmentDialog').hide()"
+                                     rendered="#{authBean.hasPermission('APPOINTMENT_CREATE') || doctorAuthBean.loggedInDoctor != null}"/>
+                    <p:commandButton value="Cancel" onclick="PF('appointmentDialog').hide()"
+                                     styleClass="!bg-green-200 !border-green-200  !font-medium !text-black hover:!bg-green-300"
+                                     type="button"/>
                 </f:facet>
             </p:dialog>
 
@@ -148,14 +237,10 @@
 
                     <p:column headerText="Date">
                         <h:outputText value="#{appointment.appointmentTime}">
-                            <f:convertDateTime pattern="yyyy-MM-dd"/>
+                            <f:convertDateTime type="localDateTime" pattern="yyyy-MM-dd"/>
                         </h:outputText>
                     </p:column>
 
-                    <p:column headerText="Actions">
-                        <p:commandButton value="Reschedule" action="#{appointmentBean.rescheduleAppointment(appointment)}"
-                                         update=":appointmentForm:messages,:appointmentForm:appointmentTable,:appointmentForm:cancelledAppointmentsDialog"/>
-                    </p:column>
                 </p:dataTable>
             </p:dialog>
         </h:form>

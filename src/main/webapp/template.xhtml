@@ -14,21 +14,88 @@
     <!-- PrimeFaces Theme CSS (required for toggleMask eye icon) -->
     <script>
       function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        sidebar.classList.toggle('hidden');
+          const sidebar = document.getElementById('sidebar');
+          const mainContent = document.getElementById('main-content');
+          sidebar.classList.toggle('-translate-x-full');
+          mainContent.classList.toggle('md:ml-64');
       }
+
+      function toggleDropdown(button){
+          const x = button.nextElementSibling;
+          const arrow = button.querySelector('svg');
+          x.classList.toggle('max-h-0');
+          x.classList.toggle('opacity-0');
+          x.classList.toggle('max-h-96');
+          x.classList.toggle('opacity-100');
+          x.classList.toggle('mt-1');
+          arrow.classList.toggle('rotate-180');
+      }
+      function highlightActiveLink() {
+          const styleMap = {
+              'blue':   ['bg-blue-100', 'text-blue-800', 'font-bold'],
+              'green':  ['bg-green-100', 'text-green-800', 'font-bold'],
+              'yellow': ['bg-yellow-100', 'text-yellow-800', 'font-bold'],
+              'purple': ['bg-purple-100', 'text-purple-800', 'font-bold'],
+              'pink':   ['bg-pink-100', 'text-pink-800', 'font-bold'],
+              'gray':   ['bg-gray-200', 'text-gray-800', 'font-bold'],
+              'slate':  ['bg-slate-100', 'text-slate-800', 'font-bold']
+              // Add any other color groups you use
+          };
+
+          const currentPath = window.location.pathname;
+          const sidebarLinks = document.querySelectorAll('#sidebar a');
+
+          sidebarLinks.forEach(link => {
+              const linkUrl = new URL(link.href, window.location.origin);
+
+              if (linkUrl.pathname === currentPath) {
+                  // 2. Find the closest parent element with a 'data-style-group' attribute
+                  const styleGroupElement = link.closest('[data-style-group]');
+
+                  if (styleGroupElement) {
+                      const groupName = styleGroupElement.dataset.styleGroup;
+                      const classesToAdd = styleMap[groupName] || styleMap['gray']; // Default to gray if not found
+
+                      // 3. Apply the classes from our map
+                      link.classList.add(...classesToAdd);
+                  }
+                  // Bonus: If the active link is inside a dropdown, open the dropdown
+                  const dropdownContent = link.closest('.max-h-0');
+                  if (dropdownContent) {
+                      const dropdownButton = dropdownContent.previousElementSibling;
+                      toggleDropdown(dropdownButton);
+                  }
+              }
+          });
+      }
+
+      // Call the new function once the page content is loaded
+      document.addEventListener('DOMContentLoaded', highlightActiveLink);
     </script>
+    <style>
+        body .patients-tab .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a .ui-state-default {
+            background-color: green !important; /* Light Cyan for inactive */
+            color: green !important; /* Dark Cyan text */
+        }
+
+        body .patients-tab .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a .ui-state-active {
+            background-color: green !important; /* Dark Cyan for active */
+            color: green !important; /* White text */
+        }
+
+    </style>
     <h:outputStylesheet library="css" name="sidebar-custom.css"/>
+    <ui:insert name="head"/>
 </h:head>
 
 <h:body class="bg-gray-100 min-h-screen">
     <div class="flex flex-col min-h-screen">
         <!-- Top Bar -->
-        <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 text-white px-6 py-4 flex items-center
+        <div class="bg-gradient-to-r from-green-700 via-green-600 to-green-500 text-white px-6 py-4 flex items-center
         justify-between shadow-lg rounded-br-lg">
             <div class="flex items-center">
-                <button type="button" class="mr-4 md:hidden focus:outline-none" onclick="toggleSidebar()">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <button type="button" class="mr-4 p-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-white" onclick="toggleSidebar()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
                 </button>
@@ -40,161 +107,189 @@
         </div>
         <div class="flex flex-1">
             <!-- Sidebar -->
-            <div id="sidebar" class="bg-white/90 backdrop-blur w-64 p-6 border-r border-blue-100 fixed md:static h-full
-            md:h-auto z-20 transition-all duration-300 md:block hidden rounded-tr-3xl shadow-xl flex flex-col justify-between">
+            <div id="sidebar" class="bg-white/90 backdrop-blur w-64 p-6 border-r border-green-100 fixed top-18 h-[calc(100vh-4rem)] z-20
+            transition-transform duration-300 transform -translate-x-full md:translate-x-0 rounded-tr-3xl shadow-xl
+            flex flex-col justify-between">
                 <!-- User Profile Section -->
                 <div class="mb-8 flex flex-col items-center gap-2">
-                    <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-200">
-                        <i class="pi pi-user text-blue-700 text-3xl"/>
+                    <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-200">
+                        <i class="pi pi-user text-green-700 text-3xl"/>
                     </span>
-                    <span class="font-semibold text-blue-700 text-lg">Welcome</span>
+                    <span class="font-semibold text-green-700 text-lg">Welcome</span>
                 </div>
                 <!-- Staff Sidebar -->
-                <ui:fragment rendered="#{not empty authBean.loggedInUser}">
+                <ui:fragment rendered="#{not empty authBean.staff}">
                     <h:form class="flex-1 flex flex-col justify-between">
                         <nav class="flex flex-col gap-2">
+                            <div class="relative mb-4" data-style-group="blue">
                             <h:link outcome="dashboard" styleClass="sidebar-link rounded hover:bg-blue-100 py-2 px-1
                             hover:transition-transform hover:duration-600 focus:outline-none">
                                 <i class="pi pi-home sidebar-icon text-blue-600"/>
-                                <span>Dashboard</span>
+                                <span class="px-2 font-medium text-lg">Dashboard</span>
                             </h:link>
-                            <div class="border-t border-blue-100 my-2"></div>
+                            </div>
+                            <div class="relative" data-style-group="slate">
+                            <h:link outcome="/Staff/staff-profile" styleClass="sidebar-link rounded hover:bg-slate-100 py-2 px-1
+                            hover:transition-transform hover:duration-600 focus:outline-none">
+                                <i class="pi pi-user sidebar-icon text-slate-600"/>
+                                <span class="px-2 font-medium text-lg">Profile</span>
+                            </h:link>
+                            </div>
+
+
+                            <div class="border-t border-green-200 my-2"/>
                             <!-- Patients Dropdown -->
-                            <div class="relative">
+                            <ui:fragment rendered="#{authBean.hasPermission('PATIENT_VIEW')}">
+
+                            <div class="relative" data-style-group="blue">
                                 <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold
                                 text-gray-600 rounded hover:bg-blue-100 focus:outline-none"
-                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                    <span class="flex items-center gap-2">
-                                        <i class="pi pi-users text-blue-600"/>
+                                        onclick="toggleDropdown(this)">
+                                    <span class="flex items-center gap-2 font-medium text-lg">
+                                        <i class="pr-3 pi pi-users text-blue-600"/>
                                         Patients
                                     </span>
                                     <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-                                <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <div class="ml-4 mt-1 flex flex-col gap-1 overflow-hidden transition-all duration-300 ease-in-out max-h-0 opacity-0">
                                     <h:link outcome="patients" styleClass="block px-4 py-2 rounded font-medium flex items-center
-                                    gap-2 transition-all duration-200  hover:bg-blue-50
-                                    hover:text-blue-700">
-                                        <i class="pi pi-list text-blue-400"/>
+                                    gap-2 transition-all duration-200 hover:bg-blue-50 hover:text-blue-700" rendered="#{authBean.hasPermission('PATIENT_VIEW')}">
+                                        <i class="pr-3 pi pi-list text-blue-400"/>
                                         <span class="hover:underline hover:underline-offset-4">Manage Patients</span>
                                     </h:link>
                                 </div>
                             </div>
+                            </ui:fragment>
                             <!-- Doctors Dropdown -->
-                            <div class="relative">
+                            <ui:fragment rendered="#{authBean.hasPermission('DOCTOR_VIEW')}">
+
+                            <div class="relative" data-style-group="green">
                                 <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold
-                                text-gray-600 rounded hover:bg-blue-100 focus:outline-none"
-                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                    <span class="flex items-center gap-2">
-                                        <i class="pi pi-user text-green-600"/>
+                                text-gray-600 rounded hover:bg-green-100 focus:outline-none"
+                                        onclick="toggleDropdown(this)">
+                                    <span class="flex items-center gap-2 font-medium text-lg">
+                                        <i class="pr-3 pi pi-user-plus text-green-600"/>
                                         Doctors
                                     </span>
                                     <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-                                <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <div class="ml-4 mt-1 flex flex-col gap-1  overflow-hidden transition-all duration-300 ease-in-out max-h-0 opacity-0">
                                     <h:link outcome="doctors" styleClass="block px-4 py-2 rounded font-medium flex items-center
                                     gap-2 transition-all duration-200  hover:bg-green-50
                                     hover:text-green-700">
-                                        <i class="pi pi-list text-green-400"/>
+                                        <i class="pr-3 pi pi-list text-green-400"/>
                                         <span class="hover:underline hover:underline-offset-4">Manage Doctors</span>
                                     </h:link>
                                 </div>
                             </div>
+                            </ui:fragment>
                             <!-- Appointments Dropdown -->
-                            <div class="relative">
+                            <ui:fragment rendered="#{authBean.hasPermission('APPOINTMENT_VIEW')}">
+
+                            <div class="relative" data-style-group="yellow">
                                 <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold
-                                text-gray-600 rounded hover:bg-blue-100 focus:outline-none"
-                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                    <span class="flex items-center gap-2">
-                                        <i class="pi pi-calendar text-yellow-600"/>
+                                text-gray-600 rounded hover:bg-yellow-100 focus:outline-none"
+                                        onclick="toggleDropdown(this)">
+                                    <span class="flex items-center gap-2 font-medium text-lg">
+                                        <i class="pr-3 pi pi-calendar text-yellow-600"/>
                                         Appointments
                                     </span>
                                     <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-                                <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <div class="ml-4 mt-1 flex flex-col gap-1  overflow-hidden transition-all duration-300 ease-in-out max-h-0 opacity-0">
                                     <h:link outcome="appointments" styleClass="block px-4 py-2 rounded font-medium flex items-center
                                     gap-2 transition-all duration-200  hover:bg-yellow-50
                                     hover:text-yellow-700">
-                                        <i class="pi pi-list text-yellow-400"/>
+                                        <i class="pr-3 pi pi-list text-yellow-400"/>
                                         <span class="hover:underline hover:underline-offset-4">Manage Appointments</span>
                                     </h:link>
                                 </div>
                             </div>
+                            </ui:fragment>
                             <!-- Billing Dropdown -->
-                            <div class="relative">
+                            <ui:fragment rendered="#{authBean.hasPermission('BILLING_VIEW')}">
+
+                            <div class="relative" data-style-group="purple">
                                 <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold
-                                text-gray-600 rounded hover:bg-blue-100 focus:outline-none"
-                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                    <span class="flex items-center gap-2">
-                                        <i class="pi pi-money-bill text-purple-600"/>
+                                text-gray-600 rounded hover:bg-purple-100 focus:outline-none"
+                                        onclick="toggleDropdown(this)">
+                                    <span class="flex items-center gap-2 font-medium text-lg">
+                                        <i class="pr-3 pi pi-money-bill text-purple-600"/>
                                         Billing
                                     </span>
                                     <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-                                <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <div class="ml-4 mt-1 flex flex-col gap-1  overflow-hidden transition-all duration-300 ease-in-out max-h-0 opacity-0">
                                     <h:link outcome="billings" styleClass="block px-4 py-2 rounded font-medium flex items-center
                                     gap-2 transition-all duration-200  hover:bg-purple-50
                                     hover:text-purple-700">
-                                        <i class="pi pi-list text-purple-400"/>
+                                        <i class="pr-3 pi pi-list text-purple-400"/>
                                         <span class="hover:underline hover:underline-offset-4">Manage Bills</span>
                                     </h:link>
                                 </div>
                             </div>
+                            </ui:fragment>
                             <!-- Staff Dropdown -->
-                            <div class="relative">
+                            <ui:fragment rendered="#{authBean.hasPermission('STAFF_VIEW')}">
+
+                            <div class="relative" data-style-group="pink">
                                 <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold
-                                text-gray-600 rounded hover:bg-blue-100 focus:outline-none"
-                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                    <span class="flex items-center gap-2">
-                                        <i class="pi pi-id-card text-pink-600"/>
+                                text-gray-600 rounded hover:bg-pink-100 focus:outline-none"
+                                        onclick="toggleDropdown(this)">
+                                    <span class="flex items-center gap-2 font-medium text-lg">
+                                        <i class="pr-3 pi pi-id-card text-pink-600"/>
                                         Staff
                                     </span>
                                     <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-                                <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <div class="ml-4 mt-1 flex flex-col gap-1  overflow-hidden transition-all duration-300 ease-in-out max-h-0 opacity-0">
                                     <h:link outcome="staff" styleClass="block px-4 py-2 rounded font-medium flex items-center
                                     gap-2 transition-all duration-200  hover:bg-pink-50
                                     hover:text-pink-700">
-                                        <i class="pi pi-list text-pink-400"/>
+                                        <i class="pr-3 pi pi-list text-pink-400"/>
                                         <span class="hover:underline hover:underline-offset-4">Manage Staff</span>
                                     </h:link>
                                 </div>
                             </div>
+                            </ui:fragment>
                             <!-- Settings Dropdown -->
-                            <div class="relative">
+                            <ui:fragment rendered="#{authBean.hasPermission('VIEW_SETTINGS_PAGE')}">
+                            <div class="relative" data-style-group="gray">
                                 <button type="button" class="flex items-center justify-between w-full px-4 py-2 font-semibold
-                                text-gray-600 rounded hover:bg-blue-100 focus:outline-none"
-                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                    <span class="flex items-center gap-2">
-                                        <i class="pi pi-cog text-gray-600"/>
+                                text-gray-600 rounded hover:bg-gray-100 focus:outline-none"
+                                        onclick="toggleDropdown(this)">
+                                    <span class="flex items-center gap-2 font-medium text-lg">
+                                        <i class="pr-3 pi pi-cog text-gray-600"/>
                                         <span class="font-bold">Settings</span>
                                     </span>
                                     <svg class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-                                <div class="ml-4 mt-1 flex flex-col gap-1 hidden">
+                                <div class="ml-4 mt-1 flex flex-col gap-1  overflow-hidden transition-all duration-300 ease-in-out max-h-0 opacity-0">
                                     <h:link outcome="settings" styleClass="block px-4 py-2 rounded font-medium flex text-gray-500 items-center
-                                    gap-2 transition-all duration-200 hover:bg-gray-100 hover:text-black">
-                                        <i class="pi pi-database text-red-400 hover:text-red-900"/>
-                                        <span>Data management</span>
+                                    gap-2 transition-all duration-200 hover:bg-gray-100 hover:text-black" rendered="#{authBean.hasPermission('VIEW_SETTINGS_PAGE')}">
+                                        <i class="pr-3 pi pi-database text-red-400 hover:text-red-900"/>
+                                        <span>Archive &amp; management</span>
                                     </h:link>
                                     <h:link outcome="auditlogs" styleClass="block px-4 py-2 rounded font-medium flex text-gray-500 items-center
-                                    gap-2 transition-all duration-200 hover:bg-gray-100 hover:text-black">
-                                        <i class="pi pi-book text-red-400 hover:text-red-900"/>
+                                    gap-2 transition-all duration-200 hover:bg-gray-100 hover:text-black" rendered="#{authBean.hasPermission('VIEW_AUDIT_LOGS')}" >
+                                        <i class="pr-3 pi pi-book text-red-400 hover:text-red-900"/>
                                         <span>Audit Logs</span>
                                     </h:link>
                                 </div>
                             </div>
+                            </ui:fragment>
                             <div class="mt-2 ml-3 flex ">
                                 <p:commandButton icon="pi pi-power-off" value="Logout" title="Logout" action="#{authBean.logout}"
                                     styleClass="!w-full !max-w-[120px] !max-h-[40px] !flex !items-center !justify-center gap-2
@@ -208,16 +303,16 @@
                 <ui:fragment rendered="#{not empty doctorAuthBean.loggedInDoctor}">
                     <h:form class="flex-1 flex flex-col justify-between">
                         <nav class="flex flex-col gap-2">
-                            <h:link outcome="doctor-dashboard" styleClass="sidebar-link rounded hover:bg-blue-100 py-2 px-1 hover:transition-transform hover:duration-600 focus:outline-none">
-                                <i class="pi pi-home sidebar-icon text-blue-600"/>
+                            <h:link outcome="doctor-dashboard" styleClass="sidebar-link rounded  font-medium hover:bg-blue-100 py-2 px-1 hover:transition-transform hover:duration-600 focus:outline-none">
+                                <i class="pr-3 pi pi-home sidebar-icon text-blue-600"/>
                                 <span>Dashboard</span>
                             </h:link>
-                            <h:link outcome="appointments" styleClass="sidebar-link rounded hover:bg-blue-100 py-2 px-1 hover:transition-transform hover:duration-600 focus:outline-none">
-                                <i class="pi pi-calendar sidebar-icon text-yellow-600"/>
+                            <h:link outcome="appointments" styleClass="sidebar-link rounded  font-medium hover:bg-yellow-100 py-2 px-1 hover:transition-transform hover:duration-600 focus:outline-none">
+                                <i class="pr-3 pi pi-calendar sidebar-icon text-yellow-600"/>
                                 <span>Appointments</span>
                             </h:link>
-                            <h:link outcome="doctor-profile" styleClass="sidebar-link rounded hover:bg-blue-100 py-2 px-1 hover:transition-transform hover:duration-600 focus:outline-none">
-                                <i class="pi pi-user sidebar-icon text-green-600"/>
+                            <h:link outcome="doctor-profile" styleClass="sidebar-link rounded font-medium hover:bg-green-100 py-2 px-1 hover:transition-transform hover:duration-600 focus:outline-none">
+                                <i class="pr-3 pi pi-user sidebar-icon text-green-600"/>
                                 <span>Profile</span>
                             </h:link>
                             <div class="mt-2 ml-3 flex ">
@@ -231,10 +326,13 @@
                 </ui:fragment>
             </div>
             <!-- Main Content Area -->
-            <div class="flex-1 p-8 bg-white rounded-lg shadow-md max-w-5xl mx-auto mt-8">
-                <ui:insert name="content">Default content</ui:insert>
+            <div id="main-content"
+                 class="flex-1 bg-white p-4 sm:p-6 md:p-8 overflow-y-auto flex flex-col justify-between transition-all duration-300 md:ml-0 mr-2 ">
+        <ui:insert name="content">Default content</ui:insert>
             </div>
         </div>
     </div>
+
+    
 </h:body>
 </html>
