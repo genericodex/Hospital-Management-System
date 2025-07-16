@@ -24,6 +24,20 @@ public class Appointment {
     @Column(name = "appointment_time", nullable = false)
     private LocalDateTime appointmentTime;
 
+    /**
+     * @EnumType.STRING: What it does: It stores the enum's name as plain text in the database.
+     * <p>
+     * •SCHEDULED is saved as the string "SCHEDULED".<p>
+     * •COMPLETED is saved as the string "COMPLETED".<p>
+     * •CANCELLED is saved as the string "CANCELLED".<p>
+     * <p>
+     * This is incredibly robust and readable.
+     * You can reorder the enum constants all you want, and it won't affect the existing data.
+     * You can also look directly at the database table and immediately understand what each status means
+     * without having to cross-reference your Java code.
+     * <p>
+     * @.ORDINAL Unlike using .ORDINAL (the default) which stores position instead
+     */
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status;
@@ -117,8 +131,7 @@ public class Appointment {
     }
 
     public boolean isValidAppointmentTime() {
-        return appointmentTime != null && !appointmentTime.isBefore(LocalDateTime.now()
- );
+        return appointmentTime != null && !appointmentTime.isBefore(LocalDateTime.now());
     }
 
     @Override
