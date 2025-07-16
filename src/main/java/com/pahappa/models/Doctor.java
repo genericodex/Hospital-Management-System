@@ -27,43 +27,21 @@ public class Doctor {
     @Column(nullable = false)
     private String password;
 
-
-
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
     // Constructors
     public Doctor() {}
 
-
-
     public Doctor(String firstName, String lastName, String specialization,
                   String contactNumber, String email, Boolean isDeleted, String password) {
-
-
-
-
         this.firstName = firstName;
         this.lastName = lastName;
         this.specialization = specialization;
         this.contactNumber = contactNumber;
         this.email = email;
-
-        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
-
-
-
-
-        this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
-
-
-
         this.isDeleted = isDeleted != null ? isDeleted : false; // Default to false if null
         this.password = password;
-
-
-
-
     }
 
     // Getters and Setters
@@ -115,16 +93,6 @@ public class Doctor {
         this.email = email;
     }
 
-
-
-
-
-
-
-
-
-
-
     public boolean isDeleted() {
         return isDeleted;
     }
@@ -132,20 +100,12 @@ public class Doctor {
         isDeleted = deleted;
     }
 
-
-
-
-
     public String getPassword() {
         return password;
     }
     public void setPassword(String password) {
         this.password = password;
     }
-
-
-
-
 
     @Override
     public String toString() {

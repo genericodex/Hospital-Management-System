@@ -55,6 +55,19 @@ public class AuditLog {
     public String getStaffName() { return staffName; }
     public void setStaffName(String staffName) { this.staffName = staffName; }
 
+        /**
+         * @StringBuilder: A standard Java class designed for efficiently building strings,
+         * especially inside loops. So every time I use + to join strings, Java creates a brand-new String object,
+         * which can be inefficient. StringBuilder modifies an internal buffer, which is much faster.
+         *<p>
+         * @String[]: This declares a variable that will hold an array of strings.
+         * This array is a container that holds a fixed number of values of a single type.
+         *
+         * @"\\r?\\n": This is a regular expression.
+         * It's a powerful way to define text patterns. This specific pattern means
+         * "split the string at every newline (\n), which might optionally be preceded by a carriage return (\r)".
+         * This correctly handles line endings from different operating systems (like Windows and Linux).
+         */
     public String getDiff() {
         if (oldValue == null && newValue == null) return "No changes";
         if (oldValue == null) return "Added: " + newValue;

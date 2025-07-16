@@ -104,7 +104,7 @@ public class Patient {
 
 
     /**
-     * Default no-args constructor needed because Hibernate has to create instances of entities.
+     * Default no-args constructor are needed because Hibernate has to create instances of entities.
      * To accomplish this, Hibernate first uses the no-args constructor to instantiate the entity object,
      * then proceeds to populate the object’s properties with the corresponding data from the database.
      * <p>
@@ -177,6 +177,9 @@ public class Patient {
      *  @Setter method that sets or changes the value of a private field.
      *  It takes one parameter (the new value) and usually returns void (nothing).
      *  Its name always starts with set.
+     * <p>
+     *  The code below is valid Java, but breaks conventional setter definition for Hibernate
+     *  and it wont be recognised as a setter for firstName property
      * <p>
      *      //// I perform an action and return a String.
      * <p>
