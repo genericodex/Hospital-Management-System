@@ -114,11 +114,16 @@
                                      rendered="#{authBean.hasPermission('BILLING_DELETE_SOFT')}"
                                      action="#{billingBean.softDeleteBilling(billing)}"
                                      update=":billingForm:billingTable,:billingForm:messages"
-                                     styleClass="ui-button-danger p-0 m-0 text-xs min-w-[28px] min-h-[28px]"
-                                     onclick="return confirm('Are you sure you want to delete this bill?');"/>
+                                     styleClass="ui-button-danger p-0 m-0 text-xs min-w-[28px] min-h-[28px]">
+                        <p:confirm header="Confirmation" message="Are you sure you want to delete this bill?" icon="pi pi-exclamation-circle"/>
+                    </p:commandButton>
                     </div>
                 </p:column>
             </p:dataTable>
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" styleClass="bg-white rounded-lg shadow-lg">
+                <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes !bg-red-500 hover:!bg-red-600 !border-red-500 text-white font-semibold py-2 px-4 rounded shadow"/>
+                <p:commandButton value="Cancel" type="button" styleClass="ui-confirmdialog-no !bg-gray-500 !border-gray-500 hover:!bg-gray-300 text-white hover:!text-black font-semibold py-2 px-4 rounded shadow"/>
+            </p:confirmDialog>
 
             <!-- Create Bill Dialog -->
             <p:dialog id="billingDialog" header="Create New Bill" widgetVar="billingDialog" modal="true" resizable="false">
