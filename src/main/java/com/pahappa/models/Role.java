@@ -16,14 +16,38 @@ public class Role implements Serializable {
 
     @Column(name = "name", unique = true, nullable = false)
     private String name;
-
-    @ManyToMany(fetch = FetchType.EAGER) // EAGER is often useful for permissions
+    /**
+     * @ManyToMany defines a "Many-to-Many" relationship.
+     * This means "Many" Roles can have "Many" Permissions.
+     *  Example: The "ADMIN" role has "DELETE_PATIENT" and "CREATE_DOCTOR" permissions.
+     *  The "DELETE_PATIENT" permission can also be given to a "RECEPTIONIST" role.
+     * <p>
+     *  Since there's no direct column that can link two tables with a many-to-many
+     *  relationship, Hibernate needs to create a third, separate "linking table".
+     *  @JoinTable defines this linking table.
+     */
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_permissions",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
+            joinColumns = @JoinColumn(name = "role_id"),//store the ID of the Role.
+            inverseJoinColumns = @JoinColumn(name = "permission_id")//store the ID of the Permission.
     )
     private Set<Permissions> permissions = new HashSet<>();
+    /**
+     * @Set (like a HashSet):
+     * A Set is like a collection of unique business cards.
+     * •Order is NOT Guaranteed: When you throw cards into a box, you don't care about the order.
+     * A Set makes no promises about the order of its items.
+     * <p>
+     * •Duplicates are FORBIDDEN: You would never keep two identical business cards for the same person.
+     * If you try to add a card that's already in the box, a Set simply ignores the new one.
+     * It ensures every item inside is unique.
+     * <p>
+     * I am telling Java and Hibernate:
+     * "A Role can have a collection of permissions,
+     * and I guarantee that every single permission in this collection will be unique."
+     *
+     */
 
 
     // Constructors

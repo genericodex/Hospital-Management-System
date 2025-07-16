@@ -21,9 +21,13 @@ public class Staff {
 
     @Column(name = "contact_number", nullable = false)
     private String contactNumber;
-
+    /**
+     *  This defines a "Many-to-One" relationship.
+     * This means "Many" Staff members can be associated with "One" Role.
+     * (e.g., Many staff members can have the "Nurse" role).
+     */
     @ManyToOne
-    @JoinColumn(name = "role_id") // This will be a foreign key in your 'staff' table
+    @JoinColumn(name = "role_id") // This will be a foreign key in my 'staff' table
     private Role role;
 
 
