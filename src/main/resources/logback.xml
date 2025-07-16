@@ -1,4 +1,11 @@
 <configuration>
+
+
+    <!-- This is a special tag for debugging Logback itself. -->
+    <!-- It will print status messages to the console if Logback has trouble finding or reading this file. -->
+    <!-- After fixing the logging, you can remove this statusListener. -->
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
