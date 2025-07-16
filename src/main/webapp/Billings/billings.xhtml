@@ -89,7 +89,7 @@
                     </h:outputText>
                 </p:column>
 
-                <p:column headerText="Actions" style="width:12%" rendered="#{authBean.hasPermission('BILLING_EDIT')}">
+                <p:column headerText="Actions" style="width:12%" rendered="#{authBean.hasPermission('BILLING_PROCESS_PAYMENT')}">
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
 
                     <p:commandButton icon="pi pi-money-bill" title="Process Payment"
@@ -141,9 +141,11 @@
                 <f:facet name="footer">
                     <p:commandButton value="Save" action="#{billingBean.saveBilling}"
                                      update=":billingForm:messages,:billingForm:billingTable"
+                                     styleClass="!bg-green-600 !border-green-600 !font-medium hover:!bg-green-500"
                                      oncomplete="if(!args.validationFailed) PF('billingDialog').hide()"
                                      rendered="#{authBean.hasPermission('BILLING_CREATE')}"/>
-                    <p:commandButton value="Cancel" onclick="PF('billingDialog').hide()" type="button"/>
+                    <p:commandButton value="Cancel" onclick="PF('billingDialog').hide()" type="button"
+                                     styleClass="!bg-green-200 !border-green-200  !font-medium !text-black hover:!bg-green-300"/>
                 </f:facet>
             </p:dialog>
 
@@ -170,10 +172,13 @@
 
                 <f:facet name="footer">
                     <p:commandButton value="Process" action="#{billingBean.processPayment}"
-                                     process=":billingForm:paymentDialog" update=":billingForm:messages,:billingForm:billingTable"
+                                     process=":billingForm:paymentDialog"
+                                     styleClass="!bg-green-600 !border-green-600 !font-medium hover:!bg-green-500"
+                                     update=":billingForm:messages,:billingForm:billingTable"
                                      oncomplete="if(!args.validationFailed) PF('paymentDialog').hide()"
                                      rendered="#{authBean.hasPermission('BILLING_PROCESS_PAYMENT')}"/>
-                    <p:commandButton value="Cancel" onclick="PF('paymentDialog').hide()" type="button"/>
+                    <p:commandButton value="Cancel" onclick="PF('paymentDialog').hide()" type="button"
+                                     styleClass="!bg-green-200 !border-green-200  !font-medium !text-black hover:!bg-green-300"/>
                 </f:facet>
             </p:dialog>
 
