@@ -70,15 +70,26 @@ public class PatientDao implements Serializable {
         logger.debug("Attempting to retrieve patient with ID: {}", id);
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         Patient patient = session.get(Patient.class, id);
-        logger.info("Successfully retrieved staff member: {}", patient != null ? patient.getEmail() : null);
+        logger.info("Successfully retrieved patient: {}", patient != null ? patient.getEmail() : null);
         return patient;
     }
 
+    /**
+     * Fetches a complete list of all patients from the database.
+     * @List<...>  A list containing all Patient objects. The list will be empty if no patients exist.
+     * <p>
+     * A query for "all patients" will almost always return more than one record.
+     * A single Patient object can't hold all that data. A List is a standard and
+     * most intuitive way in Java to represent a collection of multiple items.
+     * <p>
+     * If there are no patients in the database? The method doesn't fail.
+     * It simply returns an empty list.
+     */
     public List<Patient> getAllPatients() {
         logger.debug("Attempting to retrieve all patients");
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         List<Patient> patientList = session.createQuery("FROM com.pahappa.models.Patient", Patient.class).list();
-        logger.info("Successfully retrieved {} staff members", patientList.size());
+        logger.info("Successfully retrieved {} patients", patientList.size());
         return patientList;
     }
 
@@ -110,6 +121,9 @@ public class PatientDao implements Serializable {
             managedPatient.setUpdatedBy(patient.getUpdatedBy());
             managedPatient.setUpdatedAt(patient.getUpdatedAt());
             session.merge(managedPatient);
+            logger.info("Successfully updated patient with ID: {}", patient.getId());
+        } else {
+            logger.warn("No patient found with ID: {}", patient.getId());
         }
     }
 
@@ -131,7 +145,7 @@ public class PatientDao implements Serializable {
             session.remove(patient);
             logger.info("Successfully deleted patient with ID: {}", id);
         } else {
-            logger.warn("No patient found with ID: {}", id);
+            logger.warn("No patient found with ID: {} to update", id);
         }
     }
 
@@ -144,6 +158,7 @@ public class PatientDao implements Serializable {
         if (patient != null && !patient.isDeleted()) {
             patient.setDeleted(true);
             session.merge(patient);
+            logger.info("Successfully soft deleted patient with ID: {}", id);
         }
     }
 
