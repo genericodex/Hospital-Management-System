@@ -160,7 +160,9 @@
                                      update=":appointmentForm:messages,:appointmentForm:appointmentTable"
                                      rendered="#{appointment.status == 'SCHEDULED'}"
                                      process="@this" immediate="true"
-                                     styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
+                                     styleClass="!bg-red-500 border !border-red-700 p-0 m-0 text-xs min-w-[28px] min-h-[28px]">
+                        <p:confirm header="Confirmation" message="Are you sure you want to cancel this appointment?" icon="pi pi-exclamation-circle"/>
+                    </p:commandButton>
 
                     <p:commandButton icon="pi pi-check" title="Complete"
                                      action="#{appointmentBean.completeAppointment(appointment)}"
@@ -171,6 +173,10 @@
                     </div>
                 </p:column>
             </p:dataTable>
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" styleClass="bg-white rounded-lg shadow-lg">
+                <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes !bg-red-500 hover:!bg-red-600 !border-red-500 text-white font-semibold py-2 px-4 rounded shadow"/>
+                <p:commandButton value="Cancel" type="button" styleClass="ui-confirmdialog-no !bg-gray-500 !border-gray-500 hover:!bg-gray-300 text-white hover:!text-black font-semibold py-2 px-4 rounded shadow"/>
+            </p:confirmDialog>
 
             <!-- Add/Edit Appointment Dialog -->
             <p:dialog id="appointmentDialog"  header="Appointment Details" widgetVar="appointmentDialog" modal="true"
