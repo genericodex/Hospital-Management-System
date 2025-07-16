@@ -102,6 +102,42 @@
                 <span class="text-2xl font-extrabold tracking-wide drop-shadow">Hospital Management System</span>
             </div>
             <div class="flex items-center gap-4">
+                <h:form>
+                    <!-- Staff Profile & Logout -->
+                    <ui:fragment rendered="#{not empty authBean.staff}">
+                        <div class="flex items-center gap-4">
+                            <h:link outcome="/Staff/staff-profile"
+                                    styleClass="flex items-center !w-52 px-4 py-2 rounded-full bg-green-400/80 hover:bg-green-400 text-green-800
+                                    !font-semibold !shadow-inner !shadow-gray-600/30 transition-colors duration-200">
+                                <i class="pi pi-user mr-2"/>
+                                <span>Welcome, #{authBean.staff.firstName}</span>
+                            </h:link>
+
+                            <p:commandButton icon="pi pi-power-off" value="Logout" title="Logout" action="#{authBean.logout}"
+                                             styleClass="!w-full !max-w-[120px] !max-h-[40px] !flex !items-center !justify-center gap-2
+                                    !bg-red-700 to-pink-600 hover:!from-red-900 hover:!to-pink-800 text-white !border !border-red-600
+                                    !font-bold !py-3 !rounded-full shadow-inner shadow-red-900 !transition-all !duration-200 !transform hover:!scale-105"/>
+                        </div>
+
+                    </ui:fragment>
+
+                    <!-- Doctor Profile & Logout -->
+                    <ui:fragment rendered="#{not empty doctorAuthBean.loggedInDoctor}">
+                        <div class="flex items-center gap-4">
+                            <h:link outcome="doctor-profile"
+                                    styleClass="flex items-center px-4 py-2 !w-52 rounded-full bg-green-400/80 hover:bg-green-400 text-green-800
+                                    font-semibold !shadow-inner !shadow-gray-600/30  transition-colors duration-200">
+                                <i class="pi pi-user mr-2"/>
+                                <span>Welcome, Dr. #{doctorAuthBean.loggedInDoctor.firstName}</span>
+                            </h:link>
+
+                            <p:commandButton icon="pi pi-power-off" value="Logout" title="Logout" action="#{doctorAuthBean.logout}"
+                                             styleClass="!w-full !max-w-[120px] !max-h-[40px] !flex !items-center !justify-center gap-2
+                                    !bg-red-700 hover:!from-red-900 hover:!to-pink-700 text-white !border !border-red-600
+                                    !font-bold !py-3 !rounded-full !shadow-inner !shadow-red-900 !transition-all !duration-200 !transform hover:!scale-105"/>
+                        </div>
+                    </ui:fragment>
+                </h:form>
 
             </div>
         </div>
