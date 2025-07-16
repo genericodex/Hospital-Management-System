@@ -112,8 +112,8 @@ public class Patient {
      *      so it can create an empty Patient object first, before filling it with
      *     data from the database.
      * <p>
-     * By making the Patient class public, you are allowing any other class in your entire project
-     * (like your DAOs, Services, and JSF Beans) to see it, create new Patient objects, and use them.
+     * By making the Patient class public, I am allowing any other class in my entire project
+     * (like DAOs, Services, and JSF Beans) to see it, create new Patient objects, and use them.
      * This is essential for the class to be useful across your application.
      */
     public Patient() {}
