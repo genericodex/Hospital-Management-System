@@ -13,18 +13,30 @@ import java.util.List;
 
 
 /**
- * - A Session is the main runtime interface between Java and Hibernate
+ * @Session is the main runtime interface between Java and Hibernate
  * <p>
  *     - 'beginTransaction()': Starts a new transaction
  * <p>
  *     - 'commit()': Saves changes permanently
  * <p>
  *     - 'rollback()': Reverts changes if something goes wrong
+ *
+ * @ApplicationScoped: This is a Jakarta EE (CDI) annotation. It tells the application server:
+ * "Create exactly one instance of this DAO for the entire application, and reuse it whenever I ask for it."
+ * This tells the server to create only one single instance of this PatientDao for the entire application.
+ * It's super efficient because everyone shares the same object, like a single librarian for a whole library.
+ *
+ * @Serializable : A marker interface, for  simply flagging it and telling the Java Virtual Machine (JVM):
+ * <p>
+ *
+ * This is like giving the PatientDao object a "passport." It allows the application server to save it to
+ * disk or send it across a network (for server clusters) if needed. It's a requirement for
+ * ApplicationScoped beans.
+ *
+ *
  */
 @ApplicationScoped
 public class PatientDao implements Serializable {
-
-    private static final Logger logger = LoggerFactory.getLogger(PatientDao.class);
 
     /**
      * getSessionFactory() returns a special object that creates and manages connections to the database.
@@ -34,7 +46,14 @@ public class PatientDao implements Serializable {
      * getCurrentSession() gives you the current active connection (session) to the database for your ongoing work.
      * If there isn’t one, it creates a new one for you. This session is used to read from or write to the database.
      */
+    private static final Logger logger = LoggerFactory.getLogger(PatientDao.class);
+
     // Create
+
+    /**
+     * @persist(object) takes a transient (new) object and makes it persistent.
+     * It tells Hibernate, "I want to save this new object to the database."
+     */
     public void savePatient(Patient patient) {
         logger.debug("Attempting to save patient: {}", patient.getEmail());
         // Persist patient without strict null checks; validation should be handled in service or JSF layer
@@ -64,6 +83,14 @@ public class PatientDao implements Serializable {
     }
 
     // Update
+
+    /**
+     * @merge(object) takes a detached object (like one coming from a JSF form)
+     * and synchronizes its state with the database, by loading the current version
+     * of that patient from the database into the session. It then copies the state
+     * (all the fields) from your detached patient object onto the initialized object,
+     * which is then returned as a persistent and watched object in Hibernate
+     */
     public void updatePatient(Patient patient) {
         // Persist patient without strict null checks; validation should be handled in service or JSF layer
         if (patient.getId() == null) {
@@ -87,6 +114,12 @@ public class PatientDao implements Serializable {
     }
 
     // Delete
+
+    /**
+     * @remove(object) takes a persistent (managed) object
+     * and marks it for deletion from the database.
+     * The actual DELETE SQL statement is typically executed when the transaction commits.
+     */
     public void deletePatient(Long id) {
         if (id == null) {
             throw new IllegalArgumentException("Patient id must not be null.");
@@ -121,6 +154,9 @@ public class PatientDao implements Serializable {
                 "FROM com.pahappa.models.Patient WHERE isDeleted = false", Patient.class).list();
     }
 
+    /**
+     * @.uniqueResult() is used to make certain that the query will find at most one result.
+     */
     public long countActivePatients() {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         String hql = "SELECT count(p.id) FROM Patient p WHERE p.isDeleted = false";
