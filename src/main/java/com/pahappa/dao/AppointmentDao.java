@@ -12,10 +12,7 @@ import org.hibernate.Transaction;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -379,7 +376,7 @@ public class AppointmentDao {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
-            session.update(appointment);
+            session.merge(appointment);
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) {
@@ -389,5 +386,29 @@ public class AppointmentDao {
         }
     }
 
+    // This method should be added to your com.pahappa.dao.AppointmentDao class
+    public Map<LocalDate, Long> getDailyAppointmentCountsForDoctor(Long doctorId, LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT function('date', a.appointmentTime), count(a.id) " +
+                    "FROM Appointment a " +
+                    "WHERE a.isDeleted = false AND a.doctor.id = :doctorId AND a.appointmentTime >= :startDateTime AND a.appointmentTime < :endDateTime " +
+                    "GROUP BY function('date', a.appointmentTime)";
+
+            List<Object[]> results = session.createQuery(hql, Object[].class)
+                    .setParameter("doctorId", doctorId)
+                    .setParameter("startDateTime", startDate.atStartOfDay())
+                    .setParameter("endDateTime", endDate.plusDays(1).atStartOfDay())
+                    .getResultList();
+
+            Map<LocalDate, Long> dailyCounts = new TreeMap<>(); // TreeMap keeps dates sorted
+            for (Object[] result : results) {
+                // The result from FUNCTION('date', ...) is often a java.sql.Date
+                LocalDate date = ((java.sql.Date) result[0]).toLocalDate();
+                Long count = (Long) result[1];
+                dailyCounts.put(date, count);
+            }
+            return dailyCounts;
+        }
+    }
 }
 
