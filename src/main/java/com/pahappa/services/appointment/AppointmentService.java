@@ -34,4 +34,5 @@ public interface AppointmentService {
     List<Appointment> getUpcomingAppointmentsForDoctor(Long doctorId);
     Appointment findById(Long id); // Add this line
     void updateCalendarAppointment(Appointment appointment);
+    Map<LocalDate, Long> getDailyAppointmentCountsForDoctor(Long doctorId, LocalDate startDate, LocalDate endDate);
 }

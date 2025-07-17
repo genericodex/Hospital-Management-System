@@ -73,6 +73,17 @@
                         <span class="text-green-700 group-hover:underline font-semibold">View My Profile</span>
                     </div>
 
+                    <!-- NEW: Weekly Activity Chart -->
+                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="pi pi-chart-bar text-blue-600 text-xl"/>
+                            <span class="font-semibold text-blue-700 text-lg">My Weekly Activity</span>
+                        </div>
+                        <div class="relative" style="height: 400px;">
+                            <canvas id="doctorWeeklyActivityChart"></canvas>
+                        </div>
+                    </div>
+
 
 
 
@@ -225,50 +236,86 @@
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <h:outputScript>
-        // This function will be called by the remoteCommand
-        function renderDoctorChart(data) {
-        if (!data || data.length === 0) {
-        // Handle case with no data
-        console.log("No appointment data to render chart.");
-        return;
-        }
+            // This global function is called by the remoteCommand and dispatches data to specific chart renderers.
+            function initDoctorDashboardCharts(pieData, barData) {
+                renderDoctorPieChart(pieData);
+                renderWeeklyActivityChart(barData);
+            }
 
-        const labels = data.map(item => item.status);
-        const counts = data.map(item => item.count);
-
-        const backgroundColors = data.map(item => {
-        switch (item.status) {
-        case "SCHEDULED": return "rgb(54, 162, 235)"; // Blue
-        case "COMPLETED": return "rgb(75, 192, 192)"; // Green
-        case "CANCELLED": return "rgb(255, 99, 132)"; // Red
-        default: return "rgb(201, 203, 207)"; // Grey
-        }
-        });
-
-        const ctx = document.getElementById('doctorPieChart').getContext('2d');
-
-        // Destroy any existing chart on the canvas to prevent conflicts on AJAX updates
-        if (window.myDoctorPieChart instanceof Chart) {
-        window.myDoctorPieChart.destroy();
-        }
-            // Create the new chart
-            window.myDoctorPieChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Appointments',
-                        data: counts,
-                        backgroundColor: backgroundColors,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
+            // Renamed this from renderDoctorChart to be more specific
+            function renderDoctorPieChart(data) {
+                const canvas = document.getElementById('doctorPieChart');
+                if (!canvas || !data || data.length === 0) {
+                    console.log("No appointment status data for pie chart.");
+                    return;
                 }
-            });
-        }
+
+                const labels = data.map(item => item.status);
+                const counts = data.map(item => item.count);
+
+                const backgroundColors = data.map(item => {
+                    switch (item.status) {
+                        case "SCHEDULED": return "rgb(54, 162, 235)"; // Blue
+                        case "COMPLETED": return "rgb(75, 192, 192)"; // Green
+                        case "CANCELLED": return "rgb(255, 99, 132)"; // Red
+                        default: return "rgb(201, 203, 207)"; // Grey
+                    }
+                });
+
+                const ctx = canvas.getContext('2d');
+
+                // Destroy any existing chart on the canvas to prevent conflicts on AJAX updates
+                if (window.myDoctorPieChart instanceof Chart) {
+                    window.myDoctorPieChart.destroy();
+                }
+                window.myDoctorPieChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Appointments',
+                            data: counts,
+                            backgroundColor: backgroundColors,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+
+            // NEW: Function to render the weekly activity bar chart
+            function renderWeeklyActivityChart(data) {
+                const canvas = document.getElementById('doctorWeeklyActivityChart');
+                if (!canvas || !data || data.length === 0) return;
+
+                const labels = data.map(item => item.date);
+                const counts = data.map(item => item.count);
+                const ctx = canvas.getContext('2d');
+
+                if (window.myDoctorWeeklyActivityChart instanceof Chart) {
+                    window.myDoctorWeeklyActivityChart.destroy();
+                }
+                window.myDoctorWeeklyActivityChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Appointments',
+                            data: counts,
+                            backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                            borderColor: 'rgb(37, 99, 235)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                        },
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
         </h:outputScript>
         </div>
         </h:form>
