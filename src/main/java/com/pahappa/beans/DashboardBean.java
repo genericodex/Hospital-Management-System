@@ -23,10 +23,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Named
@@ -163,16 +160,47 @@ public class DashboardBean implements Serializable {
                     .collect(Collectors.joining(", ", "[", "]"));
 
             // Data for Line Chart (Revenue)
+
+            // --- NEW: Logic for multi-line Revenue Chart (Paid vs. Pending) ---
             LocalDate revenueEndDate = LocalDate.now();
-            LocalDate revenueStartDate = revenueEndDate.minusDays(29); // ~30 days
-            Map<LocalDate, Double> dailyRevenueData = billingService.getDailyRevenue(revenueStartDate, revenueEndDate);
-            String revenueChartJson = revenueStartDate.datesUntil(revenueEndDate.plusDays(1))
-                    .map(date -> {
-                        String formattedDate = date.format(DateTimeFormatter.ofPattern("MMM dd"));
-                        double amount = dailyRevenueData.getOrDefault(date, 0.0);
-                        return String.format("{\"date\": \"%s\", \"amount\": %.2f}", formattedDate, amount);
-                    })
-                    .collect(Collectors.joining(", ", "[", "]"));
+            LocalDate revenueStartDate = revenueEndDate.minusDays(29);
+            List<Object[]> dailyRevenueByStatus = billingService.getDailyRevenueByStatus(revenueStartDate, revenueEndDate);
+
+            // Process the raw data into a structured map for easy JSON conversion
+            Map<LocalDate, Map<BillingStatus, Double>> processedData = new TreeMap<>();
+            revenueStartDate.datesUntil(revenueEndDate.plusDays(1)).forEach(date -> {
+                Map<BillingStatus, Double> statusMap = new EnumMap<>(BillingStatus.class);
+                statusMap.put(BillingStatus.PAID, 0.0);
+                statusMap.put(BillingStatus.PENDING, 0.0);
+                processedData.put(date, statusMap);
+            });
+
+            for (Object[] row : dailyRevenueByStatus) {
+                // The DAO returns java.sql.Date, which needs conversion to LocalDate
+                LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+                BillingStatus status = (BillingStatus) row[1];
+                Double total = (Double) row[2];
+                if (processedData.containsKey(date)) {
+                    processedData.get(date).put(status, total == null ? 0.0 : total);
+                }
+            }
+
+            // Build the separate lists for the final JSON object
+            List<String> labels = new ArrayList<>();
+            List<Double> paidData = new ArrayList<>();
+            List<Double> pendingData = new ArrayList<>();
+
+            processedData.forEach((date, statusMap) -> {
+                labels.add(date.format(DateTimeFormatter.ofPattern("MMM dd")));
+                paidData.add(statusMap.get(BillingStatus.PAID));
+                pendingData.add(statusMap.get(BillingStatus.PENDING));
+            });
+
+            // Manually construct the final JSON object to be sent to the frontend
+            String labelsJson = labels.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",", "[", "]"));
+            String paidDataJson = paidData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+            String pendingDataJson = pendingData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+            String revenueChartJson = String.format("{\"labels\": %s, \"paidData\": %s, \"pendingData\": %s}", labelsJson, paidDataJson, pendingDataJson);
 
             List<Object[]> doctorWorkloadData = appointmentService.getAppointmentCountsByDoctor();
             String doctorWorkloadJson = doctorWorkloadData.stream()

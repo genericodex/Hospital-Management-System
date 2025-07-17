@@ -396,10 +396,12 @@
         function renderRevenueChart(data) {
             // FIX: Check if the canvas element exists.
             const canvas = document.getElementById('monthlyRevenueChart');
-            if (!canvas || !data || data.length === 0) return;
+            if (!canvas || !data || !data.labels || data.labels.length === 0) return;
 
-            const labels = data.map(item => item.date);
-            const amounts = data.map(item => item.amount);
+            // The data object now contains separate arrays for labels and datasets
+            const labels = data.labels;
+            const paidData = data.paidData;
+            const pendingData = data.pendingData;
             const ctx = canvas.getContext('2d');
 
             // Destroy existing chart if it exists
@@ -410,14 +412,24 @@
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Daily Revenue',
-                        data: amounts,
-                        fill: true,
-                        backgroundColor: 'rgba(20, 184, 166, 0.2)', // Tailwind Teal-500
-                        borderColor: 'rgb(20, 184, 166)',
-                        tension: 0.3 // Makes the line smooth
-                    }]
+            datasets: [
+            {
+            label: 'Paid Revenue',
+            data: paidData,
+            fill: true,
+            backgroundColor: 'rgba(20, 184, 166, 0.2)', // Teal
+            borderColor: 'rgb(20, 184, 166)',
+            tension: 0.3
+            },
+            {
+            label: 'Pending Revenue',
+            data: pendingData,
+            fill: true,
+            backgroundColor: 'rgba(249, 115, 22, 0.2)', // Orange-500
+            borderColor: 'rgb(249, 115, 22)',
+            tension: 0.3
+            }
+            ]
                 },
                 options: {
                     scales: {
@@ -425,8 +437,8 @@
                             beginAtZero: true,
                             ticks: {
                                 // Optional: Format ticks as currency
-                                callback: function(value, index, values) {
-                                    return 'Shs ' + value.toLocaleString();
+            callback: function(value) {
+            return 'shs ' + value.toLocaleString();
                                 }
                             }
                         }
