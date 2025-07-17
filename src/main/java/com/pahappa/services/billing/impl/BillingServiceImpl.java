@@ -15,6 +15,7 @@ import com.pahappa.models.Doctor;
 import com.pahappa.models.Appointment;
 import com.pahappa.models.Staff;
 import jakarta.inject.Named;
+import jakarta.transaction.Transactional;
 
 import java.util.Date;
 import java.util.Map;
@@ -100,5 +101,11 @@ public class BillingServiceImpl implements BillingService {
 
     public List<Billing> getDeletedBillings() {
         return billingDao.getDeletedBillings();
+    }
+
+    @Override
+    @Transactional
+    public List<Object[]> getBillingStatusTotals() {
+        return billingDao.getBillingStatusTotals();
     }
 }

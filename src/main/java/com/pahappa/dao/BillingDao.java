@@ -6,6 +6,7 @@ import com.pahappa.util.HibernateUtil;
 import org.hibernate.Session;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -186,5 +187,18 @@ public class BillingDao {
                         row -> (Double) row[1] != null ? (Double) row[1] : 0.0
                 )
         );
+    }
+
+    public List<Object[]> getBillingStatusTotals() {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        // Groups bills by status and sums the amount for each status.
+        String hql = "SELECT b.status, SUM(b.amount) FROM Billing b WHERE b.isDeleted = false GROUP BY b.status";
+        try {
+            return session.createQuery(hql, Object[].class).list();
+        } catch (Exception e) {
+            // In case of an error, log it and return an empty list to prevent crashes.
+            // log.error("Failed to get billing status totals.", e);
+            return Collections.emptyList();
+        }
     }
 }

@@ -23,4 +23,5 @@ public interface BillingService {
     List<Billing> findBillings(Long patientId, String paymentMethod);
     Map<LocalDate, Double> getDailyRevenue(LocalDate startDate, LocalDate endDate);
     double getTotalRevenue();
+    List<Object[]> getBillingStatusTotals();
 }
