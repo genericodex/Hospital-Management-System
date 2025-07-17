@@ -20,7 +20,7 @@
         <h:form id="dashboardForm">
             <!-- NEW: Remote command to load chart data on page load -->
             <p:remoteCommand name="loadCharts"
-                             actionListener="#{dashboardBean.loadChartData}"
+                             actionListener="#{dashboardBean.loadChartData()}"
                              autoRun="true" />
             <p:panel styleClass="border-0  !rounded-lg mb-4 !shadow-lg bg-blue-100 !w-full">
                 <div class="flex items-center gap-2 mb-4">
@@ -181,6 +181,32 @@
             </div>
                 </ui:fragment>
             </div>
+            <!-- ======================================================= -->
+            <!-- === Billing and Specialization Charts === -->
+            <!-- ======================================================= -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <!-- Billing Status Chart -->
+                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="pi pi-dollar text-red-600 text-xl"/>
+                        <span class="font-semibold text-red-700 text-lg">Billing Overview (Paid vs. Pending)</span>
+                    </div>
+                    <div class="relative" style="height: 350px;">
+                        <canvas id="billingStatusChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Doctor Specialization Chart -->
+                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="pi pi-sitemap text-indigo-600 text-xl"/>
+                        <span class="font-semibold text-indigo-700 text-lg">Doctor Specializations</span>
+                    </div>
+                    <div class="relative" style="height: 350px;">
+                        <canvas id="doctorSpecializationChart"></canvas>
+                    </div>
+                </div>
+            </div>
 
             <!-- ======================================================= -->
             <!-- === Interactive Recent Appointments Section === -->
@@ -251,21 +277,21 @@
                         <f:convertDateTime type="localDateTime" pattern="EEEE, MMM dd, yyyy 'at' hh:mm a"/>
                     </h:outputText>
 
-                    <p:outputLabel for="status" value="Status:" styleClass="font-bold"/>
-                    <p:selectOneMenu id="status" value="#{dashboardBean.selectedAppointment.status}">
-                        <f:selectItems value="#{appointmentBean.statuses}" var="s"
-                                       itemLabel="#{s.displayName}" itemValue="#{s}"/>
-                    </p:selectOneMenu>
+                    <h:outputText value="Status:" styleClass="font-bold"/>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
+                                      #{dashboardBean.selectedAppointment.status eq 'SCHEDULED' ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                      : dashboardBean.selectedAppointment.status eq 'COMPLETED' ? 'bg-green-100 text-green-700 border border-green-200'
+                                      : 'bg-gray-100 text-gray-700 border border-gray-200'}">
+                         #{dashboardBean.selectedAppointment.status}
+                     </span>
                 </h:panelGrid>
 
                 <f:facet name="footer">
-                    <p:commandButton value="Save Changes"
-                                     actionListener="#{dashboardBean.updateSelectedAppointment}"
-                                     icon="pi pi-check"
-                                     process="appointmentDetailsDialog @this"
-                                     update=":dashboardForm:recentAppointmentsTable :dashboardForm:messages"
-                                     styleClass="ui-button-success"/>
-                    <p:commandButton value="Cancel" icon="pi pi-times"
+                    <p:button value="Manage Appointments"
+                              outcome="appointments"
+                              icon="pi pi-arrow-right"
+                              styleClass="!bg-green-500 !border-green-400 hover:!bg-green-600"/>
+                    <p:commandButton value="Close" icon="pi pi-times"
                                      onclick="PF('appointmentDialogWidget').hide()"
                                      type="button" styleClass="ui-button-secondary"/>
                 </f:facet>
@@ -278,12 +304,14 @@
         <!-- ======================================================= -->
         <h:outputScript>
         // This global function will be called by the remoteCommand
-        function initStaffDashboardCharts(barData, donutData, revenueData, workloadData) {
+        function initStaffDashboardCharts(barData, donutData, revenueData, workloadData, billingData, specializationData) {
             console.log("Initializing all staff charts...");
             renderBarChart(barData);
             renderDonutChart(donutData);
             renderRevenueChart(revenueData);
             renderDoctorWorkloadChart(workloadData);
+            renderBillingStatusChart(billingData);
+            renderDoctorSpecializationChart(specializationData);
         }
 
         // Renders the bar chart for daily appointments
@@ -445,6 +473,80 @@
                 }
             });
         }
+
+            // --- NEW: Copied from billings.xhtml and adapted ---
+            function renderBillingStatusChart(data) {
+            const canvas = document.getElementById('billingStatusChart');
+            if (!canvas) return;
+
+            // Show a "no data" message if data is empty
+            if (!data || data.length === 0) {
+            canvas.style.display = 'none';
+            const parent = canvas.parentElement;
+            if (!parent.querySelector('.no-data-msg')) {
+            parent.innerHTML += '<div class="no-data-msg text-gray-500 text-center pt-24">No billing data available</div>';
+            }
+            return;
+            }
+
+            const paidData = data.find(d => d.status === 'PAID')?.total || 0;
+            const pendingData = data.find(d => d.status === 'PENDING')?.total || 0;
+
+            const chartData = {
+            labels: ['Paid', 'Pending'],
+            datasets: [{
+            label: 'Total Amount (shs)',
+            data: [paidData, pendingData],
+            backgroundColor: ['rgba(34, 197, 94, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+            borderColor: ['rgb(22, 163, 74)', 'rgb(185, 28, 28)'],
+            borderWidth: 1
+            }]
+            };
+            if (window.billingDoughnutChart) window.billingDoughnutChart.destroy();
+
+            window.billingDoughnutChart = new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: chartData,
+            options: { responsive: true, maintainAspectRatio: false }
+            });
+            }
+            // --- NEW: Copied from doctors.xhtml and adapted ---
+            function renderDoctorSpecializationChart(data) {
+            const canvas = document.getElementById('doctorSpecializationChart');
+            if (!canvas) return;
+
+            if (!data || data.length === 0) {
+            canvas.style.display = 'none';
+            const parent = canvas.parentElement;
+            if (!parent.querySelector('.no-data-msg')) {
+            parent.innerHTML += '<div class="no-data-msg text-gray-500 text-center pt-24">No specialization data available</div>';
+            }
+            return;
+            }
+
+            const labels = data.map(item => item.specialization);
+            const counts = data.map(item => item.count);
+
+            if (window.specializationChart) window.specializationChart.destroy();
+
+            window.specializationChart = new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+            labels: labels,
+            datasets: [{
+            label: 'Doctors',
+            data: counts,
+            backgroundColor: [
+            'rgba(52, 211, 153, 0.7)', 'rgba(96, 165, 250, 0.7)',
+            'rgba(251, 191, 36, 0.7)', 'rgba(239, 68, 68, 0.7)',
+            'rgba(168, 85, 247, 0.7)', 'rgba(236, 72, 153, 0.7)'
+            ],
+            hoverOffset: 4
+            }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+            });
+            }
         </h:outputScript>
     </ui:define>
 </ui:composition>
