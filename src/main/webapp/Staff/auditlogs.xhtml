@@ -7,10 +7,37 @@
 
 <ui:composition template="/template.xhtml">
     <ui:define name="title">Audit Logs</ui:define>
+
+    <ui:define name="head">
+        <!-- Add Chart.js library -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </ui:define>
     <ui:define name="content">
         <div class="bg-white rounded-lg shadow-lg p-8 max-w-9xl mx-auto mt-6">
             <h2 class="text-2xl font-bold mb-4 text-green-700">System Audit Logs</h2>
             <h:form id="auditLogForm">
+                <p:remoteCommand name="loadChart"
+                                 actionListener="#{auditLogBean.loadChartData}"
+                                 autoRun="true" />
+                <!-- Chart Panel -->
+                <!-- Chart Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- User Interactivity Chart Panel -->
+                    <p:panel header="User Interactivity" styleClass="!border-0 !shadow-lg rounded-lg">
+                        <div class="relative" style="height: 400px;">
+                            <canvas id="userActivityChart"></canvas>
+                        </div>
+                    </p:panel>
+
+                    <!-- Action Type Breakdown Chart Panel -->
+                    <p:panel header="Action Type Breakdown" styleClass="!border-0 !shadow-lg rounded-lg">
+                        <div class="relative" style="height: 400px;">
+                            <canvas id="actionTypeChart"></canvas>
+                        </div>
+                    </p:panel>
+                </div>
+                <p:panel>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <p:outputLabel for="entityFilter" value="Filter by Entity:" styleClass="block text-gray-700 text-sm font-bold mb-2"/>
@@ -74,8 +101,84 @@
                         </p:column>
                     </p:dataTable>
                 </div>
+                </p:panel>
             </h:form>
         </div>
+        <h:outputScript>
+            // Main function to initialize all charts on this page
+            function renderAuditChart(userActivityData, actionTypeData) {
+                renderUserActivityChart(userActivityData);
+                renderActionTypeChart(actionTypeData);
+            }
+
+            // Renders the horizontal bar chart for user activity
+            function renderUserActivityChart(data) {
+                if (!data || data.length === 0) return;
+                const canvas = document.getElementById('userActivityChart');
+                if (!canvas) return;
+
+                 const ctx = canvas.getContext('2d');
+                const labels = data.map(item => item.staffName);
+                const counts = data.map(item => item.count);
+
+                 if (window.userActivityBarChart) window.userActivityBarChart.destroy();
+
+                 window.userActivityBarChart = new Chart(ctx, {
+                     type: 'bar',
+                     data: {
+                         labels: labels,
+                         datasets: [{
+                             label: 'Number of Actions',
+                             data: counts,
+                             backgroundColor: 'rgba(96, 165, 250, 0.5)', // Tailwind blue-400
+                             borderColor: 'rgb(59, 130, 246)',      // Tailwind blue-500
+                             borderWidth: 1
+                         }]
+                     },
+                     options: {
+                         indexAxis: 'y',
+                         responsive: true,
+                         maintainAspectRatio: false
+                     }
+                 });
+            }
+
+            // Renders the doughnut chart for action types
+            function renderActionTypeChart(data) {
+                if (!data || data.length === 0) return;
+                const canvas = document.getElementById('actionTypeChart');
+                if (!canvas) return;
+
+                 const ctx = canvas.getContext('2d');
+                const labels = data.map(item => item.action);
+                const counts = data.map(item => item.count);
+
+                 if (window.actionTypeDoughnutChart) window.actionTypeDoughnutChart.destroy();
+
+                 window.actionTypeDoughnutChart = new Chart(ctx, {
+                     type: 'doughnut',
+                     data: {
+                         labels: labels,
+                         datasets: [{
+                             label: 'Action Types',
+                             data: counts,
+                             backgroundColor: [
+                                 'rgba(52, 211, 153, 0.7)',  // green-400
+                                 'rgba(251, 191, 36, 0.7)',  // amber-400
+                                 'rgba(239, 68, 68, 0.7)',   // red-500
+                                 'rgba(168, 85, 247, 0.7)',  // purple-500
+                                 'rgba(14, 165, 233, 0.7)'   // sky-500
+                             ],
+                             hoverOffset: 4
+                         }]
+                     },
+                     options: {
+                         responsive: true,
+                         maintainAspectRatio: false
+                     }
+                 });
+            }
+        </h:outputScript>
     </ui:define>
 </ui:composition>
 </html>
