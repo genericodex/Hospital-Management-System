@@ -22,5 +22,6 @@ public interface DoctorService {
     // --- FIX: Add the new authentication method contract ---
     Doctor authenticateDoctor(String email, String password);
     long countActiveDoctors();
+    List<Object[]> getSpecializationCounts();
 
 }
