@@ -110,9 +110,11 @@ public class BillingServiceImpl implements BillingService {
     }
 
 
+
     @Override
     @Transactional
     public List<Object[]> getDailyRevenueByStatus(LocalDate startDate, LocalDate endDate) {
         return billingDao.getDailyRevenueByStatus(startDate, endDate);
     }
+
 }

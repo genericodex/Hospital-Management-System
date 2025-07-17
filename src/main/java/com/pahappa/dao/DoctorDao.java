@@ -4,12 +4,16 @@ import com.pahappa.models.Doctor;
 import com.pahappa.util.HibernateUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 @ApplicationScoped
 public class DoctorDao implements Serializable {
+    private static final Logger log = LoggerFactory.getLogger(DoctorDao.class);
 
     // Create
     public void saveDoctor(Doctor doctor) {
@@ -123,5 +127,22 @@ public class DoctorDao implements Serializable {
                        return null;
                     }
 
+    }
+    /**
+     * NEW: Gets the count of doctors for each specialization.
+     * @return A list of Object arrays, where each array contains [specialization, count].
+     */
+    public List<Object[]> getSpecializationCounts() {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        // Make query more robust by explicitly ignoring null specializations.
+        String hql = "SELECT d.specialization, COUNT(d.id) FROM com.pahappa.models.Doctor d WHERE d.isDeleted = false AND d.specialization IS NOT NULL GROUP BY d.specialization";
+        try {
+            List<Object[]> results = session.createQuery(hql, Object[].class).list();
+            log.info("DAO returning {} specialization groups.", results.size());
+            return results;
+        } catch (Exception e) {
+            log.error("Failed to get specialization counts.", e);
+            return Collections.emptyList(); // Prevent NullPointerExceptions downstream
+        }
     }
     }

@@ -202,6 +202,7 @@ public class BillingDao {
         }
     }
 
+
     public List<Object[]> getDailyRevenueByStatus(LocalDate startDate, LocalDate endDate) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "SELECT FUNCTION('date', b.billDate), b.status, SUM(b.amount) " +
@@ -218,4 +219,5 @@ public class BillingDao {
                     .getResultList();
         }
     }
+
 }

@@ -21,6 +21,7 @@ import org.primefaces.PrimeFaces; // Import PrimeFaces
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -71,12 +72,26 @@ public class DoctorDashboardBean implements Serializable {
             Long doctorId = authBean.getLoggedInDoctor().getId();
             Map<String, Long> statusCounts = appointmentDao.getAppointmentStatusCountsByDoctor(doctorId);
             // Convert the Java Map to a JSON string.
-            String json = statusCounts.entrySet().stream()
+            String pieChartJson = statusCounts.entrySet().stream()
                     .map(entry -> String.format("{\"status\": \"%s\", \"count\": %d}", entry.getKey(), entry.getValue()))
                     .collect(Collectors.joining(", ", "[", "]"));
 
-            // Execute a JavaScript function on the frontend, passing the JSON data.
-            PrimeFaces.current().executeScript("renderDoctorChart(" + json + ");");
+
+            // --- NEW: Data for Weekly Activity Bar Chart ---
+            LocalDate endDate = LocalDate.now();
+            LocalDate startDate = endDate.minusDays(6); // Last 7 days
+            Map<LocalDate, Long> weeklyData = appointmentService.getDailyAppointmentCountsForDoctor(doctorId, startDate, endDate);
+
+            String barChartJson = startDate.datesUntil(endDate.plusDays(1))
+                    .map(date -> {
+                        String formattedDate = date.format(DateTimeFormatter.ofPattern("EEE")); // e.g., "Mon"
+                        long count = weeklyData.getOrDefault(date, 0L);
+                        return String.format("{\"date\": \"%s\", \"count\": %d}", formattedDate, count);
+                    })
+                    .collect(Collectors.joining(", ", "[", "]"));
+
+            // Execute a JavaScript function on the frontend, passing BOTH JSON strings.
+            PrimeFaces.current().executeScript("initDoctorDashboardCharts(" + pieChartJson + ", " + barChartJson + ");");
         }
     }
 

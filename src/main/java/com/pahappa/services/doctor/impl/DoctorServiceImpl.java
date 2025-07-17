@@ -210,5 +210,11 @@ public class DoctorServiceImpl implements DoctorService {
     public long countActiveDoctors() {
         return doctorDao.countActiveDoctors();
     }
+
+    @Override
+    @Transactional
+    public List<Object[]> getSpecializationCounts() {
+        return doctorDao.getSpecializationCounts();
+    }
 }
 

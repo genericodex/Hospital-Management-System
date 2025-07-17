@@ -16,13 +16,29 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @ViewScoped: This is a crucial lifecycle annotation. It means one instance of
+ * PatientBean is created when I first visit the patients.xhtml page, and it
+ * LIVES as long as I stay on that page (e.g., sorting, filtering). If I
+ * navigate to the dashboard and come back, a BRAND NEW PatientBean is created.
+ * This is perfect for managing a single page's state.
+ */
 @Named
 @ViewScoped
 public class PatientBean implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(PatientBean.class);
     @Serial
     private static final long serialVersionUID = 1L;
-
+    /**
+     * @Inject: This is powerful in implementing Dependency Injection. Instead of writing
+     * `patientService = new PatientServiceImpl()`, you are asking the Jakarta EE
+     * container to "inject" or provide the correct, managed instance of your
+     * service. This is excellent practice.
+     * <p>
+     * {@code transient} keyword tells Java not to save this field if the bean
+     * is ever serialized. This is because the service is a connection
+     * to the backend, not part of the bean's data.
+     */
     @Inject
     private transient PatientService patientService;
 
@@ -37,7 +53,12 @@ public class PatientBean implements Serializable {
     private Long patientToDeleteId;
     private String searchTerm;
     private List<Patient> filteredPatients;
-
+    /**
+     * @PostConstruct: This annotation marks a method as the "setup routine".
+     * This 'init' method is automatically called by the container immediately
+     * after the PatientBean object is created, but BEFORE the user sees the page.
+     * It's the perfect place to load initial data.
+     */
     @PostConstruct
     public void init() {
         logger.debug("PatientBean @PostConstruct init called");
@@ -47,20 +68,6 @@ public class PatientBean implements Serializable {
         filteredPatients = new ArrayList<>(patients);
     }
 
-    // --- Helper methods for security ---
-    private boolean isAdmin() {
-        if (authBean != null && authBean.getStaff() != null && authBean.getStaff().getRole() != null) {
-            return "ADMIN".equals(authBean.getStaff().getRole().getName()) || "IT SUPPORT".equals(authBean.getStaff().getRole().getName());
-        }
-        return false;
-    }
-
-    private boolean isReceptionist() {
-        if (authBean != null && authBean.getStaff() != null && authBean.getStaff().getRole() != null) {
-            return "RECEPTIONIST".equals(authBean.getStaff().getRole().getName());
-        }
-        return false;
-    }
 
     private void showAccessDeniedMessage() {
         FacesContext.getCurrentInstance().addMessage(null,
@@ -141,7 +148,7 @@ public class PatientBean implements Serializable {
     }
 
     public void deleteSelectedPatients() {
-        if (!isAdmin() || !isReceptionist()) {
+        if (!authBean.hasPermission("PATIENT_DELETE_SOFT")) {
             showAccessDeniedMessage();
             return;
         }
@@ -201,10 +208,23 @@ public class PatientBean implements Serializable {
         }
     }
 
+        /**
+         * Go to the database (via the service) and fetch a fresh, complete copy of the
+         *  patient's record using the ID from the object that was clicked on the page.
+         * <p>
+         *  This is a critical step to ensure we are editing the most up-to-date data,
+         *  and it places this fresh record into the {@code selectedPatient} field, which is
+         *  what the pop-up edit dialog is bound to.
+         */
     public void editPatient(Patient patient) {
         this.selectedPatient = patientService.getPatientById(patient.getId());
         this.newPatient = false;
     }
+        /**
+         * When this method is called, the {@code this} keyword refers to the specific PatientBean object (the "clerk on duty") that received the user's click.
+         * This line modifies the state of THAT specific object's 'selectedPatient' field.
+         *
+         */
 
     public boolean hasSelectedPatients() {
         return selectedPatients != null && !selectedPatients.isEmpty();
