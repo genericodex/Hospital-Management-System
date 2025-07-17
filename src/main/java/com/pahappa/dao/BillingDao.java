@@ -201,4 +201,23 @@ public class BillingDao {
             return Collections.emptyList();
         }
     }
+
+
+    public List<Object[]> getDailyRevenueByStatus(LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT FUNCTION('date', b.billDate), b.status, SUM(b.amount) " +
+                    "FROM Billing b " +
+                    "WHERE b.billDate >= :startDate AND b.billDate <= :endDate AND b.isDeleted = false " +
+                    "GROUP BY FUNCTION('date', b.billDate), b.status " +
+                    "ORDER BY FUNCTION('date', b.billDate)";
+
+            // Use setParameter with LocalDate directly if your Hibernate version supports it,
+            // otherwise convert to java.sql.Date.
+            return session.createQuery(hql, Object[].class)
+                    .setParameter("startDate", java.sql.Date.valueOf(startDate))
+                    .setParameter("endDate", java.sql.Date.valueOf(endDate))
+                    .getResultList();
+        }
+    }
+
 }

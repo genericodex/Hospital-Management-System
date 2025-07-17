@@ -24,4 +24,7 @@ public interface BillingService {
     Map<LocalDate, Double> getDailyRevenue(LocalDate startDate, LocalDate endDate);
     double getTotalRevenue();
     List<Object[]> getBillingStatusTotals();
+
+    List<Object[]> getDailyRevenueByStatus(LocalDate startDate, LocalDate endDate);
+
 }
