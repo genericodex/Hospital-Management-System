@@ -1,6 +1,7 @@
 package com.pahappa.beans;
 
 import com.pahappa.constants.AppointmentStatus;
+import com.pahappa.constants.BillingStatus;
 import com.pahappa.models.Appointment;
 
 import com.pahappa.services.billing.BillingService;
@@ -184,13 +185,37 @@ public class DashboardBean implements Serializable {
                     })
                     .collect(Collectors.joining(", ", "[", "]"));
 
+            // --- NEW: Data for Billing Status Doughnut Chart ---
+            List<Object[]> billingStatusData = billingService.getBillingStatusTotals();
+            String billingStatusJson = billingStatusData.stream()
+                    .map(row -> {
+                        BillingStatus status = (BillingStatus) row[0];
+                        Double total = (Double) row[1];
+                        return String.format("{\"status\": \"%s\", \"total\": %.2f}", status.name(), (total != null ? total : 0.0));
+                    })
+                    .collect(Collectors.joining(", ", "[", "]"));
+
+            // --- NEW: Data for Doctor Specialization Doughnut Chart ---
+            List<Object[]> specializationData = doctorService.getSpecializationCounts();
+            String specializationJson = specializationData.stream()
+                    .map(row -> {
+                        String specialization = (String) row[0];
+                        Long count = (Long) row[1];
+                        String escapedSpec = (specialization != null) ? specialization.replace("\"", "\\\"") : "Unassigned";
+                        return String.format("{\"specialization\": \"%s\", \"count\": %d}", escapedSpec, count);
+                    })
+                    .collect(Collectors.joining(", ", "[", "]"));
+
+
 
             // UPDATE: Execute a JavaScript function passing ALL THREE JSON strings
             PrimeFaces.current().executeScript("initStaffDashboardCharts(" +
                     barChartJson + ", " +
                     doughnutChartJson + ", " +
                     revenueChartJson + ", " +
-                    doctorWorkloadJson + ");");
+                    doctorWorkloadJson + ", " +
+                    billingStatusJson + ", " +
+                    specializationJson + ");");
             System.out.println("Successfully sent all chart data to the browser.");
 
         } catch (Exception e) {
