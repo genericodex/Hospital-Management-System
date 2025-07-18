@@ -51,7 +51,7 @@
             <!-- Main Content -->
                 <h2 class="text-3xl font-bold text-green-800 mb-6">Welcome, Dr. #{doctorAuthBean.loggedInDoctor.firstName} #{doctorAuthBean.loggedInDoctor.lastName}</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="bg-gradient-to-br from-blue-100 to-blue-300 rounded-2xl shadow-xl p-8 flex flex-col items-center hover:scale-105 transition-transform duration-300 border border-blue-200 cursor-pointer group"
+                    <div class="border-gradient-to-br from-blue-100 to-blue-300 rounded-2xl shadow-inner shadow-blue-500/20 p-8 flex flex-col items-center hover:scale-105 hover:bg-blue-100/60 transition-transform duration-300 border border-blue-200 cursor-pointer group"
                          style="cursor:pointer;"
                          onclick="window.location='../Appointments/appointments.xhtml'">
                         <span class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-200 mb-3">
@@ -61,7 +61,7 @@
                         <p class="text-4xl font-extrabold text-blue-900 mb-2">#{doctorAuthBean.appointmentCount}</p>
                         <span class="text-blue-600 group-hover:underline font-semibold">View My Appointments</span>
                     </div>
-                    <div class="bg-gradient-to-br from-green-100 to-green-300 rounded-2xl shadow-xl p-8 flex flex-col items-center hover:scale-105 transition-transform duration-300 border border-green-200 cursor-pointer group"
+                    <div class="border-gradient-to-br from-green-100 to-green-300 rounded-2xl shadow-inner shadow-green-500/20 p-8 flex flex-col items-center hover:scale-105 hover:bg-green-100/60 transition-transform duration-300 border border-green-200 cursor-pointer group"
                          style="cursor:pointer;"
                          onclick="window.location='doctor-profile.xhtml'">
                         <span class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-200 mb-3">
@@ -128,7 +128,7 @@
                                          actionListener="#{doctorDashboardBean.selectPatientForDetails(appt.patient)}"
                                          update=":doctorDashboardForm:patientDetailsDialog"
                                          oncomplete="PF('patientDetailsDialogWidget').show()"
-                                         styleClass="ui-button-outlined ui-button-secondary"/>
+                                         styleClass="ui-button-outlined ui-button-secondary !bg-green-100 !border-green-400 hover:!bg-green-100/30"/>
                     </p:column>
 
                 </p:dataTable>
@@ -183,7 +183,7 @@
 
                 <p:outputLabel for="status" value="Status:" styleClass="font-bold"/>
                 <p:selectOneMenu id="status" value="#{doctorDashboardBean.selectedAppointment.status}">
-                    <f:selectItems value="#{appointmentBean.statuses}" var="s"
+                    <f:selectItems value="#{appointmentBean.statuses}"  var="s"
                                    itemLabel="#{s.displayName}" itemValue="#{s}"/>
                 </p:selectOneMenu>
             </h:panelGrid>
@@ -218,7 +218,7 @@
 
                         <h:outputText value="Date of Birth:" styleClass="font-bold text-gray-600"/>
                         <h:outputText value="#{doctorDashboardBean.selectedPatientForDetails.dateOfBirth}">
-                            <f:convertDateTime pattern="MMMM dd, yyyy" type="localDate" />
+                            <f:convertDateTime pattern="MMMM dd, yyyy" type="date" />
                         </h:outputText>
 
                     </p:panelGrid>
