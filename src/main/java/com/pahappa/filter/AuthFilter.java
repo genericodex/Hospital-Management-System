@@ -29,6 +29,10 @@ public class AuthFilter implements Filter {
             return;
         }
 
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.
+        res.setHeader("Pragma", "no-cache"); // HTTP 1.0.
+        res.setDateHeader("Expires", 0); // Proxies.
+
         // 2. For all other protected pages, check if a user is logged in.
         HttpSession session = req.getSession(false); // 'false' means don't create a new session if one doesn't exist.
 
