@@ -316,40 +316,56 @@
 
         // Renders the bar chart for daily appointments
         function renderBarChart(data) {
-            // FIX: Check if the canvas element exists before trying to render the chart.
             const canvas = document.getElementById('dailyAppointmentsChart');
-            if (!canvas || !data || data.length === 0) return;
+            if (!canvas || !data || !data.labels || data.labels.length === 0) return;
 
-        const labels = data.map(item => item.date);
-        const counts = data.map(item => item.count);
-        const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d');
 
-        // Destroy existing chart if it exists
-        if (window.dailyAppointmentsBarChart instanceof Chart) {
-        window.dailyAppointmentsBarChart.destroy();
-        }
-        window.dailyAppointmentsBarChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-        labels: labels,
-        datasets: [{
-        label: 'Appointments',
-        data: counts,
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgb(75, 192, 192)',
-        borderWidth: 1
-        }]
-        },
-        options: {
-        scales: {
-        y: {
-        beginAtZero: true
-        }
-        },
-        responsive: true,
-        maintainAspectRatio: true
-        }
-        });
+            // Destroy existing chart if it exists
+            if (window.dailyAppointmentsBarChart instanceof Chart) {
+                window.dailyAppointmentsBarChart.destroy();
+            }
+            window.dailyAppointmentsBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Completed',
+                            data: data.completed,
+                            backgroundColor: 'rgb(75, 192, 192)' // Green
+                        },
+                        {
+                            label: 'Scheduled',
+                            data: data.scheduled,
+                            backgroundColor: 'rgb(54, 162, 235)' // Blue
+                        },
+                        {
+                            label: 'Cancelled',
+                            data: data.cancelled,
+                            backgroundColor: 'rgb(255, 99, 132)' // Red
+                        }
+                    ]
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: false,
+                        },
+                    },
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            stacked: true, // This is the magic for the x-axis
+                        },
+                        y: {
+                            stacked: true, // This is the magic for the y-axis
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         }
         // Renders the doughnut chart for appointment statuses
         function renderDonutChart(data) {
