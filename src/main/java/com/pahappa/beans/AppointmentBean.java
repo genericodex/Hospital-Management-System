@@ -5,11 +5,8 @@ import com.pahappa.models.Appointment;
 import com.pahappa.models.Doctor;
 import com.pahappa.models.Patient;
 import com.pahappa.services.appointment.AppointmentService;
-import com.pahappa.services.appointment.impl.AppointmentServiceImpl;
 import com.pahappa.services.doctor.DoctorService;
 import com.pahappa.services.patient.PatientService;
-import com.pahappa.services.patient.impl.PatientServiceImpl;
-import com.pahappa.services.doctor.impl.DoctorServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -23,9 +20,31 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @implements_Serializable : This is a contract. {@code Serializable} is a "marker" interface that tells Java
+ *    this object can be converted into a stream of bytes. This is required for scoped beans like @ViewScoped
+ *     because the web server might need to save the user's session (and all the beans within it) to a file
+ *     or send it across a network in a server cluster.
+ */
 @Named
 @ViewScoped
 public class AppointmentBean implements Serializable {
+    /**
+     * @Serial: A modern annotation to explicitly link this field to Java's serialization mechanism.
+     * <p>
+     *      {@code private}: Access modifier. Only code inside this class can see or change this value.
+     * <p>
+     *      {@code static}: This means the 'serialVersionUID' belongs to the CLASS (the blueprint) itself, not to any
+     *     one object (any single clerk). All clerks share this one single version number.
+     *<p>
+     *     {@code final}: This means the value can NEVER be changed after it's set.
+     * <p>
+     *      {@code long}: A primitive data type for a 64-bit integer.
+     * <p>
+     *      {@code serialVersionUID}: A unique ID for this version of the class blueprint. If you make incompatible changes
+     *     and try to load an old, saved version of this object, this ID mismatch will cause an error,
+     *     preventing corrupted data.
+     */
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -79,13 +98,11 @@ public class AppointmentBean implements Serializable {
             doctors = doctorService.getAllActiveDoctors();
 
 
-            // --- THIS IS THE FIX ---
             // If a doctor is logged in (from DoctorAuthBean), automatically set them
             // as the filter criteria before loading the appointment list.
             if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
                 this.filterDoctor = doctorAuthBean.getLoggedInDoctor();
             }
-            // --- END OF FIX ---
 
             // Load the main list of appointments using the filter method.
             // On first load, filters are null, so it gets all active appointments.
@@ -102,17 +119,7 @@ public class AppointmentBean implements Serializable {
         }
     }
 
-    // --- Helper methods for security ---
-    private boolean isAdmin() {
-        if (authBean != null && authBean.getStaff() != null && authBean.getStaff().getRole() != null) {
-            return "ADMIN".equals(authBean.getStaff().getRole().getName())|| "IT SUPPORT".equals(authBean.getStaff().getRole().getName());
-        }
-        if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
-                return true;
-                 }
 
-        return false;
-    }
 
     private void showAccessDeniedMessage() {
         FacesContext.getCurrentInstance().addMessage(null,
@@ -191,7 +198,7 @@ public class AppointmentBean implements Serializable {
     }
 
     public void cancelSelectedAppointments() {
-        if (!isAdmin()) {
+        if (!authBean.hasPermission("APPOINTMENT_EDIT") && doctorAuthBean.getLoggedInDoctor() == null) {
             showAccessDeniedMessage();
             return;
         }
@@ -248,7 +255,7 @@ public class AppointmentBean implements Serializable {
     }
 
     public void rescheduleAppointment(Appointment appointment){
-        if (!isAdmin()) {
+        if (!authBean.hasPermission("APPOINTMENT_EDIT") && doctorAuthBean.getLoggedInDoctor() == null) {
             showAccessDeniedMessage();
             return;
         }
@@ -283,12 +290,10 @@ public class AppointmentBean implements Serializable {
         // Step 2: Set ALL the bean properties that the dialog is bound to.
         this.selectedAppointment = managedAppointment;
 
-        // --- THIS IS THE FIX ---
         // You must also set the objects for the p:autoComplete components.
         this.selectedPatient = managedAppointment.getPatient();
         this.selectedDoctor = managedAppointment.getDoctor();
         this.newAppointment = false;
-        // That's it! All unnecessary ID fields and redundant database calls are removed.
     }
 
     public boolean isNewAppointment() {
@@ -296,7 +301,7 @@ public class AppointmentBean implements Serializable {
     }
 
     public void restoreAppointment(Long id) {
-        if (!isAdmin()) {
+        if (!authBean.hasPermission("APPOINTMENT_RESTORE") && doctorAuthBean.getLoggedInDoctor() == null) {
             showAccessDeniedMessage();
             return;
         }
@@ -364,7 +369,7 @@ public class AppointmentBean implements Serializable {
     }
 
     public void hardDeleteAppointment(Long id) {
-        if (!isAdmin()) {
+        if (!authBean.hasPermission("APPOINTMENT_DELETE_HARD")) {
             showAccessDeniedMessage();
             return;
         }
@@ -390,7 +395,7 @@ public class AppointmentBean implements Serializable {
         this.appointments = appointmentService.getFilteredAppointments(patientId, doctorId, filterStartDate, filterEndDate, filterStatus);
     }
 
-    // --- NEW: Action method to clear filters ---
+    // ---  Action method to clear filters ---
     public void clearFilters() {
         System.out.println("Clearing appointment filters.");
         this.filterPatient = null;
@@ -399,7 +404,6 @@ public class AppointmentBean implements Serializable {
         this.filterEndDate = null;
         this.filterStatus = null;
         // Reload the list with no filters applied
-        // --- THIS IS THE FIX ---
         // If a doctor is logged in, reset the filter TO that doctor.
         // Otherwise, for staff, clear the doctor filter completely.
         if (doctorAuthBean != null && doctorAuthBean.getLoggedInDoctor() != null) {
@@ -410,7 +414,7 @@ public class AppointmentBean implements Serializable {
         filterAppointments();
     }
 
-    // --- NEW: Getter for the status enum values for the dropdown ---
+    // --- Getter for the status enum values for the dropdown ---
     //    an array ([]) containing AppointmentStatus objects.
     public AppointmentStatus[] getAppointmentStatuses() {
         return AppointmentStatus.values();
@@ -418,7 +422,7 @@ public class AppointmentBean implements Serializable {
 
     // ... all your other existing methods (initNewAppointment, saveAppointment, etc.) ...
 
-    // --- NEW: Getters and Setters for the filter properties ---
+    // --- Getters and Setters for the filter properties ---
     public Patient getFilterPatient() { return filterPatient; }
     public void setFilterPatient(Patient filterPatient) { this.filterPatient = filterPatient; }
     public Doctor getFilterDoctor() { return filterDoctor; }
