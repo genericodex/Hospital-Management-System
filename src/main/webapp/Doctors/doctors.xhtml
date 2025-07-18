@@ -36,6 +36,7 @@
                 <p:toolbarGroup name="right">
                     <p:commandButton value="View Deleted" icon="pi pi-history"
                                      action="#{doctorBean.loadDeletedDoctors}"
+                                     process="@this"
                                      styleClass="!bg-green-600 !border-green-600"
                                      update=":doctorForm:deletedDoctorsDialog"
                                      oncomplete="PF('deletedDoctorsDialog').show()"
