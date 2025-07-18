@@ -173,7 +173,7 @@ public class DashboardBean implements Serializable {
 
             // Data for Line Chart (Revenue)
 
-            // --- NEW: Logic for multi-line Revenue Chart (Paid vs. Pending) ---
+            // --- Logic for multi-line Revenue Chart (Paid vs. Pending) ---
             LocalDate revenueEndDate = LocalDate.now();
             LocalDate revenueStartDate = revenueEndDate.minusDays(29);
             List<Object[]> dailyRevenueByStatus = billingService.getDailyRevenueByStatus(revenueStartDate, revenueEndDate);
@@ -225,17 +225,22 @@ public class DashboardBean implements Serializable {
                     })
                     .collect(Collectors.joining(", ", "[", "]"));
 
-            // --- NEW: Data for Billing Status Doughnut Chart ---
-            List<Object[]> billingStatusData = billingService.getBillingStatusTotals();
-            String billingStatusJson = billingStatusData.stream()
-                    .map(row -> {
-                        BillingStatus status = (BillingStatus) row[0];
-                        Double total = (Double) row[1];
-                        return String.format("{\"status\": \"%s\", \"total\": %.2f}", status.name(), (total != null ? total : 0.0));
-                    })
-                    .collect(Collectors.joining(", ", "[", "]"));
+            // --- Data for Billing Status Doughnut Chart ---
+            List<Object[]> paymentMethodData = billingService.getBillingTotalsByPaymentMethod();
+            String billingStatusJson = paymentMethodData.stream()
+                    .map(obj -> {
+                        String method = (String) obj[0];
+                        // Handle potential null payment methods if the data allows it
+                        if (method == null) {
+                            method = "Unknown";
+                        }
+                        // Sanitize the method name to prevent breaking JSON
+                        method = method.replace("\"", "\\\"");
+                        Double total = (Double) obj[1];
+                        return String.format("{\"method\": \"%s\", \"total\": %.2f}", method, total);
+                    }).collect(Collectors.joining(", ", "[", "]"));
 
-            // --- NEW: Data for Doctor Specialization Doughnut Chart ---
+            // --- Data for Doctor Specialization Doughnut Chart ---
             List<Object[]> specializationData = doctorService.getSpecializationCounts();
             String specializationJson = specializationData.stream()
                     .map(row -> {
