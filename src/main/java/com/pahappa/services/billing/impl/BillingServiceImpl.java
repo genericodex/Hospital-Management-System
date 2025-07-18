@@ -109,6 +109,10 @@ public class BillingServiceImpl implements BillingService {
         return billingDao.getBillingStatusTotals();
     }
 
+    @Override
+    public List<Object[]> getBillingTotalsByPaymentMethod() {
+        return billingDao.getBillingTotalsByPaymentMethod();
+    }
 
 
     @Override

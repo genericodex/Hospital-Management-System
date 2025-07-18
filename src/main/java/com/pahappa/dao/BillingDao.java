@@ -1,5 +1,6 @@
 package com.pahappa.dao;
 
+import com.pahappa.constants.BillingStatus;
 import com.pahappa.models.Billing;
 import com.pahappa.models.Patient;
 import com.pahappa.util.HibernateUtil;
@@ -216,6 +217,16 @@ public class BillingDao {
             return session.createQuery(hql, Object[].class)
                     .setParameter("startDate", java.sql.Date.valueOf(startDate))
                     .setParameter("endDate", java.sql.Date.valueOf(endDate))
+                    .getResultList();
+        }
+    }
+
+    public List<Object[]> getBillingTotalsByPaymentMethod() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // We only want to see the payment methods for bills that have actually been PAID.
+            String hql = "SELECT b.paymentMethod, SUM(b.amount) FROM Billing b WHERE b.status = :status GROUP BY b.paymentMethod";
+            return session.createQuery(hql, Object[].class)
+                    .setParameter("status", BillingStatus.PAID)
                     .getResultList();
         }
     }
