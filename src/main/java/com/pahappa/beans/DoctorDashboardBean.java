@@ -1,5 +1,6 @@
 package com.pahappa.beans;
 
+import com.pahappa.constants.AppointmentStatus;
 import com.pahappa.dao.AppointmentDao;
 import com.pahappa.models.Appointment;
 import com.pahappa.models.Patient;
@@ -79,20 +80,59 @@ public class DoctorDashboardBean implements Serializable {
 
             // --- NEW: Data for Weekly Activity Bar Chart ---
             LocalDate endDate = LocalDate.now();
-            LocalDate startDate = endDate.minusDays(6); // Last 7 days
-            Map<LocalDate, Long> weeklyData = appointmentService.getDailyAppointmentCountsForDoctor(doctorId, startDate, endDate);
+            LocalDate startDate = endDate.minusDays(6);
+            List<Object[]> dailyDataByStatus = appointmentService.getDailyAppointmentCountsByStatusForDoctor(doctorId, startDate, endDate);
 
-            String barChartJson = startDate.datesUntil(endDate.plusDays(1))
-                    .map(date -> {
-                        String formattedDate = date.format(DateTimeFormatter.ofPattern("EEE")); // e.g., "Mon"
-                        long count = weeklyData.getOrDefault(date, 0L);
-                        return String.format("{\"date\": \"%s\", \"count\": %d}", formattedDate, count);
-                    })
-                    .collect(Collectors.joining(", ", "[", "]"));
+            // Process the raw data into a structured map for easy JSON conversion
+            Map<LocalDate, Map<AppointmentStatus, Long>> processedWeeklyData = new TreeMap<>();
+            startDate.datesUntil(endDate.plusDays(1)).forEach(date -> {
+                Map<AppointmentStatus, Long> statusMap = new EnumMap<>(AppointmentStatus.class);
+                statusMap.put(AppointmentStatus.SCHEDULED, 0L);
+                statusMap.put(AppointmentStatus.COMPLETED, 0L);
+                statusMap.put(AppointmentStatus.CANCELLED, 0L);
+                processedWeeklyData.put(date, statusMap);
+            });
 
-            // Execute a JavaScript function on the frontend, passing BOTH JSON strings.
+            for (Object[] row : dailyDataByStatus) {
+                LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+                AppointmentStatus status = (AppointmentStatus) row[1];
+                Long count = (Long) row[2];
+                if (processedWeeklyData.containsKey(date)) {
+                    processedWeeklyData.get(date).put(status, count);
+                }
+            }
+
+            String barChartJson = buildDoctorStackedBarChartJson(processedWeeklyData);
+
+            // Send both JSON strings to the frontend
             PrimeFaces.current().executeScript("initDoctorDashboardCharts(" + pieChartJson + ", " + barChartJson + ");");
         }
+    }
+
+    /**
+     * A private helper method to build the JSON for the doctor's stacked bar chart.
+     * This keeps the main loadChartData() method cleaner and more organized.
+     */
+    private String buildDoctorStackedBarChartJson(Map<LocalDate, Map<AppointmentStatus, Long>> processedData) {
+        List<String> labels = new ArrayList<>();
+        List<Long> scheduledData = new ArrayList<>();
+        List<Long> completedData = new ArrayList<>();
+        List<Long> cancelledData = new ArrayList<>();
+
+        processedData.forEach((date, statusMap) -> {
+            labels.add(date.format(DateTimeFormatter.ofPattern("EEE"))); // e.g., "Mon"
+            scheduledData.add(statusMap.getOrDefault(AppointmentStatus.SCHEDULED, 0L));
+            completedData.add(statusMap.getOrDefault(AppointmentStatus.COMPLETED, 0L));
+            cancelledData.add(statusMap.getOrDefault(AppointmentStatus.CANCELLED, 0L));
+        });
+
+        String labelsJson = labels.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",", "[", "]"));
+        String scheduledJson = scheduledData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+        String completedJson = completedData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+        String cancelledJson = cancelledData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+
+        return String.format("{\"labels\": %s, \"scheduled\": %s, \"completed\": %s, \"cancelled\": %s}",
+                labelsJson, scheduledJson, completedJson, cancelledJson);
     }
 
     private void createSchedule(List<Appointment> appointments) {

@@ -145,7 +145,7 @@
                                 slotDuration="01:00:00"
                                 allDaySlot="false"
                                 locale="en"
-                                timeZone="UTC"
+                                timeZone="UTC+3"
                                 clientTimeZone="local"
                                 height="auto"
                                 styleClass="rounded-lg shadow-md !border-blue-200"
@@ -286,10 +286,10 @@
             // NEW: Function to render the weekly activity bar chart
             function renderWeeklyActivityChart(data) {
                 const canvas = document.getElementById('doctorWeeklyActivityChart');
-                if (!canvas || !data || data.length === 0) return;
-
-                const labels = data.map(item => item.date);
-                const counts = data.map(item => item.count);
+                if (!canvas || !data || !data.labels || data.labels.length === 0) {
+                    console.log("No weekly activity data for bar chart.");
+                    return;
+                }
                 const ctx = canvas.getContext('2d');
 
                 if (window.myDoctorWeeklyActivityChart instanceof Chart) {
@@ -298,18 +298,35 @@
                 window.myDoctorWeeklyActivityChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Appointments',
-                            data: counts,
-                            backgroundColor: 'rgba(37, 99, 235, 0.2)',
-                            borderColor: 'rgb(37, 99, 235)',
-                            borderWidth: 1
-                        }]
+                        labels: data.labels,
+                        datasets: [
+                            {
+                                label: 'Completed',
+                                data: data.completed,
+                                backgroundColor: 'rgb(75, 192, 192)' // Green
+                            },
+                            {
+                                label: 'Scheduled',
+                                data: data.scheduled,
+                                backgroundColor: 'rgb(54, 162, 235)' // Blue
+                            },
+                            {
+                                label: 'Cancelled',
+                                data: data.cancelled,
+                                backgroundColor: 'rgb(255, 99, 132)' // Red
+                            }
+                        ]
                     },
                     options: {
                         scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                            x: {
+                                stacked: true // This is the magic for the x-axis
+                            },
+                            y: {
+                                stacked: true, // This is the magic for the y-axis
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                            }
                         },
                         responsive: true,
                         maintainAspectRatio: false

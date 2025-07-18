@@ -36,4 +36,5 @@ public interface AppointmentService {
     void updateCalendarAppointment(Appointment appointment);
     Map<LocalDate, Long> getDailyAppointmentCountsForDoctor(Long doctorId, LocalDate startDate, LocalDate endDate);
     List<Object[]> getDailyAppointmentCountsByStatus(LocalDate startDate, LocalDate endDate);
+    List<Object[]> getDailyAppointmentCountsByStatusForDoctor(Long doctorId, LocalDate startDate, LocalDate endDate);
 }
