@@ -3,7 +3,8 @@ package com.pahappa.beans;
 import com.pahappa.dao.RoleDao;
 import com.pahappa.models.Role;
 import com.pahappa.models.Staff;
-import com.pahappa.services.staff.impl.StaffServiceImpl;
+import com.pahappa.services.staff.StaffService;
+import com.pahappa.util.PasswordEncoder;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -23,12 +24,18 @@ public class StaffBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Inject
-    private StaffServiceImpl staffService;
+    private StaffService staffService;
 
     @Inject
     private AuthBean authBean; // Injected to get the current user's role
 
-    private final RoleDao roleDao = new RoleDao();
+    // Let the container manage all my components, so I inject the DAO
+    // instead of creating it manually with `new`.
+    @Inject
+    private RoleDao roleDao;
+
+    @Inject
+    private PasswordEncoder passwordEncoder;
     private List<Role> availableRoles;
 
     private List<Staff> staffList;
@@ -82,16 +89,18 @@ public class StaffBean implements Serializable {
 
     public void editStaff(Staff staff) {
         this.selectedStaff = staffService.getStaffById(staff.getId());
+        this.password = null;
         this.newStaff = false;
     }
 
     public void saveStaff() {
-        if (!isAdmin()) {
+        if (!authBean.hasPermission("STAFF_EDIT")) {
             showAccessDeniedMessage();
             return;
         }
         try {
-            if (selectedStaff.getId() == null) {
+            if (newStaff) {
+                // For a NEW staff member, the service layer is responsible for hashing.
                 staffService.createStaff(
                         selectedStaff.getFirstName(),
                         selectedStaff.getLastName(),
@@ -100,16 +109,24 @@ public class StaffBean implements Serializable {
                         selectedStaff.getRole(),
                         selectedStaff.getDepartment(),
                         selectedStaff.getHireDate(),
-                        password,
+                        password, // Pass the plain-text password for creation
                         false,
                         null
                 );
                 FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage("Staff member created successfully"));
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Staff member created successfully"));
             } else {
-                staffService.updateStaff(selectedStaff, authBean.getStaff()); // Pass current user as actor
+                // For an EXISTING staff member, check if a new password was provided.
+                if (password != null && !password.trim().isEmpty()) {
+                    // If yes, hash it here in the bean and set it on the object.
+                    String hashedPassword = passwordEncoder.encode(password);
+                    selectedStaff.setPassword(hashedPassword);
+                }
+                // Now, update the staff member. The password will either be the new hash
+                // or the original, untouched hash that was already on the selectedStaff object.
+                staffService.updateStaff(selectedStaff, authBean.getStaff());
                 FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage("Staff member updated successfully"));
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Staff member " + selectedStaff.getFirstName() + " updated successfully"));
             }
             init();
             password = null;
