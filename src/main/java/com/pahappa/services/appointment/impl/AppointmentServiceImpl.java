@@ -141,4 +141,9 @@ public class AppointmentServiceImpl implements AppointmentService {
     public Map<LocalDate, Long> getDailyAppointmentCountsForDoctor(Long doctorId, LocalDate startDate, LocalDate endDate) {
         return appointmentDao.getDailyAppointmentCountsForDoctor(doctorId, startDate, endDate);
     }
+
+    @Override
+    public List<Object[]> getDailyAppointmentCountsByStatus(LocalDate startDate, LocalDate endDate) {
+        return appointmentDao.getDailyAppointmentCountsByStatus(startDate, endDate);
+    }
 }

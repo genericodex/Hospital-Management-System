@@ -140,16 +140,28 @@ public class DashboardBean implements Serializable {
             // Data for Bar Chart (Weekly Volume)
             LocalDate endDate = LocalDate.now();
             LocalDate startDate = endDate.minusDays(6);
-            Map<LocalDate, Long> dailyData = appointmentService.getDailyAppointmentCounts(startDate, endDate);
+            List<Object[]> dailyDataByStatus = appointmentService.getDailyAppointmentCountsByStatus(startDate, endDate);
 
-            String barChartJson = startDate.datesUntil(endDate.plusDays(1))
-                    .map(date -> {
-                        String formattedDate = date.format(DateTimeFormatter.ofPattern("EEE"));
-                        long count = dailyData.getOrDefault(date, 0L);
-                        return String.format("{\"date\": \"%s\", \"count\": %d}", formattedDate, count);
-                    })
-                    .collect(Collectors.joining(", ", "[", "]"));
+            // Process the raw data into a structured map for easy JSON conversion
+            Map<LocalDate, Map<AppointmentStatus, Long>> processedWeeklyData = new TreeMap<>();
+            startDate.datesUntil(endDate.plusDays(1)).forEach(date -> {
+                Map<AppointmentStatus, Long> statusMap = new EnumMap<>(AppointmentStatus.class);
+                statusMap.put(AppointmentStatus.SCHEDULED, 0L);
+                statusMap.put(AppointmentStatus.COMPLETED, 0L);
+                statusMap.put(AppointmentStatus.CANCELLED, 0L);
+                processedWeeklyData.put(date, statusMap);
+            });
 
+            for (Object[] row : dailyDataByStatus) {
+                LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+                AppointmentStatus status = (AppointmentStatus) row[1];
+                Long count = (Long) row[2];
+                if (processedWeeklyData.containsKey(date)) {
+                    processedWeeklyData.get(date).put(status, count);
+                }
+            }
+
+            String barChartJson = buildStackedBarChartJson(processedWeeklyData);
             // Data for Doughnut Chart (Status Breakdown)
             Map<AppointmentStatus, Long> statusData = appointmentService.getGlobalAppointmentStatusCounts();
             String doughnutChartJson = statusData.entrySet().stream()
@@ -249,5 +261,31 @@ public class DashboardBean implements Serializable {
         } catch (Exception e) {
             System.out.println("[ERROR] Failed to load and send chart data."+ e);
         }
+    }
+
+    /**
+     * A private helper method to build the JSON for the stacked bar chart.
+     * This keeps the main loadChartData() method cleaner.
+     */
+    private String buildStackedBarChartJson(Map<LocalDate, Map<AppointmentStatus, Long>> processedData) {
+        List<String> labels = new ArrayList<>();
+        List<Long> scheduledData = new ArrayList<>();
+        List<Long> completedData = new ArrayList<>();
+        List<Long> cancelledData = new ArrayList<>();
+
+        processedData.forEach((date, statusMap) -> {
+            labels.add(date.format(DateTimeFormatter.ofPattern("EEE"))); // e.g., "Mon"
+            scheduledData.add(statusMap.get(AppointmentStatus.SCHEDULED));
+            completedData.add(statusMap.get(AppointmentStatus.COMPLETED));
+            cancelledData.add(statusMap.get(AppointmentStatus.CANCELLED));
+        });
+
+        String labelsJson = labels.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",", "[", "]"));
+        String scheduledJson = scheduledData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+        String completedJson = completedData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+        String cancelledJson = cancelledData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+
+        return String.format("{\"labels\": %s, \"scheduled\": %s, \"completed\": %s, \"cancelled\": %s}",
+                labelsJson, scheduledJson, completedJson, cancelledJson);
     }
 }
