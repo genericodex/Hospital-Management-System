@@ -20,7 +20,7 @@
                                      action="#{staffBean.initNewStaff}"
                                      update=":staffForm:staffDialog"
                                      oncomplete="PF('staffDialog').show()"
-                                     rendered="#{authBean.staff.role.name == 'ADMIN' ||  authBean.staff.role.name == 'IT SUPPORT'}"/>
+                                     rendered="#{authBean.hasPermission('STAFF_CREATE')}"/>
 
                     <span style="display:inline-block; width:0.75rem;"/>
 
@@ -39,7 +39,7 @@
                                      styleClass="!bg-green-600 !border-green-600"
                                      update=":staffForm:deletedStaffDialog"
                                      oncomplete="PF('deletedStaffDialog').show()"
-                                     rendered="#{authBean.staff.role.name == 'ADMIN' ||  authBean.staff.role.name == 'IT SUPPORT'}"/>
+                                     rendered="#{authBean.hasPermission('STAFF_VIEW_DELETED')}"/>
                 </p:toolbarGroup>
             </p:toolbar>
 
@@ -77,7 +77,7 @@
                     <h:outputText value="#{staff.email}"/>
                 </p:column>
 
-                <p:column headerText="Actions" style="width:10%" rendered="#{authBean.staff.role.name == 'ADMIN' || authBean.staff.role.name == 'IT SUPPORT'}">
+                <p:column headerText="Actions" style="width:10%" rendered="#{authBean.hasPermission('STAFF_EDIT')}">
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
 
                     <p:commandButton icon="pi pi-pencil" title="Edit"
@@ -103,9 +103,9 @@
             </p:confirmDialog>
 
             <!-- Add/Edit Staff Dialog -->
-            <p:dialog id="staffDialog" header="Staff Details" widgetVar="staffDialog" modal="true" resizable="false">
+            <p:dialog id="staffDialog" header="Staff Details" widgetVar="staffDialog" modal="true" resizable="true">
                 <h:panelGroup id="staffDialogContent" layout="block">
-                <h:panelGrid columns="2" cellpadding="5">
+                <h:panelGrid columns="2" cellpadding="7">
                     <h:outputLabel for="firstName" value="First Name:"/>
                     <p:inputText id="firstName" value="#{staffBean.selectedStaff.firstName}" required="true"/>
 
@@ -140,8 +140,11 @@
                         <f:ajax event="blur" render=":staffForm:messages"/>
                     </p:calendar>
 
-                    <h:outputLabel for="password" value="Password:" rendered="#{staffBean.newStaff}"/>
-                    <p:password id="password" value="#{staffBean.password}" rendered="#{staffBean.newStaff}" required="true" toggleMask="true" feedback="true"/>
+                    <h:outputLabel for="password" value="#{staffBean.newStaff ? 'Password:' : 'New Password:'}" />
+                    <p:password id="password" value="#{staffBean.password}" required="#{staffBean.newStaff}" toggleMask="true" feedback="true" placeholder="Leave blank to keep current"/>
+                    <!-- The password field must bind to the temporary `password` variable in the bean, NOT directly to the staff object. -->
+                    <!-- The `required` attribute is now conditional: it's only true if we are creating a new staff member. -->
+                    <!--  Use a single label with a conditional value to ensure perfect alignment in the panelGrid. -->
                 </h:panelGrid>
                 </h:panelGroup>
 
@@ -150,8 +153,10 @@
                     <p:commandButton value="Save" action="#{staffBean.saveStaff}"
                                      process="staffDialogContent @this"
                                      update=":staffForm:messages,:staffForm:staffTable"
+                                     styleClass="!bg-green-600 !border-green-600 !font-medium hover:!bg-green-500"
                                      oncomplete="if(!args.validationFailed) PF('staffDialog').hide()"/>
-                    <p:commandButton value="Cancel" onclick="PF('staffDialog').hide()" type="button"/>
+                    <p:commandButton value="Cancel" onclick="PF('staffDialog').hide()" type="button"
+                                     styleClass="!bg-green-200 !border-green-200  !font-medium !text-black hover:!bg-green-300"/>
                 </f:facet>
             </p:dialog>
 

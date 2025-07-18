@@ -5,7 +5,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 /**
  * A utility class for handling password hashing and verification using the BCrypt algorithm.
- * This is a CDI bean, so it can be injected into any service that needs it.
+ * This is a CDI bean, so I can inject it into any service that needs it.
  */
 @ApplicationScoped
 public class PasswordEncoder {
