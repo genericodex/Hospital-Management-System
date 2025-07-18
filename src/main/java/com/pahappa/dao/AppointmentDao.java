@@ -427,5 +427,25 @@ public class AppointmentDao {
                     .getResultList();
         }
     }
+    /**
+     * Retrieves daily appointment counts for a specific doctor, broken down by status.
+     * Returns a list where each item is an array: [date, status, count].
+     */
+    public List<Object[]> getDailyAppointmentCountsByStatusForDoctor(Long doctorId, LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT function('date', a.appointmentTime), a.status, count(a.id) " +
+                    "FROM Appointment a " +
+                    "WHERE a.isDeleted = false AND a.doctor.id = :doctorId " +
+                    "AND a.appointmentTime >= :startDateTime AND a.appointmentTime < :endDateTime " +
+                    "GROUP BY function('date', a.appointmentTime), a.status " +
+                    "ORDER BY function('date', a.appointmentTime)";
+
+            return session.createQuery(hql, Object[].class)
+                    .setParameter("doctorId", doctorId)
+                    .setParameter("startDateTime", startDate.atStartOfDay())
+                    .setParameter("endDateTime", endDate.plusDays(1).atStartOfDay())
+                    .getResultList();
+        }
+    }
 }
 

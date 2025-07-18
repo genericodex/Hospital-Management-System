@@ -237,7 +237,7 @@
                 <p:dataTable id="recentAppointmentsTable" var="appointment" value="#{dashboardBean.recentAppointments}"
                              selectionMode="single" selection="#{dashboardBean.selectedAppointment}"
                              rowKey="#{appointment.id}"
-                             styleClass="rounded-lg"
+                             styleClass="!rounded-lg !bg-green-100 !text-green-800 !text-lg"
                              paginator="true" rows="5" paginatorPosition="bottom"
                              rowsPerPageTemplate="5,10,20"
                              emptyMessage="No recent appointments found.">
@@ -338,17 +338,17 @@
                         {
                             label: 'Completed',
                             data: data.completed,
-                            backgroundColor: 'rgb(75, 192, 192)' // Green
+                            backgroundColor: 'rgb(120, 189, 37)' // Green
                         },
                         {
                             label: 'Scheduled',
                             data: data.scheduled,
-                            backgroundColor: 'rgb(54, 162, 235)' // Blue
+                            backgroundColor: 'rgb(42, 114, 242)' // Blue
                         },
                         {
                             label: 'Cancelled',
                             data: data.cancelled,
-                            backgroundColor: 'rgb(255, 99, 132)' // Red
+                            backgroundColor: 'rgb(255, 62, 60)' // Red
                         }
                     ]
                 },
@@ -384,9 +384,9 @@
 
         const backgroundColors = data.map(item => {
         switch (item.status.toUpperCase()) {
-            case "SCHEDULED": return "rgb(54, 162, 235)"; // Blue
-            case "COMPLETED": return "rgb(75, 192, 192)"; // Green
-            case "CANCELLED": return "rgb(255, 99, 132)"; // Red
+            case "SCHEDULED": return "rgb(42, 114, 242)"; // Blue
+            case "COMPLETED": return "rgb(0, 189, 37)"; // Green
+            case "CANCELLED": return "rgb(255, 0, 0)"; // Red
             default: return "rgb(201, 203, 207)";       // Grey
         }
         });
@@ -438,16 +438,16 @@
             label: 'Paid Revenue',
             data: paidData,
             fill: true,
-            backgroundColor: 'rgba(20, 184, 166, 0.2)', // Teal
-            borderColor: 'rgb(20, 184, 166)',
+            backgroundColor: 'rgb(0, 166, 71,0.2)', // Teal
+            borderColor: 'rgb(0, 166, 71)',
             tension: 0.3
             },
             {
             label: 'Pending Revenue',
             data: pendingData,
             fill: true,
-            backgroundColor: 'rgba(249, 115, 22, 0.2)', // Orange-500
-            borderColor: 'rgb(249, 115, 22)',
+            backgroundColor: 'rgb(226, 97, 8,0.2)', // Orange-500
+            borderColor: 'rgb(226, 97, 8)',
             tension: 0.3
             }
             ]
@@ -490,7 +490,7 @@
                         label: 'Total Appointments',
                         data: counts,
                         backgroundColor: 'rgba(147, 51, 234, 0.2)', // Tailwind Purple
-                        borderColor: 'rgb(147, 51, 234)',
+                        borderColor: 'rgb(147, 21, 234)',
                         borderWidth: 1
                     }]
                 },
@@ -527,12 +527,12 @@
 
             // A nice color palette for different payment methods
             const backgroundColors = [
-            'rgba(59, 130, 246, 0.7)',  // blue-500
-            'rgba(16, 185, 129, 0.7)',  // green-500
-            'rgba(234, 179, 8, 0.7)',   // yellow-500
-            'rgba(139, 92, 246, 0.7)',  // violet-500
-            'rgba(236, 72, 153, 0.7)',  // pink-500
-            'rgba(249, 115, 22, 0.7)'   // orange-500
+            'rgba(29, 100, 246)',  // blue-500
+            'rgba(10, 205, 59)',  // green-500
+            'rgba(250, 190, 8)',   // yellow-500
+            'rgba(189, 52, 246)',  // violet-500
+            'rgba(236, 72, 153)',  // pink-500
+            'rgba(249, 115, 22)'   // orange-500
             ];
 
             const chartData = {
@@ -547,7 +547,7 @@
             if (window.billingDoughnutChart) window.billingDoughnutChart.destroy();
 
             window.billingDoughnutChart = new Chart(canvas.getContext('2d'), {
-            type: 'doughnut',
+            type: 'pie',
             data: chartData,
             options: {
             responsive: true,
@@ -587,9 +587,12 @@
             label: 'Doctors',
             data: counts,
             backgroundColor: [
-            'rgba(52, 211, 153, 0.7)', 'rgba(96, 165, 250, 0.7)',
-            'rgba(251, 191, 36, 0.7)', 'rgba(239, 68, 68, 0.7)',
-            'rgba(168, 85, 247, 0.7)', 'rgba(236, 72, 153, 0.7)'
+            'rgba(52, 211, 153)', 'rgba(46, 112, 250)',
+            'rgba(251, 191, 36)', 'rgba(239, 68, 68)',
+            'rgba(251, 19, 236,0.2)', 'rgba(255, 18, 208)',
+            'rgba(21, 191, 16)', 'rgba(119, 68, 238,0.4)',
+            'rgba(251, 181, 36)', 'rgba(23, 228, 268)',
+            'rgba(16, 85, 247)', 'rgba(236, 72, 153)'
             ],
             hoverOffset: 4
             }]
