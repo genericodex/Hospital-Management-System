@@ -138,6 +138,30 @@ public class Patient {
         this.medicalHistory = medicalHistory;
     }
 
+    // --- NEW: Add this Copy Constructor ---
+    /**
+     * Creates a new Patient object as a copy of another.
+     * This is crucial for creating a detached snapshot for audit logging.
+     * @param other The Patient object to copy.
+     */
+    public Patient(Patient other) {
+        if (other == null) return;
+        this.id = other.id;
+        this.firstName = other.firstName;
+        this.lastName = other.lastName;
+        this.dateOfBirth = other.dateOfBirth;
+        this.contactNumber = other.contactNumber;
+        this.address = other.address;
+        this.medicalHistory = other.medicalHistory;
+        this.email = other.email;
+        this.insuranceNumber = other.insuranceNumber;
+        this.isDeleted = other.isDeleted;
+        this.createdBy = other.createdBy;
+        this.createdAt = other.createdAt;
+        this.updatedBy = other.updatedBy;
+        this.updatedAt = other.updatedAt;
+    }
+
     // Getters and Setters
 
     /**

@@ -70,40 +70,90 @@
                 </div>
                 <div style="width:100%; overflow-x:auto;">
                     <p:dataTable id="auditLogTable" var="log" value="#{auditLogBean.auditLogs}"
-                                 paginator="true" rows="5" emptyMessage="No audit logs found"
-                                 style="min-width:1200px;" styleClass="min-w-full divide-y divide-gray-200 text-sm rounded-lg
-                                 overflow-hidden shadow" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
-                        <p:column headerText="Timestamp" sortBy="#{log.timestamp}">
+                                 paginator="true" rows="10" emptyMessage="No audit logs found"
+                                 styleClass="min-w-full divide-y divide-gray-200 text-sm rounded-lg overflow-hidden shadow"
+                                 paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
+                        <p:column headerText="Timestamp" sortBy="#{log.timestamp}" style="width:15%;">
                             <h:outputText value="#{log.timestamp}">
                                 <f:convertDateTime type="localDateTime" pattern="yyyy-MM-dd HH:mm:ss"/>
                             </h:outputText>
                         </p:column>
-                        <p:column headerText="Staff">
+                        <p:column headerText="Staff" sortBy="#{log.staffName}" style="width:15%;">
                             <h:outputText value="#{log.staffName}"/>
                         </p:column>
-                        <p:column headerText="Action">
-                            <h:outputText value="#{log.actionType}"/>
+                        <p:column headerText="Action" sortBy="#{log.actionType}" style="width:10%;">
+                            <p:tag value="#{log.actionType}" severity="#{log.actionType.contains('DELETE') ? 'danger' : (log.actionType.contains('CREATE') or log.actionType.contains('RESTORE')) ? 'success' :
+                                                log.actionType.contains('UPDATE') ? 'info' : ''}"
+                                     styleClass="#{log.actionType.contains('DELETE') ? '!bg-red-500 !border !border-red-300 !text-white !shadow-inner !shadow-red-900' :
+                                                log.actionType.contains('CREATE') ? '!bg-green-500 !border !shadow-inner !shadow-green-900 !border-green-300 !text-white' :
+                                                log.actionType.contains('UPDATE') ? '!bg-blue-500 !shadow-inner !shadow-blue-900 !border-blue-300 !text-white' :
+                                                log.actionType.contains('LOGIN') ? '!bg-gray-500 !border !border-gray-300 !text-white' : ''}"/>
                         </p:column>
-                        <p:column headerText="Entity">
+                        <p:column headerText="Entity" sortBy="#{log.entityName}" style="width:10%;">
                             <h:outputText value="#{log.entityName}"/>
                         </p:column>
-                        <p:column headerText="Entity ID">
+                        <p:column headerText="Entity ID" sortBy="#{log.entityId}" style="width:10%;">
                             <h:outputText value="#{log.entityId}"/>
                         </p:column>
-                        <p:column headerText="Old Value" style="max-width:5000px; min-width:300px; white-space:pre-wrap; word-break:break-all;">
-                            <h:outputText value="#{log.oldValue}" style="white-space:pre-wrap; word-break:break-all;"/>
-                        </p:column>
-                        <p:column headerText="New Value" style="max-width:1200px; min-width:300px; white-space:pre-wrap; word-break:break-all;">
-                            <h:outputText value="#{log.newValue}" style="white-space:pre-wrap; word-break:break-all;"/>
-                        </p:column>
-                        <p:column headerText="Diff" style="max-width:1200px; min-width:300px; white-space:pre-wrap; word-break:break-all; color: #333;">
-                            <h:outputText value="#{log.diff}" style="white-space:pre-wrap; word-break:break-all;"/>
+                        <!-- NEW: Actions column with a view button -->
+                        <p:column headerText="Actions" style="width:5%; text-align:center;">
+                            <p:commandButton icon="pi pi-eye" title="View Details"
+                                             process="@this"
+                                             update=":auditLogForm:logDetailDialog"
+                                             oncomplete="PF('logDetailDialogWidget').show()"
+                                             styleClass="rounded-button ui-button-info ui-button-flat">
+                                <!-- This sets the selected log in the bean when the button is clicked -->
+                                <f:setPropertyActionListener target="#{auditLogBean.selectedAuditLog}" value="#{log}" />
+                            </p:commandButton>
                         </p:column>
                     </p:dataTable>
                 </div>
                 </p:panel>
+                <!-- NEW: Dialog to show the full details of a selected audit log -->
+                <!-- ... inside auditlogs.xhtml ... -->
+                <p:dialog id="logDetailDialog" widgetVar="logDetailDialogWidget" modal="true"
+                          header="Audit Log Details" responsive="true" width="800">
+                    <h:panelGroup rendered="#{not empty auditLogBean.selectedAuditLog}">
+                        <!-- This top panel grid remains the same -->
+                        <p:panelGrid columns="2" layout="grid" styleClass="ui-panelgrid-blank"
+                                     columnClasses="ui-grid-col-2 font-bold,ui-grid-col-10">
+                            <h:outputText value="Log ID:"/>
+                            <h:outputText value="#{auditLogBean.selectedAuditLog.id}"/>
+                            <!-- ... other main log details ... -->
+                            <h:outputText value="Entity:"/>
+                            <h:outputText value="#{auditLogBean.selectedAuditLog.entityName} (ID: #{auditLogBean.selectedAuditLog.entityId})"/>
+                        </p:panelGrid>
+
+                        <!-- === THE FIX: Replace the old/new/diff panels with a data table === -->
+                        <p:dataTable var="detail" value="#{auditLogBean.selectedAuditLog.details.toArray()}"
+                                     styleClass="mt-4 text-sm" emptyMessage="No specific field changes were recorded for this action.">
+                            <f:facet name="header">
+                                <span class="font-bold">Field Changes</span>
+                            </f:facet>
+
+                            <p:column headerText="Field Name" style="width:25%;">
+                                <h:outputText value="#{detail.fieldName}" styleClass="font-semibold"/>
+                            </p:column>
+
+                            <p:column headerText="Old Value">
+                                <h:outputText value="#{detail.oldValue}" styleClass="text-red-600"/>
+                            </p:column>
+
+                            <p:column headerText="New Value">
+                                <h:outputText value="#{detail.newValue}" styleClass="text-green-600"/>
+                            </p:column>
+                        </p:dataTable>
+                        <!-- ================================================================= -->
+
+                    </h:panelGroup>
+                    <f:facet name="footer">
+                        <p:commandButton value="Close" type="button" onclick="PF('logDetailDialogWidget').hide()" styleClass="ui-button-secondary"/>
+                    </f:facet>
+                </p:dialog>
+                <!-- ... -->
             </h:form>
         </div>
+
         <h:outputScript>
             // Main function to initialize all charts on this page
             function renderAuditChart(userActivityData, actionTypeData) {

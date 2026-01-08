@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<f:metadata>
+    <!-- This captures the 'patientId' from the URL and sets it in the bean -->
+    <f:viewParam name="patientId" value="#{patientBillingDetailBean.patientId}" required="true" requiredMessage="A patient ID is required to view this page."/>
+    <!-- This action is called after the view parameter is set -->
+    <f:viewAction action="#{patientBillingDetailBean.loadPatientBillingData}"/>
+</f:metadata>
+
+<ui:composition template="/template.xhtml">
+    <ui:define name="title">Billing Details for #{patientBillingDetailBean.patient.firstName} #{patientBillingDetailBean.patient.lastName}</ui:define>
+
+    <ui:define name="content">
+        <h:form id="detailsForm">
+            <p:growl id="messages" showDetail="true" autoUpdate="true"/>
+
+            <h:inputHidden value="#{patientBillingDetailBean.patientId}" />
+            <p:panel header="Billing for: #{patientBillingDetailBean.patient.firstName} #{patientBillingDetailBean.patient.lastName}" styleClass="mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="font-bold">Patient ID:</span>
+                        <h:outputText value=" #{patientBillingDetailBean.patient.id}"/>
+                    </div>
+                    <div>
+                        <span class="font-bold">Email:</span>
+                        <h:outputText value=" #{patientBillingDetailBean.patient.email}"/>
+                    </div>
+                    <div>
+                        <span class="font-bold">Contact:</span>
+                        <h:outputText value=" #{patientBillingDetailBean.patient.contactNumber}"/>
+                    </div>
+                </div>
+            </p:panel>
+
+            <!-- Payment Processing Panel -->
+            <p:panel id="paymentProcessingPanel" header="Payment Processing" styleClass="mb-6">
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <div class="flex items-center gap-2">
+                        <h:outputLabel for="paymentMethod" value="Payment Method: " styleClass="font-semibold"/>
+                        <p:selectOneMenu id="paymentMethod" value="#{patientBillingDetailBean.selectedPaymentMethod}" required="true" requiredMessage="Select a payment method before processing.">
+                            <f:selectItem itemLabel="Select..." itemValue="#{null}" noSelectionOption="true"/>
+                            <f:selectItems value="#{patientBillingDetailBean.paymentMethods}" var="method"
+                                           itemLabel="#{method.displayName}" itemValue="#{method}"/>
+                        </p:selectOneMenu>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-xl font-bold #{patientBillingDetailBean.totalPendingAmount > 0 ? 'text-red-600' : 'text-green-600'}">Total Due: </span>
+                        <h:outputText value="#{patientBillingDetailBean.totalPendingAmount}" styleClass="text-xl font-bold #{patientBillingDetailBean.totalPendingAmount > 0 ? 'text-red-600' : 'text-green-600'}">
+                            <f:convertNumber type="currency" currencySymbol="shs "/>
+                        </h:outputText>
+                        <p:commandButton value="Pay All Pending" icon="pi pi-check-circle"
+                                         action="#{patientBillingDetailBean.processAllPendingPayments}"
+                                         process="paymentMethod @this"
+                                         update="messages billsTable paymentProcessingPanel"
+                                         styleClass="ml-4 ui-button-success"
+                                         rendered="#{patientBillingDetailBean.totalPendingAmount > 0 and authBean.hasPermission('BILLING_PROCESS_PAYMENT')}">
+                        <p:confirm header="Confirmation" message="Are you sure you want to process these payments?" icon="pi pi-wallet" />
+                        </p:commandButton>
+                    </div>
+                </div>
+            </p:panel>
+                        <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" styleClass="bg-white rounded-lg shadow-lg">
+                            <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes !bg-red-500 hover:!bg-red-600 !border-red-500 text-white font-semibold py-2 px-4 rounded shadow"/>
+                            <p:commandButton value="Cancel" type="button" styleClass="ui-confirmdialog-no !bg-gray-500 hover:!bg-gray-300 !border-gray-500 text-white hover:!text-black font-semibold py-2 px-4 rounded shadow"/>
+                        </p:confirmDialog>
+
+            <!-- Data Table of All Bills for this Patient -->
+            <p:dataTable id="billsTable" var="bill" value="#{patientBillingDetailBean.billsForPatient}"
+                         paginator="true" rows="10" emptyMessage="No bills found for this patient." paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
+
+                <p:column headerText="Bill ID" sortBy="#{bill.id}" style="width: 8%;">
+                    <h:outputText value="#{bill.id}"/>
+                </p:column>
+                <p:column headerText="Date" sortBy="#{bill.billDate}" style="width: 12%;">
+                    <h:outputText value="#{bill.billDate}">
+                        <f:convertDateTime pattern="yyyy-MM-dd"/>
+                    </h:outputText>
+                </p:column>
+                <p:column headerText="Description">
+                    <h:outputText value="#{bill.serviceDescription}"/>
+                </p:column>
+                <p:column headerText="Amount" style="width: 15%;">
+                    <h:outputText value="#{bill.amount}">
+                        <f:convertNumber type="currency" currencySymbol="shs "/>
+                    </h:outputText>
+                </p:column>
+                <p:column headerText="Status" sortBy="#{bill.status}" style="width: 12%;">
+                    <p:tag value="#{bill.status}"
+                           severity="#{bill.status == 'PAID' ? 'success' : 'warning'}"
+                           styleClass="#{bill.status == 'PENDING' ? '!bg-red-600 !text-white': ''}"/>
+                </p:column>
+                <p:column headerText="Payment Method" style="width: 15%;">
+                    <h:outputText value="#{patientBillingDetailBean.getPaymentMethodDisplayName(bill.paymentMethod)}" />
+                </p:column>
+                <p:column headerText="Actions" style="width: 10%; text-align: center;">
+                    <p:commandButton value="Process Payment"
+                                     icon="pi pi-dollar"
+                                     action="#{patientBillingDetailBean.processSinglePayment(bill)}"
+                                     update="@form"
+                                     styleClass="ui-button-success ui-button-outlined"
+                                     rendered="#{bill.status == 'PENDING' and authBean.hasPermission('BILLING_PROCESS_PAYMENT')}">
+                        <p:confirm header="Confirm Payment" message="Process payment for Bill ##{bill.id} of #{bill.amount} using #{patientBillingDetailBean.selectedPaymentMethod.displayName}?" icon="pi pi-exclamation-triangle"/>
+                    </p:commandButton>
+                </p:column>
+            </p:dataTable>
+
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+                <p:commandButton value="Yes" type="button" styleClass="!bg-green-600 hover:!bg-green-700 !border-green-500 hover:!border-green-600" icon="pi pi-check"/>
+                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-secondary" icon="pi pi-times"/>
+            </p:confirmDialog>
+
+        </h:form>
+    </ui:define>
+</ui:composition>
+</html>

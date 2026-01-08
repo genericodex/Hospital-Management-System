@@ -65,6 +65,7 @@ public class HibernateUtil {
                 configuration.addAnnotatedClass(Staff.class);
                 configuration.addAnnotatedClass(Role.class);
                 configuration.addAnnotatedClass(Permissions.class);
+                configuration.addAnnotatedClass(AuditLogDetail.class);
 
                 registry = new StandardServiceRegistryBuilder()
                         .applySettings(configuration.getProperties())
@@ -81,6 +82,7 @@ public class HibernateUtil {
                 sources.addAnnotatedClass(Staff.class);
                 sources.addAnnotatedClass(Role.class);
                 sources.addAnnotatedClass(Permissions.class);
+                sources.addAnnotatedClass(AuditLogDetail.class);
 
                 Metadata metadata = sources.getMetadataBuilder().build();
                 sessionFactory = metadata.getSessionFactoryBuilder().build();

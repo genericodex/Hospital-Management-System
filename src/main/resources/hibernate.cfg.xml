@@ -22,6 +22,7 @@
 
         <!-- Echo executed SQL to stdout -->
         <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.show_sql">false</property>
         <property name="hibernate.current_session_context_class">thread</property>
         <property name="hibernate.connection.autocommit">false</property>
 
@@ -36,6 +37,7 @@
         <mapping class="com.pahappa.models.Staff"/>
         <mapping class="com.pahappa.models.Role"/>
         <mapping class="com.pahappa.models.AuditLog"/>
+        <mapping class="com.pahappa.models.AuditLogDetail"/>
         <mapping class="com.pahappa.models.Permissions"/>
     </session-factory>
 </hibernate-configuration>

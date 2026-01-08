@@ -21,6 +21,8 @@ public class AuditLogBean implements Serializable {
     private List<AuditLog> auditLogs;
     private String selectedEntity;
     private String selectedActionType;
+    // --- NEW: Property to hold the selected log for the details dialog ---
+    private AuditLog selectedAuditLog;
     private String selectedStaffName;
     private java.time.LocalDateTime startDate;
     private java.time.LocalDateTime endDate;
@@ -43,6 +45,33 @@ public class AuditLogBean implements Serializable {
         startDate = null;
         endDate = null;
         filterAuditLogs(); // Reload all logs after clearing filters
+    }
+
+    // --- NEW: Helper method to format the diff output with HTML for color-coding ---
+    public String getFormattedDiff() {
+        if (selectedAuditLog == null || selectedAuditLog.getDiff() == null) {
+            return "No changes recorded.";
+        }
+        String diff = selectedAuditLog.getDiff();
+        StringBuilder htmlDiff = new StringBuilder();
+        String[] lines = diff.split("\\r?\\n"); // Handles different line endings
+
+        for (String line : lines) {
+            // Use html-safe escaping for the content of the line
+            String escapedLine = org.apache.commons.text.StringEscapeUtils.escapeHtml4(line);
+
+            if (line.startsWith("+")) {
+                // Wrap added lines in a green span
+                htmlDiff.append("<span style='color: #16a34a; font-weight: bold;'>").append(escapedLine).append("</span><br/>");
+            } else if (line.startsWith("-")) {
+                // Wrap removed lines in a red span
+                htmlDiff.append("<span style='color: #dc2626; font-weight: bold;'>").append(escapedLine).append("</span><br/>");
+            } else {
+                // Append normal lines as they are
+                htmlDiff.append(escapedLine).append("<br/>");
+            }
+        }
+        return htmlDiff.toString();
     }
 
     public void loadChartData() {
@@ -124,5 +153,8 @@ public class AuditLogBean implements Serializable {
     public void setEndDate(java.time.LocalDateTime endDate) {
         this.endDate = endDate;
     }
+    // --- NEW: Getter and Setter for the selected log ---
+    public AuditLog getSelectedAuditLog() { return selectedAuditLog; }
+    public void setSelectedAuditLog(AuditLog selectedAuditLog) { this.selectedAuditLog = selectedAuditLog; }
 }
 

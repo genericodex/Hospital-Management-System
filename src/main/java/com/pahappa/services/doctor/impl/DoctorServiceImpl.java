@@ -7,12 +7,9 @@ import com.pahappa.models.Staff;
 import com.pahappa.models.AuditLog;
 import java.util.List;
 import java.time.LocalDateTime;
-import java.util.Date;
-import com.pahappa.models.Patient;
-import com.pahappa.models.Appointment;
 
-import com.pahappa.services.HospitalService;
 import com.pahappa.services.doctor.DoctorService;
+import com.pahappa.util.JsonUtil;
 import com.pahappa.util.PasswordEncoder;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -95,18 +92,7 @@ public class DoctorServiceImpl implements DoctorService {
             doctor.setPassword(old.getPassword());
         }
         doctorDao.updateDoctor(doctor);
-        AuditLog log = new AuditLog();
-        log.setActionType("UPDATE");
-        log.setEntityName("Doctor");
-        log.setEntityId(doctor.getId() != null ? doctor.getId().toString() : "N/A");
-        log.setOldValue(old != null ? old.toString() : null);
-        log.setNewValue(doctor.toString());
-        log.setTimestamp(LocalDateTime.now());
-        if (staff != null) {
-            log.setStaffId(staff.getId());
-            log.setStaffName(staff.getFirstName() + " " + staff.getLastName());
-        }
-        auditLogDao.saveAuditLog(log);
+        createAuditLog("UPDATE", doctor, old, doctor,staff);
     }
 
     @Override
@@ -157,18 +143,7 @@ public class DoctorServiceImpl implements DoctorService {
     public void restoreDoctor(Long id, Staff staff) {
         Doctor old = doctorDao.getDoctorById(id);
         doctorDao.restoreDoctor(id);
-        AuditLog log = new AuditLog();
-        log.setActionType("RESTORE");
-        log.setEntityName("Doctor");
-        log.setEntityId(id != null ? id.toString() : "N/A");
-        log.setOldValue(old != null ? old.toString() : null);
-        log.setNewValue(null);
-        log.setTimestamp(LocalDateTime.now());
-        if (staff != null) {
-            log.setStaffId(staff.getId());
-            log.setStaffName(staff.getFirstName() + " " + staff.getLastName());
-        }
-        auditLogDao.saveAuditLog(log);
+        createAuditLog("RESTORE", old, old, old, staff);
     }
 
     // --- FIX: Implement the new changePassword method ---
@@ -215,6 +190,24 @@ public class DoctorServiceImpl implements DoctorService {
     @Transactional
     public List<Object[]> getSpecializationCounts() {
         return doctorDao.getSpecializationCounts();
+    }
+    private void createAuditLog(String actionType, Doctor entity, Object oldState, Object newState, Staff staff) {
+        AuditLog log = new AuditLog();
+        log.setActionType(actionType);
+        log.setEntityName("Patient");
+        if (entity != null && entity.getId() != null) {
+            log.setEntityId(entity.getId().toString());
+        } else {
+            log.setEntityId("N/A");
+        }
+        log.setOldValue(JsonUtil.toJson(oldState));
+        log.setNewValue(JsonUtil.toJson(newState));
+        log.setTimestamp(LocalDateTime.now());
+        if (staff != null) {
+            log.setStaffId(staff.getId());
+            log.setStaffName(staff.getFirstName() + " " + staff.getLastName());
+        }
+        auditLogDao.saveAuditLog(log);
     }
 }
 

@@ -4,6 +4,7 @@ import com.pahappa.constants.BillingStatus;
 import com.pahappa.constants.PaymentMethod;
 import com.pahappa.models.Billing;
 import com.pahappa.models.Patient;
+import com.pahappa.models.dto.PatientBillingSummary;
 import com.pahappa.services.billing.BillingService;
 import com.pahappa.services.billing.impl.BillingServiceImpl;
 import com.pahappa.services.patient.PatientService;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Named
 @ViewScoped
@@ -39,6 +41,9 @@ public class BillingBean implements Serializable {
     private transient AuthBean authBean;
 
     private List<Billing> billings;
+    private List<PatientBillingSummary> patientSummaries;
+    private List<PatientBillingSummary> filteredSummaries; // For search
+    private String searchTerm;
     private List<Billing> selectedBillings;
     private PaymentMethod selectedPaymentMethod;
     private Billing selectedBilling;
@@ -59,11 +64,15 @@ public class BillingBean implements Serializable {
             this.selectedBilling = new Billing();
             billings = billingService.getAllBillings();
             patients = patientService.getAllActivePatient();
+            this.patientSummaries = billingService.getPatientBillingSummaries();
+            this.filteredSummaries = new ArrayList<>(patientSummaries);
             deletedBillings = new ArrayList<>();
         } catch (Exception e) {
             System.out.println("Failed to initialize BillingBean");
             billings = new ArrayList<>();
             patients = new ArrayList<>();
+            this.patientSummaries = new ArrayList<>();
+            this.filteredSummaries = new ArrayList<>();
             deletedBillings = new ArrayList<>();
 
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not load billing data."));
@@ -266,6 +275,17 @@ public class BillingBean implements Serializable {
         this.filterByPaymentMethod = filterByPaymentMethod;
     }
 
+    public void searchPatients() {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            filteredSummaries = new ArrayList<>(patientSummaries);
+        } else {
+            String lower = searchTerm.toLowerCase();
+            filteredSummaries = patientSummaries.stream()
+                    .filter(s -> (s.getPatient().getFirstName() + " " + s.getPatient().getLastName()).toLowerCase().contains(lower))
+                    .collect(Collectors.toList());
+        }
+    }
+
 
     // Getters and Setters
     public List<Billing> getBillings() { return billings; }
@@ -286,10 +306,15 @@ public class BillingBean implements Serializable {
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public boolean isNewBilling() { return newBilling; }
+    public String getSearchTerm() { return searchTerm; }
+    public void setSearchTerm(String searchTerm) { this.searchTerm = searchTerm; }
     public Integer getSearchPatientId() { return searchPatientId; }
     public void setSearchPatientId(Integer searchPatientId) { this.searchPatientId = searchPatientId; }
     public void setBillingToDeleteId(Long id) {
         this.billingToDeleteId = id;
+    }
+    public List<PatientBillingSummary> getPatientSummaries() {
+        return filteredSummaries; // The table should point to the filtered list
     }
     public Long getBillingToDeleteId() {
         return billingToDeleteId;

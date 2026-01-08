@@ -33,91 +33,40 @@
 
             <!-- Search Bar -->
             <div class="mb-4 pt-2 flex items-center gap-2">
-                <p:selectOneMenu id="searchPatient" value="#{billingBean.searchPatientId}" styleClass="w-64 hover:!bg-green-100" filter="true" filterMatchMode="contains">
-                    <f:selectItem itemLabel="Search by patient..." itemValue=""/>
-                    <f:selectItems value="#{billingBean.patients}" var="patient"
-                        itemLabel="#{patient.firstName} #{patient.lastName}" itemValue="#{patient.id}"/>
-                </p:selectOneMenu>
-                <p:selectOneMenu id="filterPaymentMethod" value="#{billingBean.filterByPaymentMethod}" styleClass="w-64 hover:!bg-green-100">
-                    <f:selectItem itemLabel="Filter by payment method..." itemValue="#{null}"/>
-                    <f:selectItems value="#{billingBean.paymentMethods}" var="method"
-                                   itemLabel="#{method.displayName}" itemValue="#{method.name()}"/>
-                </p:selectOneMenu>
-                <p:commandButton value="Search" icon="pi pi-search" action="#{billingBean.filterBillings}"
-                                 process="@this searchPatient filterPaymentMethod"
-                                 styleClass="!bg-green-600 hover:!bg-green-500 !border-green-600 text-white
-                                     font-semibold rounded shadow mr-2 text-xs"
-                                 update=":billingForm:billingTable"/>
-                <p:commandButton value="Clear" icon="pi pi-times" action="#{billingBean.clearFilters}"
-                                 process="@this"
-                                 styleClass="!bg-green-200 hover:!bg-green-300 !border-green-300 !text-black
-                                     font-semibold rounded shadow mr-2 text-xs"
-                                 update=":billingForm:billingTable,:billingForm:searchPatient"/>
+                <p:inputText id="searchInput" value="#{billingBean.searchTerm}" placeholder="Search by patient name..." styleClass="w-64"/>
+                <p:commandButton value="Search" icon="pi pi-search" action="#{billingBean.searchPatients}"
+                                 process="searchInput @this"
+                                 update="billingTable" styleClass="!bg-green-600 !border-green-600"/>
             </div>
 
-            <p:dataTable id="billingTable" var="billing" value="#{billingBean.billings}"
-                         rendered="#{authBean.hasPermission('BILLING_VIEW')}"
-                         paginator="true" rows="10" selection="#{billingBean.selectedBillings}"
-                         rowKey="#{billing.id}" emptyMessage="No bills found" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
+            <p:dataTable id="billingTable" var="summary" value="#{billingBean.patientSummaries}"
+                         paginator="true" rows="10"
+                         emptyMessage="No patients with bills found." paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
 
-                <p:column headerText="ID" sortBy="#{billing.id}">
-                    <h:outputText value="#{billing.id}"/>
+                <p:column headerText="Patient ID" sortBy="#{summary.patient.id}" style="width:10%;">
+                    <h:outputText value="#{summary.patient.id}"/>
                 </p:column>
 
-                <p:column headerText="Patient" sortBy="#{billing.patient.lastName}">
-                    <h:outputText value="#{billing.patient.firstName} #{billing.patient.lastName}"/>
+                <p:column headerText="Patient Name" sortBy="#{summary.patient.lastName}">
+                    <h:outputText value="#{summary.patient.firstName} #{summary.patient.lastName}"/>
                 </p:column>
 
-                <p:column headerText="Amount" sortBy="#{billing.amount}">
-                    <h:outputText value="#{billing.amount}">
-                        <f:convertNumber type="currency" currencySymbol="shs " maxFractionDigits="1"/>
+                <p:column headerText="Pending Bills" sortBy="#{summary.pendingBillsCount}" style="text-align:center; width:15%;">
+                    <p:tag value="#{summary.pendingBillsCount}" severity="#{summary.pendingBillsCount > 0 ? 'danger' : 'success'}" styleClass="!w-12 !font-black"/>
+                </p:column>
+
+                <p:column headerText="Total Amount Due" sortBy="#{summary.totalPendingAmount}" style="width:20%;">
+                    <h:outputText value="#{summary.totalPendingAmount}">
+                        <f:convertNumber type="currency" currencySymbol="shs "/>
                     </h:outputText>
                 </p:column>
 
-                <p:column headerText="Description" sortBy="#{billing.serviceDescription}">
-                    <h:outputText value="#{billing.serviceDescription}"/>
-                </p:column>
-
-                <p:column headerText="Status" sortBy="#{billing.status}">
-                    <p:tag value="#{billing.status}"
-                           severity="#{billing.status == 'PAID' ? 'success' : 'warning'}" styleClass="#{billing.status == 'PENDING' ? '!bg-red-600 !text-white': ''}"/>
-                </p:column>
-
-                <p:column headerText="Date" sortBy="#{billing.billDate}">
-                    <h:outputText value="#{billing.billDate}">
-                        <f:convertDateTime pattern="yyyy-MM-dd"/>
-                    </h:outputText>
-                </p:column>
-
-                <p:column headerText="Actions" style="width:12%" rendered="#{authBean.hasPermission('BILLING_PROCESS_PAYMENT')}">
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-
-                    <p:commandButton icon="pi pi-money-bill" title="Process Payment"
-                                     rendered="#{billing.status == 'PENDING' }"
-                                     action="#{billingBean.initPayment(billing)}"
-                                     process="@this"
-                                     update=":billingForm:paymentDialog"
-                                     styleClass="!bg-green-600 hover:!bg-green-500 !border-green-600 text-white
-                                     font-semibold rounded shadow mr-2 text-xs"
-                                     oncomplete="PF('paymentDialog').show()"/>
-
-                    <p:commandButton icon="pi pi-eye" title="View Details"
-                                     action="#{billingBean.viewDetails(billing)}"
-                                     rendered="#{authBean.hasPermission('BILLING_VIEW')}"
-                                     process="@this"
-                                     update=":billingForm:detailsDialog"
-                                     oncomplete="PF('detailsDialog').show()"
-                                     styleClass="!bg-gray-300 hover:!bg-gray-400 !border-gray-300 !text-black !font-medium p-0 m-0 text-xs min-w-[28px] min-h-[28px]"/>
-
-                    <p:commandButton icon="pi pi-trash" title="Delete Bill"
-                                     process="@this"
-                                     rendered="#{authBean.hasPermission('BILLING_DELETE_SOFT')}"
-                                     action="#{billingBean.softDeleteBilling(billing)}"
-                                     update=":billingForm:billingTable,:billingForm:messages"
-                                     styleClass="ui-button-danger p-0 m-0 text-xs min-w-[28px] min-h-[28px]">
-                        <p:confirm header="Confirmation" message="Are you sure you want to delete this bill?" icon="pi pi-exclamation-circle"/>
-                    </p:commandButton>
-                    </div>
+                <p:column headerText="Actions" style="width:10%; text-align:center;">
+                    <!-- This button navigates to the new details page -->
+                    <p:button outcome="/Billings/patient-billing-details" icon="pi pi-eye" title="View &amp; Process Bills"
+                              styleClass="ui-button-info ui-button-outlined">
+                        <f:param name="patientId" value="#{summary.patient.id}"/>
+                    </p:button>
                 </p:column>
             </p:dataTable>
             <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" styleClass="bg-white rounded-lg shadow-lg">
@@ -150,39 +99,6 @@
                                      oncomplete="if(!args.validationFailed) PF('billingDialog').hide()"
                                      rendered="#{authBean.hasPermission('BILLING_CREATE')}"/>
                     <p:commandButton value="Cancel" onclick="PF('billingDialog').hide()" type="button"
-                                     styleClass="!bg-green-200 !border-green-200  !font-medium !text-black hover:!bg-green-300"/>
-                </f:facet>
-            </p:dialog>
-
-            <!-- Process Payment Dialog -->
-            <p:dialog id="paymentDialog" header="Process Payment" widgetVar="paymentDialog" modal="true" resizable="false">
-                <h:panelGrid columns="2" cellpadding="5">
-                    <h:outputLabel value="Patient:"/>
-                    <h:outputText value="#{billingBean.selectedBilling.patient.firstName} #{billingBean.selectedBilling.patient.lastName}"/>
-
-                    <h:outputLabel value="Amount:"/>
-                    <h:outputText value="#{billingBean.selectedBilling.amount}">
-                        <f:convertNumber type="currency" currencySymbol="shs " maxFractionDigits="1"/>
-                    </h:outputText>
-
-                    <h:outputLabel value="Description:"/>
-                    <h:outputText value="#{billingBean.selectedBilling.serviceDescription}"/>
-
-                    <h:outputLabel for="paymentMethod" value="Payment Method:"/>
-                    <p:selectOneMenu id="paymentMethod" value="#{billingBean.selectedPaymentMethod}" required="true">
-                        <f:selectItems value="#{billingBean.paymentMethods}" var="method"
-                                       itemLabel="#{method.displayName}" itemValue="#{method}"/>
-                    </p:selectOneMenu>
-                </h:panelGrid>
-
-                <f:facet name="footer">
-                    <p:commandButton value="Process" action="#{billingBean.processPayment}"
-                                     process=":billingForm:paymentDialog"
-                                     styleClass="!bg-green-600 !border-green-600 !font-medium hover:!bg-green-500"
-                                     update=":billingForm:messages,:billingForm:billingTable"
-                                     oncomplete="if(!args.validationFailed) PF('paymentDialog').hide()"
-                                     rendered="#{authBean.hasPermission('BILLING_PROCESS_PAYMENT')}"/>
-                    <p:commandButton value="Cancel" onclick="PF('paymentDialog').hide()" type="button"
                                      styleClass="!bg-green-200 !border-green-200  !font-medium !text-black hover:!bg-green-300"/>
                 </f:facet>
             </p:dialog>

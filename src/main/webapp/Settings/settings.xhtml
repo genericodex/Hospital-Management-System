@@ -44,7 +44,8 @@
                     <p:commandButton value="Load Deleted Patients" icon="pi pi-refresh"
                                      styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      action="#{patientBean.loadDeletedPatients}"
-                                     update="@form"/>
+                                     update="deletedPatientsTable"
+                    process="@this"/>
                     <span style="display:flex; height:0.75rem;"/>
 
                     <p:dataTable id="deletedPatientsTable" var="patient" value="#{patientBean.deletedPatients}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
@@ -99,7 +100,8 @@
                     <p:commandButton value="Load Deleted Doctors" icon="pi pi-refresh"
                                      styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      action="#{doctorBean.loadDeletedDoctors}"
-                                     update="@form"/>
+                                     update="deletedDoctorsTable"
+                    process="@this"/>
                     <p:dataTable id="deletedDoctorsTable" var="doctor" value="#{doctorBean.deletedDoctors}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{doctor.id}"/>
@@ -137,7 +139,8 @@
                     <p:commandButton value="Load Deleted Appointments" icon="pi pi-refresh"
                                      styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      action="#{appointmentBean.loadCancelledAppointments}"
-                                     update="@form"/>
+                                     update="deletedAppointmentsTable"
+                    process="@this"/>
                     <p:dataTable id="deletedAppointmentsTable" var="appointment" value="#{appointmentBean.cancelledAppointments}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{appointment.id}"/>
@@ -180,7 +183,8 @@
                     <p:commandButton value="Load Deleted Staff" icon="pi pi-refresh"
                                      action="#{staffBean.loadDeletedStaff}"
                                      styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
-                                     update="@form"/>
+                                     update="deletedStaffTable"
+                    process="@this"/>
                     <p:dataTable id="deletedStaffTable" var="staff" value="#{staffBean.deletedStaff}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{staff.id}"/>
@@ -218,7 +222,8 @@
                     <p:commandButton value="Load Deleted Billings" icon="pi pi-refresh"
                                      styleClass="!bg-green-600 border !border-green-500  !font-semibold hover:!bg-green-500  hover:!border-green-700"
                                      action="#{billingBean.loadDeletedBillings}"
-                                     update="@form"/>
+                                     update="deletedBillingsTable"
+                    process="@this"/>
                     <p:dataTable id="deletedBillingsTable" var="billing" value="#{billingBean.deletedBillings}" paginator="true" rows="10" paginatorPosition="bottom" rowsPerPageTemplate="5,10,15,50,100">
                         <p:column headerText="ID">
                             <h:outputText value="#{billing.id}"/>

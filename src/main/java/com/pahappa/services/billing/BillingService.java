@@ -2,6 +2,7 @@ package com.pahappa.services.billing;
 
 import com.pahappa.models.Billing;
 import com.pahappa.models.Patient;
+import com.pahappa.models.dto.PatientBillingSummary;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,5 +27,5 @@ public interface BillingService {
     List<Object[]> getBillingStatusTotals();
     List<Object[]> getBillingTotalsByPaymentMethod();
     List<Object[]> getDailyRevenueByStatus(LocalDate startDate, LocalDate endDate);
-
+    List<PatientBillingSummary> getPatientBillingSummaries();
 }

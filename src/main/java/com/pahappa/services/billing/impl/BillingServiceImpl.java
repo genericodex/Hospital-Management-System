@@ -8,6 +8,7 @@ import com.pahappa.models.Patient;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.pahappa.models.dto.PatientBillingSummary;
 import com.pahappa.services.HospitalService;
 import com.pahappa.services.billing.BillingService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -119,6 +120,12 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     public List<Object[]> getDailyRevenueByStatus(LocalDate startDate, LocalDate endDate) {
         return billingDao.getDailyRevenueByStatus(startDate, endDate);
+    }
+
+    @Override
+    @Transactional
+    public List<PatientBillingSummary> getPatientBillingSummaries() {
+        return billingDao.getPatientBillingSummaries();
     }
 
 }

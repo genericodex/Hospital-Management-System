@@ -1,16 +1,14 @@
 package com.pahappa.services.patient.impl;
 
 import com.pahappa.dao.PatientDao;
-import com.pahappa.dao.AuditLogDao;
 import com.pahappa.models.Patient;
 import com.pahappa.models.Staff;
-import com.pahappa.models.AuditLog;
-import java.util.List;
-import java.time.LocalDateTime;
-import java.util.Date;
-import com.pahappa.models.Doctor;
-import com.pahappa.models.Appointment;
 
+import java.util.List;
+import java.util.Date;
+
+import com.pahappa.services.audit.AuditService;
+import com.pahappa.services.audit.impl.AuditServiceImpl;
 import com.pahappa.services.patient.PatientService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -30,14 +28,23 @@ public class PatientServiceImpl implements PatientService {
     @Inject
     private PatientDao patientDao;
     @Inject
-    private AuditLogDao auditLogDao;
+    private AuditService auditService;
 
     // Patient operations
     @Override
     public Patient createPatient(String firstName, String lastName, Date dob, String contact, String address, String email, Boolean isDeleted,String medicalHistory, Staff staff) {
         Patient patient = new Patient(firstName, lastName, dob, contact, address, email, isDeleted ,medicalHistory);
+        // Set audit metadata before saving
+        if (staff != null) {
+            patient.setCreatedBy(staff.getId());
+        }
+        patient.setCreatedAt(new Date());
+
+        // 1. Save the patient first to get an ID from the database.
         patientDao.savePatient(patient);
-        createAuditLog("CREATE", patient, null, patient, staff);
+
+        // 2. Now that the patient has an ID, log the action.
+        auditService.log("CREATE", "Patient", patient.getId().toString(), null, patient, staff);
         return patient;
     }
     @Override
@@ -47,27 +54,55 @@ public class PatientServiceImpl implements PatientService {
     @Override
     public void updatePatient(Patient patient, Staff staff) {
         Patient old = patientDao.getPatientById(patient.getId());
+        // 1. Fetch the managed entity to get a true representation of the old state.
+        Patient managedOldState = patientDao.getPatientById(patient.getId());
+        if (managedOldState == null) {
+            throw new IllegalStateException("Patient with ID " + patient.getId() + " not found for update.");
+        }
+
+        // 2. Create a clean, detached copy of the old state BEFORE any changes are made.
+        Patient oldStateCopy = new Patient(managedOldState);
+        // 3. Set audit metadata on the object that is about to be updated.
+        if (staff != null) {
+            patient.setUpdatedBy(staff.getId());
+        }
+        patient.setUpdatedAt(new Date());
+
+        // 4. Perform the update.
+
         patientDao.updatePatient(patient);
-        createAuditLog("UPDATE", patient, old, patient, staff);
+        // 5. Log the changes by comparing the clean copy with the updated object from the form.
+        auditService.log("UPDATE", "Patient", patient.getId().toString(), oldStateCopy, patient, staff);
     }
+
     @Override
     public void deletePatient(Long id, Staff staff) {
-        Patient old = patientDao.getPatientById(id);
-        patientDao.deletePatient(id);
-        createAuditLog("DELETE", old, old, null, staff);
+        Patient oldState = patientDao.getPatientById(id);
+        if (oldState != null) {
+            patientDao.deletePatient(id);
+            auditService.log("DELETE", "Patient", id.toString(), oldState, null, staff);
+        }
     }
     @Override
     public void softDeletePatient(Long id, Staff staff) {
-        Patient old = patientDao.getPatientById(id);
-        patientDao.softDeletePatient(id);
-        createAuditLog("SOFT_DELETE", old, old, null, staff);
+        Patient oldState = patientDao.getPatientById(id);
+        if (oldState != null) {
+            Patient oldStateCopy = new Patient(oldState); // Create snapshot
+            patientDao.softDeletePatient(id);
+            Patient newState = patientDao.getPatientById(id); // Get new state
+            auditService.log("SOFT_DELETE", "Patient", id.toString(), oldStateCopy, newState, staff);
+        }
     }
+
     @Override
     public void restorePatient(Long id, Staff staff) {
-        Patient old = patientDao.getPatientById(id);
-        patientDao.restorePatient(id);
-        // For restore, the "new value" is the restored patient state
-        createAuditLog("RESTORE", old, old, old, staff);
+        Patient oldState = patientDao.getPatientById(id);
+        if (oldState != null) {
+            Patient oldStateCopy = new Patient(oldState); // Create snapshot
+            patientDao.restorePatient(id);
+            Patient newState = patientDao.getPatientById(id); // Get new state
+            auditService.log("RESTORE", "Patient", id.toString(), oldStateCopy, newState, staff);
+        }
     }
     @Override
     public List<Patient> getAllActivePatient() { return patientDao.getAllActivePatient(); }
@@ -78,31 +113,4 @@ public class PatientServiceImpl implements PatientService {
         return patientDao.countActivePatients();
     }
 
-    /**
-     * A private helper method to encapsulate the creation of audit logs.
-     * This reduces code duplication and makes the main service methods cleaner.
-     * @param actionType The type of action (e.g., "CREATE", "UPDATE").
-     * @param entity The primary entity involved to get its ID.
-     * @param oldState The object state before the change.
-     * @param newState The object state after the change.
-     * @param staff The staff member performing the action.
-     */
-    private void createAuditLog(String actionType, Patient entity, Object oldState, Object newState, Staff staff) {
-        AuditLog log = new AuditLog();
-        log.setActionType(actionType);
-        log.setEntityName("Patient");
-        if (entity != null && entity.getId() != null) {
-            log.setEntityId(entity.getId().toString());
-        } else {
-            log.setEntityId("N/A");
-        }
-        log.setOldValue(oldState != null ? oldState.toString() : null);
-        log.setNewValue(newState != null ? newState.toString() : null);
-        log.setTimestamp(LocalDateTime.now());
-        if (staff != null) {
-            log.setStaffId(staff.getId());
-            log.setStaffName(staff.getFirstName() + " " + staff.getLastName());
-        }
-        auditLogDao.saveAuditLog(log);
-    }
 }

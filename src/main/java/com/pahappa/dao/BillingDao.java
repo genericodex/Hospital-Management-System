@@ -3,6 +3,7 @@ package com.pahappa.dao;
 import com.pahappa.constants.BillingStatus;
 import com.pahappa.models.Billing;
 import com.pahappa.models.Patient;
+import com.pahappa.models.dto.PatientBillingSummary;
 import com.pahappa.util.HibernateUtil;
 import org.hibernate.Session;
 
@@ -117,7 +118,7 @@ public class BillingDao {
     public List<Billing> getBillingsByPatient(Long patientId) {
         Session session = HibernateUtil.getSessionFactory().getCurrentSession();
         return session.createQuery(
-                        "FROM Billing WHERE patient.id = :patientId", Billing.class)
+                        "FROM Billing b WHERE b.patient.id = :patientId AND b.isDeleted = false", Billing.class)
                 .setParameter("patientId", patientId)
                 .list();
     }
@@ -229,6 +230,24 @@ public class BillingDao {
                     .setParameter("status", BillingStatus.PAID)
                     .getResultList();
         }
+    }
+
+    /**
+     * Fetches a summary of pending bills for each patient.
+     * This query groups all non-deleted bills by patient and calculates the
+     * total amount and count of only the PENDING bills for each patient.
+     * @return A list of PatientBillingSummary objects.
+     */
+    public List<PatientBillingSummary> getPatientBillingSummaries() {
+        Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        String hql = "SELECT new com.pahappa.models.dto.PatientBillingSummary(" +
+                "b.patient, " +
+                "SUM(CASE WHEN b.status = 'PENDING' THEN b.amount ELSE 0 END), " +
+                "COUNT(CASE WHEN b.status = 'PENDING' THEN 1 END)) " +
+                "FROM Billing b WHERE b.isDeleted = false " +
+                "GROUP BY b.patient";
+
+        return session.createQuery(hql, PatientBillingSummary.class).list();
     }
 
 }
