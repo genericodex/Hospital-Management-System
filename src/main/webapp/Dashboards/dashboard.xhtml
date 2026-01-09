@@ -1,606 +1,319 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                template="../template.xhtml">
 
-<h:head>
-    <title>Hospital Management System - Dashboard</title>
-    <h:outputStylesheet library="css" name="styles.css"/>
-    <script src="https://cdn.tailwindcss.com"/>
-    <!-- NEW: Add Chart.js library -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</h:head>
-
-<ui:composition template="../template.xhtml">
     <ui:define name="title">Dashboard</ui:define>
 
-    <ui:define name="content" >
+    <ui:define name="content">
+        <h:head>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <!-- FullCalendar -->
+            <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+            <script src="https://cdn.tailwindcss.com"/>
+
+            <style>
+                /* Fix Calendar Grid Visibility */
+                .fc td, .fc th {
+                    border: 1px solid #e2e8f0 !important;
+                }
+                .fc-theme-standard .fc-scrollgrid {
+                    border: 1px solid #e2e8f0 !important;
+                }
+                .fc-col-header-cell {
+                    background-color: #f8fafc;
+                }
+                /* Drag Handle Cursor */
+                .drag-handle {
+                    cursor: move;
+                }
+            </style>
+        </h:head>
+
         <h:form id="dashboardForm">
-            <!-- NEW: Remote command to load chart data on page load -->
-            <p:remoteCommand name="loadCharts"
-                             actionListener="#{dashboardBean.loadChartData()}"
-                             autoRun="true" />
-            <p:panel styleClass="border-0  !rounded-lg mb-4 !shadow-lg bg-blue-100 !w-full">
-                <div class="flex items-center gap-2 mb-4">
-                    <i class="pi pi-calendar text-green-600 text-xl"/>
-                    <span class="font-semibold text-green-700 text-lg">Dashboard Overview</span>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <p:growl id="msgs" showDetail="true"/>
 
-                    <!-- Patients Card -->
-                    <ui:fragment rendered="#{authBean.hasPermission('PATIENT_VIEW')}">
-
-                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:bg-blue-300/10 hover:shadow-xl hover:shadow-blue-200 ">
-                        <div class="flex items-center justify-between">
-                            <div class="flex flex-col">
-                                <h:outputText value="Patients" styleClass="text-blue-900 font-semibold"/>
-                                <h:outputText value="#{dashboardBean.patientCount}" styleClass="text-3xl font-bold text-blue-500 mt-1"/>
-                            </div>
-                            <div class="bg-blue-100 rounded-xl p-3">
-                                <i class="pi pi-users text-3xl text-blue-500"/>
-                            </div>
-                        </div>
-                        <h:link outcome="patients" value="View Details" styleClass="block text-sm text-blue-500 hover:text-blue-700 mt-4 font-medium"/>
-                    </div>
-                    </ui:fragment>
-
-                    <!-- Doctors Card -->
-                    <ui:fragment rendered="#{authBean.hasPermission('DOCTOR_VIEW')}">
-
-                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-green-200 hover:bg-green-300/10">
-                        <div class="flex items-center justify-between">
-                            <div class="flex flex-col">
-                                <h:outputText value="Doctors" styleClass="text-green-900 font-semibold"/>
-                                <h:outputText value="#{dashboardBean.doctorCount}" styleClass="text-3xl font-bold text-green-500 mt-1"/>
-                            </div>
-                            <div class="bg-green-100 rounded-xl p-3">
-                                <i class="pi pi-user-plus text-3xl text-green-500"/>
-                            </div>
-                        </div>
-                        <h:link outcome="doctors" value="View Details" styleClass="block text-sm text-green-500 hover:text-green-700 mt-4 font-medium"/>
-                    </div>
-                    </ui:fragment>
-
-                    <!-- Appointments Card -->
-                    <ui:fragment rendered="#{authBean.hasPermission('APPOINTMENT_VIEW')}">
-
-                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-yellow-200 hover:bg-yellow-300/10">
-                        <div class="flex items-center justify-between">
-                            <div class="flex flex-col">
-                                <h:outputText value="Appointments" styleClass="text-yellow-900 font-semibold"/>
-                                <h:outputText value="#{dashboardBean.appointmentCount}" styleClass="text-3xl font-bold text-yellow-500 mt-1"/>
-                            </div>
-                            <div class="bg-yellow-100 rounded-xl p-3">
-                                <i class="pi pi-calendar text-3xl text-yellow-500"/>
-                            </div>
-                        </div>
-                        <h:link outcome="appointments" value="View Details" styleClass="block text-sm text-yellow-500 hover:text-yellow-700 mt-4 font-medium"/>
-                    </div>
-                    </ui:fragment>
-
-                    <!-- Staff Card -->
-                    <ui:fragment rendered="#{authBean.hasPermission('STAFF_VIEW')}">
-
-                    <div class="bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-purple-200 hover:bg-purple-300/10">
-                        <div class="flex items-center justify-between">
-                            <div class="flex flex-col">
-                                <h:outputText value="Staff" styleClass="text-purple-900 font-semibold"/>
-                                <h:outputText value="#{dashboardBean.staffCount}" styleClass="text-3xl font-bold text-purple-500 mt-1"/>
-                            </div>
-                            <div class="bg-purple-100 rounded-xl p-3">
-                                <i class="pi pi-id-card text-3xl text-purple-500"/>
-                            </div>
-                        </div>
-                        <h:link outcome="staff" value="View Details" styleClass="block text-sm text-purple-500 hover:text-purple-700 mt-4 font-medium"/>
-                    </div>
-                    </ui:fragment>
-
-                    <ui:fragment rendered="#{authBean.hasPermission('BILLING_VIEW')}">
-
-                <div class="mt-3 bg-white border-0 rounded-2xl shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-teal-200 hover:bg-teal-300/10">
-                    <div class="flex items-center justify-between">
-                        <div class="flex flex-col">
-                            <h:outputText value="Total Revenue" styleClass="text-teal-900 font-semibold"/>
-                            <div class="text-3xl font-bold text-teal-500 mt-1">
-                                <!-- Use f:convertNumber to format it as currency -->
-                                <h:outputText value="#{dashboardBean.totalRevenue}">
-                                    <f:convertNumber type="currency" currencySymbol="shs " maxFractionDigits="1"/>
-                                </h:outputText>
-                            </div>
-                        </div>
-                        <div class="bg-teal-100 rounded-xl p-3">
-                            <i class="pi pi-money-bill text-3xl text-teal-500"/>
-                        </div>
-                    </div>
-                    <h:link outcome="/Billings/billings" value="View Details" styleClass="block text-sm text-teal-500 hover:text-teal-700 mt-4 font-medium"/>
-                </div>
-                    </ui:fragment>
-                </div>
-            </p:panel>
-
-            <!-- ============================================= -->
-            <!-- === NEW: SECTION FOR CHARTS === -->
-            <!-- ============================================= -->
-<ui:fragment rendered="#{authBean.hasPermission('APPOINTMENT_VIEW')}">
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                <!-- Daily Appointments Bar Chart -->
-                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="pi pi-chart-bar text-green-600 text-xl"/>
-                        <span class="font-semibold text-green-700 text-lg">Weekly Appointment Volume</span>
-                    </div>
-                    <!-- The canvas for the bar chart -->
-                    <canvas id="dailyAppointmentsChart" style="width: 100%; height: 350px;"></canvas>
+            <!-- Dashboard Header & Toolbar -->
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-white p-4 rounded-lg shadow-sm">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-bold text-gray-700">Dashboard:</h2>
+                    <p:selectOneMenu value="#{dashboardBean.currentLayoutId}" style="width: 200px;">
+                        <f:selectItems value="#{dashboardBean.availableLayouts}" var="layout"
+                                       itemLabel="#{layout.name}" itemValue="#{layout.id}"/>
+                        <p:ajax listener="#{dashboardBean.switchLayout}" update="@form" oncomplete="loadDynamicData()"/>
+                    </p:selectOneMenu>
+                    <p:commandButton icon="pi pi-plus" title="New Dashboard"
+                                     onclick="PF('newDashboardDialog').show()"
+                                     styleClass="ui-button-outlined ui-button-secondary rounded-full"/>
                 </div>
 
-                <!-- Appointment Status Doughnut Chart -->
-                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="pi pi-chart-pie text-blue-600 text-xl"/>
-                        <span class="font-semibold text-blue-700 text-lg">Appointment Status</span>
-                    </div>
-                    <!-- The canvas for the doughnut chart -->
-                    <div class="relative" style="height: 350px;">
-                        <canvas id="statusDoughnutChart"></canvas>
-                    </div>
+                <div class="flex gap-2">
+                    <p:commandButton value="Refresh" icon="pi pi-refresh"
+                                     actionListener="#{dashboardBean.loadChartData}"
+                                     styleClass="ui-button-outlined ui-button-secondary"/>
+                    <p:commandButton value="Add Widget" icon="pi pi-plus"
+                                     actionListener="#{dashboardBean.initNewWidget}"
+                                     oncomplete="PF('widgetDialog').show()"
+                                     update=":widgetDialogForm"/>
                 </div>
             </div>
-</ui:fragment>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-<ui:fragment rendered="#{authBean.hasPermission('BILLING_CREATE')}">
+            <!-- Dynamic Grid -->
+            <div id="widgetGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <ui:repeat value="#{dashboardBean.currentLayout.widgets}" var="widget" varStatus="status">
 
-            <div class="grid grid-cols-1 gap-6 mt-6">
-                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="pi pi-chart-line text-teal-600 text-xl"/>
-                        <span class="font-semibold text-teal-700 text-lg">Revenue (Last 30 Days)</span>
-                    </div>
-                    <div class="relative" style="height: 350px;">
-                        <canvas id="monthlyRevenueChart"></canvas>
-                    </div>
-                </div>
-            </div>
-</ui:fragment>
+                    <!-- Widget Wrapper -->
+                    <div class="widget-item col-span-1 #{widget.type eq 'TABLE' ? 'md:col-span-2 lg:col-span-3' : (widget.type eq 'CALENDAR' ? 'md:col-span-2' : '')}"
+                         data-widget-id="#{widget.id}">
 
-<ui:fragment rendered="#{authBean.hasPermission('DOCTOR_VIEW')}">
+                        <!-- Common Container Style -->
+                        <div class="bg-white rounded-xl shadow-md border border-gray-100 h-full flex flex-col overflow-hidden" style="height: #{widget.type eq 'CALENDAR' ? '300%' : '100%'}">
 
-            <div class="grid grid-cols-1 gap-6 mt-6">
-                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="pi pi-users text-purple-600 text-xl"/>
-                        <span class="font-semibold text-purple-700 text-lg">Doctor Appointment Workload</span>
-                    </div>
-                    <div class="relative" style="height: 400px;">
-                        <canvas id="doctorWorkloadChart"></canvas>
-                    </div>
-                </div>
-            </div>
-</ui:fragment>
-            </div>
-            <!-- ======================================================= -->
-            <!-- === Billing and Specialization Charts === -->
-            <!-- ======================================================= -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                <!-- Billing Status Chart -->
-            <ui:fragment rendered="#{authBean.hasPermission('BILLING_VIEW')}">
+                            <!-- FIX: Dedicated Drag Handle Header -->
+                            <div class="drag-handle bg-gray-50 px-4 py-2 border-b border-gray-100 flex justify-between items-center">
+                                <div class="flex items-center gap-2 text-gray-600">
+                                    <i class="pi pi-arrows-alt text-gray-400"></i>
+                                    <h3 class="font-bold text-sm uppercase tracking-wide">#{widget.title}</h3>
+                                </div>
+                                <div class="flex gap-1">
+                                    <p:commandButton icon="pi pi-pencil" styleClass="rounded-full ui-button-flat ui-button-secondary ui-button-sm"
+                                                     actionListener="#{dashboardBean.editWidget(widget)}"
+                                                     oncomplete="PF('widgetDialog').show()" update=":widgetDialogForm"/>
+                                    <p:commandButton icon="pi pi-trash" styleClass="rounded-full ui-button-flat ui-button-danger ui-button-sm"
+                                                     actionListener="#{dashboardBean.deleteWidget(widget)}"
+                                                     update=":dashboardForm"/>
+                                </div>
+                            </div>
 
-                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
-                    <div class="flex items-center gap-2 mb-4"> <i class="pi pi-wallet text-red-600 text-xl"/>
-                        <span class="font-semibold text-red-700 text-lg">Revenue by Payment Method</span>
-                    </div>
-                    <div class="relative" style="height: 350px;">
-                        <canvas id="billingStatusChart"></canvas>
-                    </div>
-                </div>
-            </ui:fragment>
+                            <!-- Widget Content Area -->
+                            <div class="p-4 flex-grow">
 
-                <!-- Doctor Specialization Chart -->
-                <ui:fragment rendered="#{authBean.hasPermission('DOCTOR_VIEW')}">
+                                <!-- Card Content -->
+                                <ui:fragment rendered="#{widget.type eq 'CARD'}">
+                                    <div id="widget_#{status.index}" class="text-4xl font-bold text-blue-600 mt-2">-</div>
+                                </ui:fragment>
 
-                <div class="bg-white border-0 rounded-2xl shadow-sm p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="pi pi-sitemap text-indigo-600 text-xl"/>
-                        <span class="font-semibold text-indigo-700 text-lg">Doctor Specializations</span>
+                                <!-- Chart Content -->
+                                <ui:fragment rendered="#{widget.type eq 'CHART'}">
+                                    <div class="relative h-64 w-full">
+                                        <canvas id="widget_#{status.index}"></canvas>
+                                    </div>
+                                </ui:fragment>
+
+                                <!-- Table Content -->
+                                <ui:fragment rendered="#{widget.type eq 'TABLE'}">
+                                    <div id="widget_#{status.index}" class="overflow-auto max-h-64"></div>
+                                </ui:fragment>
+
+                                <!-- Calendar Content -->
+                                <ui:fragment rendered="#{widget.type eq 'CALENDAR'}">
+                                    <!-- FIX: Use inline style for height to guarantee full size -->
+                                    <div id="widget_#{status.index}" style="height: 300% !important;"></div>
+                                </ui:fragment>
+
+                            </div>
+                        </div>
                     </div>
-                    <div class="relative" style="height: 350px;">
-                        <canvas id="doctorSpecializationChart"></canvas>
-                    </div>
-                </div>
-                </ui:fragment>
+
+                </ui:repeat>
             </div>
 
-            <!-- ======================================================= -->
-            <!-- === Interactive Recent Appointments Section === -->
-            <!-- ======================================================= -->
-            <!-- Interactive Recent Appointments Section -->
-            <p:panel styleClass="!border-0 shadow mt-6 rounded-lg !w-full" rendered="#{authBean.hasPermission('APPOINTMENT_VIEW')}">
-                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
-                    <div class="flex items-center gap-2">
-                        <i class="pi pi-calendar-times text-green-600 text-xl"/>
-                        <span class="font-semibold text-green-700 text-lg">Recent Appointments</span>
-                    </div>
-                    <!-- Controls to change appointment count -->
-                    <div class="flex items-center gap-2">
-                        <p:outputLabel for="recentCount" value="Show:" styleClass="font-semibold"/>
-                        <p:spinner id="recentCount" value="#{dashboardBean.recentCount}" min="1" max="50" downButtonStyleClass="!bg-green-600 !border-green-800" upButtonStyleClass="!bg-green-600 !border-green-800" styleClass="w-16"/>
-                        <p:commandButton value="Refresh"
-                                         actionListener="#{dashboardBean.refreshRecentAppointmentsList}"
-                                         update="recentAppointmentsTable"
-                                         icon="pi pi-refresh"
-                                         styleClass="ui-button-outlined !border-green-700 !text-green-700"/>
-                    </div>
-                </div>
-                <p:dataTable id="recentAppointmentsTable" var="appointment" value="#{dashboardBean.recentAppointments}"
-                             selectionMode="single" selection="#{dashboardBean.selectedAppointment}"
-                             rowKey="#{appointment.id}"
-                             styleClass="!rounded-lg !bg-green-100 !text-green-800 !text-lg"
-                             paginator="true" rows="5" paginatorPosition="bottom"
-                             rowsPerPageTemplate="5,10,20"
-                             emptyMessage="No recent appointments found.">
-
-                    <p:ajax event="rowSelect" listener="#{dashboardBean.onRowSelect}"
-                            update=":dashboardForm:appointmentDetailsDialog"
-                            oncomplete="PF('appointmentDialogWidget').show()" />
-
-                    <p:column headerText="Patient" sortBy="#{appointment.patient.lastName}">
-                        <h:outputText value="#{appointment.patient.firstName} #{appointment.patient.lastName}"/>
-                    </p:column>
-                    <p:column headerText="Doctor" sortBy="#{appointment.doctor.lastName}">
-                        <h:outputText value="Dr. #{appointment.doctor.firstName} #{appointment.doctor.lastName}"/>
-                    </p:column>
-                    <p:column headerText="Date" sortBy="#{appointment.appointmentTime}">
-                        <h:outputText value="#{appointment.appointmentTime}">
-                            <f:convertDateTime type="localDateTime" pattern="MMM dd, yyyy hh:mm a"/>
-                        </h:outputText>
-                    </p:column>
-                    <p:column headerText="Status" sortBy="#{appointment.status}">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                                     #{appointment.status eq 'SCHEDULED' ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                     : appointment.status eq 'COMPLETED' ? 'bg-green-100 text-green-700 border border-green-200'
-                                     : 'bg-gray-100 text-gray-700 border border-gray-200'}">
-                            <h:outputText value="#{appointment.status}"/>
-                        </span>
-                    </p:column>
-                </p:dataTable>
-            </p:panel>
-            <p:dialog id="appointmentDetailsDialog" widgetVar="appointmentDialogWidget"
-                      header="Appointment Details" modal="true" responsive="true" style="min-width: 450px;">
-
-                <h:panelGrid columns="2" cellpadding="10" rendered="#{not empty dashboardBean.selectedAppointment}">
-                    <h:outputText value="Patient:" styleClass="font-bold"/>
-                    <h:outputText value="#{dashboardBean.selectedAppointment.patient.firstName} #{dashboardBean.selectedAppointment.patient.lastName}"/>
-
-                    <h:outputText value="Doctor:" styleClass="font-bold"/>
-                    <h:outputText value="Dr. #{dashboardBean.selectedAppointment.doctor.firstName} #{dashboardBean.selectedAppointment.doctor.lastName}"/>
-
-                    <h:outputText value="Time:" styleClass="font-bold"/>
-                    <h:outputText value="#{dashboardBean.selectedAppointment.appointmentTime}">
-                        <f:convertDateTime type="localDateTime" pattern="EEEE, MMM dd, yyyy 'at' hh:mm a"/>
-                    </h:outputText>
-
-                    <h:outputText value="Status:" styleClass="font-bold"/>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
-                                      #{dashboardBean.selectedAppointment.status eq 'SCHEDULED' ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                      : dashboardBean.selectedAppointment.status eq 'COMPLETED' ? 'bg-green-100 text-green-700 border border-green-200'
-                                      : 'bg-gray-100 text-gray-700 border border-gray-200'}">
-                         #{dashboardBean.selectedAppointment.status}
-                     </span>
-                </h:panelGrid>
-
-                <f:facet name="footer">
-                    <p:button value="Manage Appointments"
-                              outcome="appointments"
-                              icon="pi pi-arrow-right"
-                              styleClass="!bg-green-500 !border-green-400 hover:!bg-green-600"/>
-                    <p:commandButton value="Close" icon="pi pi-times"
-                                     onclick="PF('appointmentDialogWidget').hide()"
-                                     type="button" styleClass="ui-button-secondary"/>
-                </f:facet>
-            </p:dialog>
+            <p:remoteCommand name="loadDynamicData" actionListener="#{dashboardBean.loadChartData}" autoRun="true"/>
+            <p:remoteCommand name="updateWidgetPosition" actionListener="#{dashboardBean.handleReorder}"/>
         </h:form>
 
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <!-- ======================================================= -->
-        <!-- === JavaScript to render the charts === -->
-        <!-- ======================================================= -->
-        <h:outputScript>
-        // This global function will be called by the remoteCommand
-        function initStaffDashboardCharts(barData, donutData, revenueData, workloadData, billingData, specializationData) {
-            console.log("Initializing all staff charts...");
-            renderBarChart(barData);
-            renderDonutChart(donutData);
-            renderRevenueChart(revenueData);
-            renderDoctorWorkloadChart(workloadData);
-            renderBillingStatusChart(billingData);
-            renderDoctorSpecializationChart(specializationData);
-        }
+        <!-- New Dashboard Dialog -->
+        <p:dialog header="Create New Dashboard" widgetVar="newDashboardDialog" modal="true" width="400" responsive="true">
+            <h:form>
+                <div class="field">
+                    <p:outputLabel for="dashName" value="Dashboard Name"/>
+                    <p:inputText id="dashName" value="#{dashboardBean.newDashboardName}" required="true" styleClass="w-full"/>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <p:commandButton value="Create" actionListener="#{dashboardBean.createNewDashboard}"
+                                     update=":dashboardForm" styleClass="ui-button-primary"/>
+                </div>
+            </h:form>
+        </p:dialog>
 
-        // Renders the bar chart for daily appointments
-        function renderBarChart(data) {
-            const canvas = document.getElementById('dailyAppointmentsChart');
-            if (!canvas || !data || !data.labels || data.labels.length === 0) return;
+        <!-- Widget Configuration Dialog -->
+        <p:dialog header="Configure Widget" widgetVar="widgetDialog" modal="true" width="600" responsive="true">
+            <h:form id="widgetDialogForm">
+                <p:messages showDetail="true" closable="true">
+                    <p:autoUpdate/>
+                </p:messages>
 
-            const ctx = canvas.getContext('2d');
+                <div class="grid grid-cols-2 gap-4 ui-fluid">
+                    <div class="col-span-2">
+                        <p:outputLabel value="Title *" for="wTitle"/>
+                        <p:inputText id="wTitle" value="#{dashboardBean.newWidget.title}" required="true"/>
+                    </div>
 
-            // Destroy existing chart if it exists
-            if (window.dailyAppointmentsBarChart instanceof Chart) {
-                window.dailyAppointmentsBarChart.destroy();
-            }
-            window.dailyAppointmentsBarChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: [
-                        {
-                            label: 'Completed',
-                            data: data.completed,
-                            backgroundColor: 'rgb(120, 189, 37)' // Green
-                        },
-                        {
-                            label: 'Scheduled',
-                            data: data.scheduled,
-                            backgroundColor: 'rgb(42, 114, 242)' // Blue
-                        },
-                        {
-                            label: 'Cancelled',
-                            data: data.cancelled,
-                            backgroundColor: 'rgb(255, 62, 60)' // Red
-                        }
-                    ]
-                },
-                options: {
-                    plugins: {
-                        title: {
-                            display: false,
-                        },
-                    },
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        x: {
-                            stacked: true, // This is the magic for the x-axis
-                        },
-                        y: {
-                            stacked: true, // This is the magic for the y-axis
-                            beginAtZero: true
-                        }
+                    <div>
+                        <p:outputLabel value="Type"/>
+                        <p:selectOneMenu value="#{dashboardBean.newWidget.type}">
+                            <f:selectItems value="#{dashboardBean.widgetTypes}"/>
+                            <p:ajax update="@form"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <h:panelGroup rendered="#{dashboardBean.newWidget.type eq 'CHART'}">
+                        <p:outputLabel value="Chart Style"/>
+                        <p:selectOneMenu value="#{dashboardBean.newWidget.chartType}">
+                            <f:selectItems value="#{dashboardBean.chartTypes}"/>
+                        </p:selectOneMenu>
+                    </h:panelGroup>
+
+                    <div class="col-span-2">
+                        <p:outputLabel value="Data Source (Table) *"/>
+                        <p:selectOneMenu value="#{dashboardBean.newWidget.dataSourceTable}">
+                            <f:selectItem itemLabel="Select Table" itemValue=""/>
+                            <f:selectItems value="#{dashboardBean.availableTables}"/>
+                            <p:ajax listener="#{dashboardBean.onTableChange}" update="fieldSelectX fieldSelectY tableCols calDate calTitle"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <!-- Chart: X-Axis -->
+                    <h:panelGroup rendered="#{dashboardBean.newWidget.type eq 'CHART'}" styleClass="col-span-1">
+                        <p:outputLabel value="Group By (X-Axis) *"/>
+                        <p:selectOneMenu id="fieldSelectX" value="#{dashboardBean.newWidget.XAxisField}">
+                            <f:selectItems value="#{dashboardBean.availableFields}"/>
+                        </p:selectOneMenu>
+                    </h:panelGroup>
+
+                    <!-- Chart/Card: Y-Axis -->
+                    <h:panelGroup rendered="#{dashboardBean.newWidget.type eq 'CHART' or dashboardBean.newWidget.type eq 'CARD'}" styleClass="col-span-1">
+                        <p:outputLabel value="Value Field (Y-Axis) *"/>
+                        <p:selectOneMenu id="fieldSelectY" value="#{dashboardBean.newWidget.YAxisField}">
+                            <f:selectItems value="#{dashboardBean.availableFields}"/>
+                        </p:selectOneMenu>
+                    </h:panelGroup>
+
+                    <!-- Table: Columns -->
+                    <h:panelGroup rendered="#{dashboardBean.newWidget.type eq 'TABLE'}" styleClass="col-span-2">
+                        <p:outputLabel value="Select Columns *"/>
+                        <p:selectCheckboxMenu id="tableCols" value="#{dashboardBean.selectedTableColumns}" label="Columns"
+                                              multiple="true" filter="true" filterMatchMode="startsWith" panelStyle="width: 250px">
+                            <f:selectItems value="#{dashboardBean.availableFields}"/>
+                        </p:selectCheckboxMenu>
+                    </h:panelGroup>
+
+                    <!-- Calendar: Date & Title -->
+                    <h:panelGroup rendered="#{dashboardBean.newWidget.type eq 'CALENDAR'}" styleClass="col-span-1">
+                        <p:outputLabel value="Date Column *"/>
+                        <p:selectOneMenu id="calDate" value="#{dashboardBean.newWidget.XAxisField}">
+                            <f:selectItems value="#{dashboardBean.availableFields}"/>
+                        </p:selectOneMenu>
+                    </h:panelGroup>
+                    <h:panelGroup rendered="#{dashboardBean.newWidget.type eq 'CALENDAR'}" styleClass="col-span-1">
+                        <p:outputLabel value="Event Title Column *"/>
+                        <p:selectOneMenu id="calTitle" value="#{dashboardBean.newWidget.YAxisField}">
+                            <f:selectItems value="#{dashboardBean.availableFields}"/>
+                        </p:selectOneMenu>
+                    </h:panelGroup>
+
+                    <h:panelGroup rendered="#{dashboardBean.newWidget.type eq 'CHART' or dashboardBean.newWidget.type eq 'CARD'}">
+                        <p:outputLabel value="Aggregation"/>
+                        <p:selectOneMenu value="#{dashboardBean.newWidget.aggregation}">
+                            <f:selectItems value="#{dashboardBean.aggregationSelectItems}"/>
+                        </p:selectOneMenu>
+                    </h:panelGroup>
+
+                    <div class="col-span-2">
+                        <p:outputLabel value="Filter (HQL Clause)"/>
+                        <p:inputText value="#{dashboardBean.newWidget.filterClause}" placeholder="e.g. status = 'SCHEDULED'"/>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex justify-end">
+                    <p:commandButton value="Save" actionListener="#{dashboardBean.saveWidget}"
+                                     update=":dashboardForm" styleClass="ui-button-success"/>
+                </div>
+            </h:form>
+        </p:dialog>
+
+        <script>
+            //<![CDATA[
+            $(function() {
+                $("#widgetGrid").sortable({
+                    items: ".widget-item",
+                    handle: ".drag-handle", // FIX: Only drag when clicking the header
+                    placeholder: "ui-state-highlight",
+                    stop: function(event, ui) {
+                        var ids = [];
+                        $("#widgetGrid .widget-item").each(function() {
+                            ids.push($(this).data("widget-id"));
+                        });
+                        updateWidgetPosition([{name: 'widgetOrder', value: ids.join(',')}]);
                     }
-                }
+                });
+                $("#widgetGrid").disableSelection();
             });
-        }
-        // Renders the doughnut chart for appointment statuses
-        function renderDonutChart(data) {
-            // FIX: Check if the canvas element exists before trying to render the chart.
-            const canvas = document.getElementById('statusDoughnutChart');
-            if (!canvas || !data || data.length === 0) return;
 
-        const labels = data.map(item => item.status);
-        const counts = data.map(item => item.count);
-        const ctx = canvas.getContext('2d');
+            function renderDynamicChart(canvasId, type, labels, data) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                const existingChart = Chart.getChart(canvas);
+                if (existingChart) existingChart.destroy();
 
-        const backgroundColors = data.map(item => {
-        switch (item.status.toUpperCase()) {
-            case "SCHEDULED": return "rgb(42, 114, 242)"; // Blue
-            case "COMPLETED": return "rgb(0, 189, 37)"; // Green
-            case "CANCELLED": return "rgb(255, 0, 0)"; // Red
-            default: return "rgb(201, 203, 207)";       // Grey
-        }
-        });
-
-        // Destroy existing chart if it exists
-        if (window.statusDoughnutChart instanceof Chart) {
-        window.statusDoughnutChart.destroy();
-        }
-
-            window.statusDoughnutChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Appointment Status',
-                        data: counts,
-                        backgroundColor: backgroundColors,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
-
-        function renderRevenueChart(data) {
-            // FIX: Check if the canvas element exists.
-            const canvas = document.getElementById('monthlyRevenueChart');
-            if (!canvas || !data || !data.labels || data.labels.length === 0) return;
-
-            // The data object now contains separate arrays for labels and datasets
-            const labels = data.labels;
-            const paidData = data.paidData;
-            const pendingData = data.pendingData;
-            const ctx = canvas.getContext('2d');
-
-            // Destroy existing chart if it exists
-            if (window.monthlyRevenueChart instanceof Chart) {
-                window.monthlyRevenueChart.destroy();
-            }
-            window.monthlyRevenueChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-            datasets: [
-            {
-            label: 'Paid Revenue',
-            data: paidData,
-            fill: true,
-            backgroundColor: 'rgb(0, 166, 71,0.2)', // Teal
-            borderColor: 'rgb(0, 166, 71)',
-            tension: 0.3
-            },
-            {
-            label: 'Pending Revenue',
-            data: pendingData,
-            fill: true,
-            backgroundColor: 'rgb(226, 97, 8,0.2)', // Orange-500
-            borderColor: 'rgb(226, 97, 8)',
-            tension: 0.3
-            }
-            ]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                // Optional: Format ticks as currency
-            callback: function(value) {
-            return 'shs ' + value.toLocaleString();
-                                }
-                            }
-                        }
+                new Chart(canvas.getContext('2d'), {
+                    type: type ? type.toLowerCase() : 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Value',
+                            data: data,
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
+                            borderWidth: 1
+                        }]
                     },
-                    responsive: true,
-                    maintainAspectRatio:true
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+            }
+
+            function updateCardValue(elementId, value) {
+                const el = document.getElementById(elementId);
+                if(el) el.innerText = value;
+            }
+
+            function renderDynamicTable(containerId, data) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                if (!data || !data.headers) {
+                    container.innerHTML = '<p class="text-gray-400 text-center">No Data</p>';
+                    return;
                 }
-            });
-        }
-        function renderDoctorWorkloadChart(data) {
-            // FIX: Check if the canvas element exists.
-            const canvas = document.getElementById('doctorWorkloadChart');
-            if (!canvas || !data || data.length === 0) return;
 
-            const labels = data.map(item => item.doctorName);
-            const counts = data.map(item => item.count);
-            const ctx = canvas.getContext('2d');
-
-            // Destroy existing chart if it exists
-            if (window.doctorWorkloadChart instanceof Chart) {
-                window.doctorWorkloadChart.destroy();
-            }
-            window.doctorWorkloadChart = new Chart(ctx, {
-                type: 'bar', // It's still a 'bar' chart type
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Total Appointments',
-                        data: counts,
-                        backgroundColor: 'rgba(147, 51, 234, 0.2)', // Tailwind Purple
-                        borderColor: 'rgb(147, 21, 234)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    indexAxis: 'y', // This is what makes it a horizontal bar chart!
-                    scales: {
-                        x: {
-                            beginAtZero: true
-                        }
-                    },
-                    responsive: true,
-                    maintainAspectRatio: true
-                }
-            });
-        }
-
-            // --- Copied from billings.xhtml and adapted ---
-            function renderBillingStatusChart(data) {
-            const canvas = document.getElementById('billingStatusChart');
-            if (!canvas) return;
-
-            // Show a "no data" message if data is empty
-            if (!data || data.length === 0) {
-            canvas.style.display = 'none';
-            const parent = canvas.parentElement;
-            if (!parent.querySelector('.no-data-msg')) {
-            parent.innerHTML += '<div class="no-data-msg text-gray-500 text-center pt-24">No payment data available</div>';
-            }
-            return;
+                let html = '<table class="min-w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr>';
+                data.headers.forEach(h => html += '<th class="px-6 py-3">' + h + '</th>');
+                html += '</tr></thead><tbody>';
+                data.rows.forEach(row => {
+                    html += '<tr class="bg-white border-b hover:bg-gray-50">';
+                    row.forEach(cell => html += '<td class="px-6 py-4">' + cell + '</td>');
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
             }
 
-            const labels = data.map(item => item.method);
-            const totals = data.map(item => item.total);
+            function renderDynamicCalendar(containerId, events) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = '';
 
-            // A nice color palette for different payment methods
-            const backgroundColors = [
-            'rgba(29, 100, 246)',  // blue-500
-            'rgba(10, 205, 59)',  // green-500
-            'rgba(250, 190, 8)',   // yellow-500
-            'rgba(189, 52, 246)',  // violet-500
-            'rgba(236, 72, 153)',  // pink-500
-            'rgba(249, 115, 22)'   // orange-500
-            ];
-
-            const chartData = {
-            labels: labels,
-            datasets: [{
-            label: 'Total Amount (shs)',
-            data: totals,
-            backgroundColor: backgroundColors,
-            borderWidth: 1
-            }]
-            };
-            if (window.billingDoughnutChart) window.billingDoughnutChart.destroy();
-
-            window.billingDoughnutChart = new Chart(canvas.getContext('2d'), {
-            type: 'pie',
-            data: chartData,
-            options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-            legend: {
-            position: 'top',
+                const calendar = new FullCalendar.Calendar(container, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
+                    events: events,
+                    height: '100%', // Will fill the 600px container
+                    expandRows: true,
+                    dayMaxEvents: true
+                });
+                calendar.render();
             }
-            }
-            }
-            });
-            }
-            // --- NEW: Copied from doctors.xhtml and adapted ---
-            function renderDoctorSpecializationChart(data) {
-            const canvas = document.getElementById('doctorSpecializationChart');
-            if (!canvas) return;
-
-            if (!data || data.length === 0) {
-            canvas.style.display = 'none';
-            const parent = canvas.parentElement;
-            if (!parent.querySelector('.no-data-msg')) {
-            parent.innerHTML += '<div class="no-data-msg text-gray-500 text-center pt-24">No specialization data available</div>';
-            }
-            return;
-            }
-
-            const labels = data.map(item => item.specialization);
-            const counts = data.map(item => item.count);
-
-            if (window.specializationChart) window.specializationChart.destroy();
-
-            window.specializationChart = new Chart(canvas.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-            labels: labels,
-            datasets: [{
-            label: 'Doctors',
-            data: counts,
-            backgroundColor: [
-            'rgba(52, 211, 153)', 'rgba(46, 112, 250)',
-            'rgba(251, 191, 36)', 'rgba(239, 68, 68)',
-            'rgba(251, 19, 236,0.2)', 'rgba(255, 18, 208)',
-            'rgba(21, 191, 16)', 'rgba(119, 68, 238,0.4)',
-            'rgba(251, 181, 36)', 'rgba(23, 228, 268)',
-            'rgba(16, 85, 247)', 'rgba(236, 72, 153)'
-            ],
-            hoverOffset: 4
-            }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-            });
-            }
-        </h:outputScript>
+            //]]>
+        </script>
     </ui:define>
 </ui:composition>
-</html>

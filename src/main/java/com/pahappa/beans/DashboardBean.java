@@ -1,296 +1,384 @@
 package com.pahappa.beans;
 
-import com.pahappa.constants.AppointmentStatus;
-import com.pahappa.constants.BillingStatus;
-import com.pahappa.models.Appointment;
-
-import com.pahappa.services.billing.BillingService;
-import com.pahappa.services.patient.PatientService;
-import com.pahappa.services.doctor.DoctorService;
-import com.pahappa.services.appointment.AppointmentService;
-import com.pahappa.services.staff.StaffService;
+import com.google.gson.Gson;
+import com.pahappa.models.Staff;
+import com.pahappa.models.analytics.DashboardLayout;
+import com.pahappa.models.analytics.DashboardWidgetEntity;
+import com.pahappa.services.dashboard.DynamicQueryService;
+import com.pahappa.util.HibernateUtil;
+import com.pahappa.util.SchemaMetadataProvider;
+import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
-import org.primefaces.PrimeFaces;
-import org.primefaces.event.SelectEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import jakarta.annotation.PostConstruct;
+import jakarta.faces.model.SelectItem;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import java.io.Serial;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.primefaces.PrimeFaces;
+
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 
 @Named
 @ViewScoped
 public class DashboardBean implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1L;
 
-   @Inject
-   private transient PatientService patientService;
-   @Inject
-   private transient DoctorService doctorService;
-   @Inject
-   private transient AppointmentService appointmentService;
-   @Inject
-   private transient StaffService staffService;
-   @Inject
-   private transient BillingService billingService;
+    @Inject
+    private DynamicQueryService queryService;
+    @Inject
+    private SchemaMetadataProvider schemaProvider;
+    @Inject
+    private AuthBean authBean;
 
+    private DashboardLayout currentLayout;
+    private List<DashboardLayout> availableLayouts;
+    private Long currentLayoutId;
 
-    private long patientCount;
-    private long doctorCount;
-    private long appointmentCount;
-    private long staffCount;
-    private double totalRevenue;
-    // NEW: Property to control the number of recent appointments shown
-    private int recentCount = 5; // Default to 5
-    // NEW: Property to hold the appointment selected for the dialog
-    private Appointment selectedAppointment;
+    private DashboardWidgetEntity newWidget;
+    private List<String> availableTables;
+    private List<String> availableFields;
+    private boolean isEditMode = false;
 
-    private List<Appointment> recentAppointments;
+    // NEW: Bind UI multi-select to this list, then convert to CSV string for entity
+    private List<String> selectedTableColumns;
+
+    private String newDashboardName;
 
     @PostConstruct
     public void init() {
-        try {
-            this.patientCount = patientService.countActivePatients();
-            this.doctorCount = doctorService.countActiveDoctors();
-            this.staffCount = staffService.countActiveStaff();
-            this.appointmentCount = appointmentService.countActiveAppointments();
-            this.totalRevenue = billingService.getTotalRevenue();
+        loadUserDashboards();
+        initNewWidget();
+        availableTables = schemaProvider.getAvailableTables();
+    }
 
-            System.out.println("DEBUG: Patient Count: " + patientCount);
-            System.out.println("DEBUG: Doctor Count: " + doctorCount);
-            System.out.println("DEBUG: Appointment Count: " + appointmentCount);
-            System.out.println("DEBUG: Staff Count: " + staffCount);
+    public void loadUserDashboards() {
+        availableLayouts = new ArrayList<>();
+        Staff currentUser = (authBean != null) ? authBean.getStaff() : null;
 
-            refreshRecentAppointmentsList();
-            System.out.println("DEBUG: Recent Appointments Size: " + recentAppointments.size());
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "FROM DashboardLayout dl";
+            if (currentUser != null) {
+                hql += " WHERE dl.owner.id = :ownerId";
+                availableLayouts = session.createQuery(hql, DashboardLayout.class)
+                        .setParameter("ownerId", currentUser.getId())
+                        .list();
+            } else {
+                availableLayouts = session.createQuery(hql, DashboardLayout.class).list();
+            }
         } catch (Exception e) {
-            System.err.println("ERROR: Exception during DashboardBean initialization: " + e.getMessage());
-            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Dashboard could not be loaded."));
             e.printStackTrace();
-            // Initialize counts to 0 and lists to empty to prevent NullPointerExceptions
-            patientCount = 0;
-            doctorCount = 0;
-            appointmentCount = 0;
-            staffCount = 0;
-            totalRevenue = 0.0;
-            recentAppointments = Collections.emptyList();
+        }
+
+        if (availableLayouts.isEmpty()) {
+            createDefaultDashboard();
+        } else {
+            currentLayout = availableLayouts.stream()
+                    .filter(DashboardLayout::isDefault)
+                    .findFirst()
+                    .orElse(availableLayouts.get(0));
+            currentLayoutId = currentLayout.getId();
         }
     }
 
+    private void createDefaultDashboard() {
+        DashboardLayout defaultLayout = new DashboardLayout();
+        defaultLayout.setName("Default Dashboard");
+        defaultLayout.setDefault(true);
+        if (authBean != null) defaultLayout.setOwner(authBean.getStaff());
 
-    public void refreshRecentAppointmentsList() {
-        try {
-            this.recentAppointments = appointmentService.findRecentAppointments(recentCount);
+        saveLayoutToDb(defaultLayout);
+        availableLayouts.add(defaultLayout);
+        currentLayout = defaultLayout;
+        currentLayoutId = defaultLayout.getId();
+    }
+
+    public void createNewDashboard() {
+        if (newDashboardName == null || newDashboardName.trim().isEmpty()) {
+            addError("Dashboard name is required");
+            return;
+        }
+        DashboardLayout layout = new DashboardLayout();
+        layout.setName(newDashboardName);
+        if (authBean != null) layout.setOwner(authBean.getStaff());
+
+        saveLayoutToDb(layout);
+        availableLayouts.add(layout);
+        currentLayout = layout;
+        currentLayoutId = layout.getId();
+        newDashboardName = null;
+
+        addInfo("Dashboard Created");
+        PrimeFaces.current().executeScript("PF('newDashboardDialog').hide()");
+        loadChartData();
+    }
+
+    private void saveLayoutToDb(DashboardLayout layout) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            session.persist(layout);
+            tx.commit();
         } catch (Exception e) {
-            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, "Warning", "Could not refresh appointments."));
-            this.recentAppointments = Collections.emptyList();
+            if (tx != null && tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            addError("Failed to save dashboard: " + e.getMessage());
         }
     }
 
-    public List<Appointment> getRecentAppointments() {
-        return recentAppointments;
+    public void switchLayout() {
+        if (currentLayoutId != null) {
+            try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+                currentLayout = session.get(DashboardLayout.class, currentLayoutId);
+            }
+            loadChartData();
+        }
     }
 
-    // Getters only (no setters needed)
-    public long getPatientCount() { return patientCount; }
-    public long getDoctorCount() { return doctorCount; }
-    public long getAppointmentCount() { return appointmentCount; }
-    public long getStaffCount() { return staffCount; }
-    public double getTotalRevenue() { return totalRevenue; }
-    public int getRecentCount() { return recentCount; }
-    public void setRecentCount(int recentCount) { this.recentCount = recentCount; }
-    public Appointment getSelectedAppointment() { return selectedAppointment; }
-    public void setSelectedAppointment(Appointment selectedAppointment) { this.selectedAppointment = selectedAppointment; }
-
-    public void onRowSelect(SelectEvent<Appointment> event) {
-        this.selectedAppointment = event.getObject();
+    public void initNewWidget() {
+        newWidget = new DashboardWidgetEntity();
+        newWidget.setType(DashboardWidgetEntity.WidgetType.CHART);
+        newWidget.setChartType(DashboardWidgetEntity.ChartType.BAR);
+        isEditMode = false;
+        availableFields = new ArrayList<>();
+        selectedTableColumns = new ArrayList<>();
     }
 
-    public void updateSelectedAppointment() {
-        if (selectedAppointment != null) {
-            try {
-                // Assumes an 'update' method exists in your AppointmentService
-                appointmentService.updateAppointment(selectedAppointment);
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Appointment for " + selectedAppointment.getPatient().getFirstName() + " updated."));
+    public void editWidget(DashboardWidgetEntity widget) {
+        this.newWidget = widget;
+        this.isEditMode = true;
+        if (newWidget.getDataSourceTable() != null) {
+            availableFields = schemaProvider.getFieldsForTable(newWidget.getDataSourceTable());
+        }
+        // Populate selected columns from CSV string
+        if (widget.getTableColumns() != null && !widget.getTableColumns().isEmpty()) {
+            selectedTableColumns = new ArrayList<>(Arrays.asList(widget.getTableColumns().split(",")));
+        } else {
+            selectedTableColumns = new ArrayList<>();
+        }
+    }
 
-                refreshRecentAppointmentsList(); // Refresh the list to show status changes
-                PrimeFaces.current().executeScript("PF('appointmentDialogWidget').hide();");
-            } catch (Exception e) {
-                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Could not update appointment."));
+    // --- FIX: Updated deleteWidget to use orphanRemoval via Parent ---
+    public void deleteWidget(DashboardWidgetEntity widget) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+
+            // 1. Load the parent Layout
+            DashboardLayout layout = session.get(DashboardLayout.class, currentLayout.getId());
+
+            // 2. Remove the widget from the parent's collection
+            // This triggers the actual deletion because of orphanRemoval=true
+            boolean removed = layout.getWidgets().removeIf(w -> w.getId().equals(widget.getId()));
+
+            if (removed) {
+                session.merge(layout);
+            }
+
+            tx.commit();
+
+            // 3. Update in-memory list
+            currentLayout.getWidgets().removeIf(w -> w.getId().equals(widget.getId()));
+            loadChartData();
+            addInfo("Widget Removed");
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            addError("Error deleting widget: " + e.getMessage());
+        }
+    }
+
+    public void onTableChange() {
+        if (newWidget.getDataSourceTable() != null) {
+            availableFields = schemaProvider.getFieldsForTable(newWidget.getDataSourceTable());
+        }
+    }
+
+    public void saveWidget() {
+        // Validation
+        if (newWidget.getTitle() == null || newWidget.getTitle().trim().isEmpty()) {
+            addError("Title is required");
+            return;
+        }
+        if (newWidget.getDataSourceTable() == null) {
+            addError("Data Source (Table) is required");
+            return;
+        }
+
+        // Type specific validation
+        if (newWidget.getType() == DashboardWidgetEntity.WidgetType.CHART) {
+            if (newWidget.getXAxisField() == null) {
+                addError("Group By (X-Axis) is required for Charts");
+                return;
+            }
+            if (newWidget.getYAxisField() == null) {
+                addError("Value Field (Y-Axis) is required");
+                return;
+            }
+        } else if (newWidget.getType() == DashboardWidgetEntity.WidgetType.TABLE) {
+            if (selectedTableColumns == null || selectedTableColumns.isEmpty()) {
+                addError("At least one column must be selected for Table");
+                return;
+            }
+            // Convert List to CSV
+            newWidget.setTableColumns(String.join(",", selectedTableColumns));
+        } else if (newWidget.getType() == DashboardWidgetEntity.WidgetType.CALENDAR) {
+            if (newWidget.getXAxisField() == null) {
+                addError("Date Column is required for Calendar");
+                return;
+            }
+            if (newWidget.getYAxisField() == null) {
+                addError("Event Title Column is required for Calendar");
+                return;
+            }
+        } else if (newWidget.getType() == DashboardWidgetEntity.WidgetType.CARD) {
+            if (newWidget.getYAxisField() == null) {
+                addError("Value Field is required for Card");
+                return;
             }
         }
+
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            if (!isEditMode) {
+                newWidget.setLayout(currentLayout);
+                session.persist(newWidget);
+                currentLayout.getWidgets().add(newWidget);
+            } else {
+                session.merge(newWidget);
+                int idx = -1;
+                for(int i=0; i<currentLayout.getWidgets().size(); i++) {
+                    if(currentLayout.getWidgets().get(i).getId().equals(newWidget.getId())) {
+                        idx = i;
+                        break;
+                    }
+                }
+                if(idx != -1) currentLayout.getWidgets().set(idx, newWidget);
+            }
+            tx.commit();
+            loadChartData();
+            PrimeFaces.current().executeScript("PF('widgetDialog').hide()");
+            addInfo("Widget Saved");
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            addError("Failed to save widget: " + e.getMessage());
+        }
     }
-    /**
-     * This method is called from the frontend by p:remoteCommand.
-     * It fetches data, converts it to JSON, and sends it to a JavaScript function.
-     */
+
     public void loadChartData() {
-        System.out.println("Loading chart data for staff dashboard...");
-        try {
-            // Data for Bar Chart (Weekly Volume)
-            LocalDate endDate = LocalDate.now();
-            LocalDate startDate = endDate.minusDays(6);
-            List<Object[]> dailyDataByStatus = appointmentService.getDailyAppointmentCountsByStatus(startDate, endDate);
+        Gson gson = new Gson();
+        int index = 0;
+        if (currentLayout == null || currentLayout.getWidgets() == null) return;
 
-            // Process the raw data into a structured map for easy JSON conversion
-            Map<LocalDate, Map<AppointmentStatus, Long>> processedWeeklyData = new TreeMap<>();
-            startDate.datesUntil(endDate.plusDays(1)).forEach(date -> {
-                Map<AppointmentStatus, Long> statusMap = new EnumMap<>(AppointmentStatus.class);
-                statusMap.put(AppointmentStatus.SCHEDULED, 0L);
-                statusMap.put(AppointmentStatus.COMPLETED, 0L);
-                statusMap.put(AppointmentStatus.CANCELLED, 0L);
-                processedWeeklyData.put(date, statusMap);
-            });
-
-            for (Object[] row : dailyDataByStatus) {
-                LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
-                AppointmentStatus status = (AppointmentStatus) row[1];
-                Long count = (Long) row[2];
-                if (processedWeeklyData.containsKey(date)) {
-                    processedWeeklyData.get(date).put(status, count);
+        for (DashboardWidgetEntity widget : currentLayout.getWidgets()) {
+            String widgetId = "widget_" + index++;
+            try {
+                if (widget.getType() == DashboardWidgetEntity.WidgetType.CHART) {
+                    Map<Object, Object> data = (Map<Object, Object>) queryService.executeWidgetQuery(widget);
+                    String labels = gson.toJson(data.keySet());
+                    String values = gson.toJson(data.values());
+                    PrimeFaces.current().executeScript(String.format("renderDynamicChart('%s', '%s', %s, %s)",
+                            widgetId, widget.getChartType(), labels, values));
                 }
-            }
-
-            String barChartJson = buildStackedBarChartJson(processedWeeklyData);
-            // Data for Doughnut Chart (Status Breakdown)
-            Map<AppointmentStatus, Long> statusData = appointmentService.getGlobalAppointmentStatusCounts();
-            String doughnutChartJson = statusData.entrySet().stream()
-                    .map(entry -> {
-                        String statusLabel = entry.getKey().getDisplayName();
-                        return String.format("{\"status\": \"%s\", \"count\": %d}", statusLabel, entry.getValue());
-                    })
-                    .collect(Collectors.joining(", ", "[", "]"));
-
-            // Data for Line Chart (Revenue)
-
-            // --- Logic for multi-line Revenue Chart (Paid vs. Pending) ---
-            LocalDate revenueEndDate = LocalDate.now();
-            LocalDate revenueStartDate = revenueEndDate.minusDays(29);
-            List<Object[]> dailyRevenueByStatus = billingService.getDailyRevenueByStatus(revenueStartDate, revenueEndDate);
-
-            // Process the raw data into a structured map for easy JSON conversion
-            Map<LocalDate, Map<BillingStatus, Double>> processedData = new TreeMap<>();
-            revenueStartDate.datesUntil(revenueEndDate.plusDays(1)).forEach(date -> {
-                Map<BillingStatus, Double> statusMap = new EnumMap<>(BillingStatus.class);
-                statusMap.put(BillingStatus.PAID, 0.0);
-                statusMap.put(BillingStatus.PENDING, 0.0);
-                processedData.put(date, statusMap);
-            });
-
-            for (Object[] row : dailyRevenueByStatus) {
-                // The DAO returns java.sql.Date, which needs conversion to LocalDate
-                LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
-                BillingStatus status = (BillingStatus) row[1];
-                Double total = (Double) row[2];
-                if (processedData.containsKey(date)) {
-                    processedData.get(date).put(status, total == null ? 0.0 : total);
+                else if (widget.getType() == DashboardWidgetEntity.WidgetType.CARD) {
+                    Object value = queryService.executeWidgetQuery(widget);
+                    String formattedValue = formatNumber(value);
+                    PrimeFaces.current().executeScript(String.format("updateCardValue('%s', '%s')", widgetId, formattedValue));
                 }
+                else if (widget.getType() == DashboardWidgetEntity.WidgetType.TABLE) {
+                    Map<String, Object> data = (Map<String, Object>) queryService.executeWidgetQuery(widget);
+                    String jsonData = gson.toJson(data);
+                    PrimeFaces.current().executeScript(String.format("renderDynamicTable('%s', %s)", widgetId, jsonData));
+                }
+                else if (widget.getType() == DashboardWidgetEntity.WidgetType.CALENDAR) {
+                    List<Map<String, String>> events = (List<Map<String, String>>) queryService.executeWidgetQuery(widget);
+                    String jsonEvents = gson.toJson(events);
+                    PrimeFaces.current().executeScript(String.format("renderDynamicCalendar('%s', %s)", widgetId, jsonEvents));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            // Build the separate lists for the final JSON object
-            List<String> labels = new ArrayList<>();
-            List<Double> paidData = new ArrayList<>();
-            List<Double> pendingData = new ArrayList<>();
-
-            processedData.forEach((date, statusMap) -> {
-                labels.add(date.format(DateTimeFormatter.ofPattern("MMM dd")));
-                paidData.add(statusMap.get(BillingStatus.PAID));
-                pendingData.add(statusMap.get(BillingStatus.PENDING));
-            });
-
-            // Manually construct the final JSON object to be sent to the frontend
-            String labelsJson = labels.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",", "[", "]"));
-            String paidDataJson = paidData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
-            String pendingDataJson = pendingData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
-            String revenueChartJson = String.format("{\"labels\": %s, \"paidData\": %s, \"pendingData\": %s}", labelsJson, paidDataJson, pendingDataJson);
-
-            List<Object[]> doctorWorkloadData = appointmentService.getAppointmentCountsByDoctor();
-            String doctorWorkloadJson = doctorWorkloadData.stream()
-                    .map(row -> {
-                        String doctorName = "Dr. " + row[0] + " " + row[1];
-                        long count = (long) row[2];
-                        // We escape the doctor's name to prevent issues with names like O'Malley
-                        return String.format("{\"doctorName\": \"%s\", \"count\": %d}",
-                                doctorName.replace("\"", "\\\""), count);
-                    })
-                    .collect(Collectors.joining(", ", "[", "]"));
-
-            // --- Data for Billing Status Doughnut Chart ---
-            List<Object[]> paymentMethodData = billingService.getBillingTotalsByPaymentMethod();
-            String billingStatusJson = paymentMethodData.stream()
-                    .map(obj -> {
-                        String method = (String) obj[0];
-                        // Handle potential null payment methods if the data allows it
-                        if (method == null) {
-                            method = "Unknown";
-                        }
-                        // Sanitize the method name to prevent breaking JSON
-                        method = method.replace("\"", "\\\"");
-                        Double total = (Double) obj[1];
-                        return String.format("{\"method\": \"%s\", \"total\": %.2f}", method, total);
-                    }).collect(Collectors.joining(", ", "[", "]"));
-
-            // --- Data for Doctor Specialization Doughnut Chart ---
-            List<Object[]> specializationData = doctorService.getSpecializationCounts();
-            String specializationJson = specializationData.stream()
-                    .map(row -> {
-                        String specialization = (String) row[0];
-                        Long count = (Long) row[1];
-                        String escapedSpec = (specialization != null) ? specialization.replace("\"", "\\\"") : "Unassigned";
-                        return String.format("{\"specialization\": \"%s\", \"count\": %d}", escapedSpec, count);
-                    })
-                    .collect(Collectors.joining(", ", "[", "]"));
-
-
-
-            // UPDATE: Execute a JavaScript function passing ALL THREE JSON strings
-            PrimeFaces.current().executeScript("initStaffDashboardCharts(" +
-                    barChartJson + ", " +
-                    doughnutChartJson + ", " +
-                    revenueChartJson + ", " +
-                    doctorWorkloadJson + ", " +
-                    billingStatusJson + ", " +
-                    specializationJson + ");");
-            System.out.println("Successfully sent all chart data to the browser.");
-
-        } catch (Exception e) {
-            System.out.println("[ERROR] Failed to load and send chart data."+ e);
         }
     }
 
-    /**
-     * A private helper method to build the JSON for the stacked bar chart.
-     * This keeps the main loadChartData() method cleaner.
-     */
-    private String buildStackedBarChartJson(Map<LocalDate, Map<AppointmentStatus, Long>> processedData) {
-        List<String> labels = new ArrayList<>();
-        List<Long> scheduledData = new ArrayList<>();
-        List<Long> completedData = new ArrayList<>();
-        List<Long> cancelledData = new ArrayList<>();
+    public void handleReorder() {
+        Map<String, String> params = FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap();
+        String widgetOrder = params.get("widgetOrder"); // Comma separated IDs e.g. "5,2,8"
 
-        processedData.forEach((date, statusMap) -> {
-            labels.add(date.format(DateTimeFormatter.ofPattern("EEE"))); // e.g., "Mon"
-            scheduledData.add(statusMap.get(AppointmentStatus.SCHEDULED));
-            completedData.add(statusMap.get(AppointmentStatus.COMPLETED));
-            cancelledData.add(statusMap.get(AppointmentStatus.CANCELLED));
-        });
+        if (widgetOrder == null || widgetOrder.isEmpty()) return;
 
-        String labelsJson = labels.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",", "[", "]"));
-        String scheduledJson = scheduledData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
-        String completedJson = completedData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
-        String cancelledJson = cancelledData.stream().map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+        String[] ids = widgetOrder.split(",");
+        Transaction tx = null;
 
-        return String.format("{\"labels\": %s, \"scheduled\": %s, \"completed\": %s, \"cancelled\": %s}",
-                labelsJson, scheduledJson, completedJson, cancelledJson);
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+
+            for (int i = 0; i < ids.length; i++) {
+                Long id = Long.valueOf(ids[i]);
+                DashboardWidgetEntity widget = session.get(DashboardWidgetEntity.class, id);
+                if (widget != null) {
+                    widget.setPosition(i);
+                    session.merge(widget);
+                }
+            }
+
+            tx.commit();
+            // Reload layout to reflect order
+            currentLayout = session.get(DashboardLayout.class, currentLayout.getId());
+            addInfo("Dashboard Layout Updated");
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            e.printStackTrace();
+        }
     }
+    private String formatNumber(Object value) {
+        if (value instanceof Number) {
+            NumberFormat nf = NumberFormat.getInstance();
+            nf.setMaximumFractionDigits(2);
+            return nf.format(value);
+        }
+        return value != null ? value.toString() : "0";
+    }
+
+    // NEW: Friendly Aggregation Names
+    public List<SelectItem> getAggregationSelectItems() {
+        List<SelectItem> items = new ArrayList<>();
+        items.add(new SelectItem(DashboardWidgetEntity.AggregationType.COUNT, "Count (Total Items)"));
+        items.add(new SelectItem(DashboardWidgetEntity.AggregationType.SUM, "Sum (Total Value)"));
+        items.add(new SelectItem(DashboardWidgetEntity.AggregationType.AVG, "Average"));
+        items.add(new SelectItem(DashboardWidgetEntity.AggregationType.MIN, "Minimum"));
+        items.add(new SelectItem(DashboardWidgetEntity.AggregationType.MAX, "Maximum"));
+        return items;
+    }
+
+    private void addError(String msg) {
+        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", msg));
+    }
+    private void addInfo(String msg) {
+        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", msg));
+    }
+
+    // Getters
+    public DashboardLayout getCurrentLayout() { return currentLayout; }
+    public List<DashboardLayout> getAvailableLayouts() { return availableLayouts; }
+    public Long getCurrentLayoutId() { return currentLayoutId; }
+    public void setCurrentLayoutId(Long currentLayoutId) { this.currentLayoutId = currentLayoutId; }
+    public DashboardWidgetEntity getNewWidget() { return newWidget; }
+    public List<String> getAvailableTables() { return availableTables; }
+    public List<String> getAvailableFields() { return availableFields; }
+    public DashboardWidgetEntity.WidgetType[] getWidgetTypes() { return DashboardWidgetEntity.WidgetType.values(); }
+    public DashboardWidgetEntity.ChartType[] getChartTypes() { return DashboardWidgetEntity.ChartType.values(); }
+    public DashboardWidgetEntity.AggregationType[] getAggregationTypes() { return DashboardWidgetEntity.AggregationType.values(); }
+    public String getNewDashboardName() { return newDashboardName; }
+    public void setNewDashboardName(String newDashboardName) { this.newDashboardName = newDashboardName; }
+    public List<String> getSelectedTableColumns() { return selectedTableColumns; }
+    public void setSelectedTableColumns(List<String> selectedTableColumns) { this.selectedTableColumns = selectedTableColumns; }
 }
