@@ -1,6 +1,8 @@
 package com.pahappa.util;
 
 import com.pahappa.models.*;
+import com.pahappa.models.analytics.DashboardLayout;
+import com.pahappa.models.analytics.DashboardWidgetEntity;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
@@ -62,6 +64,8 @@ public class HibernateUtil {
                 configuration.addAnnotatedClass(Doctor.class);
                 configuration.addAnnotatedClass(Appointment.class);
                 configuration.addAnnotatedClass(Billing.class);
+                configuration.addAnnotatedClass(DashboardLayout.class);
+                configuration.addAnnotatedClass(DashboardWidgetEntity.class);
                 configuration.addAnnotatedClass(Staff.class);
                 configuration.addAnnotatedClass(Role.class);
                 configuration.addAnnotatedClass(Permissions.class);
@@ -77,6 +81,8 @@ public class HibernateUtil {
                 sources.addAnnotatedClass(Doctor.class);
                 sources.addAnnotatedClass(Appointment.class);
                 sources.addAnnotatedClass(Billing.class);
+                sources.addAnnotatedClass(DashboardLayout.class);
+                sources.addAnnotatedClass(DashboardWidgetEntity.class);
                 sources.addAnnotatedClass(AuditLog.class);
                 sources.addAnnotatedClass(Staff.class);
                 sources.addAnnotatedClass(Role.class);

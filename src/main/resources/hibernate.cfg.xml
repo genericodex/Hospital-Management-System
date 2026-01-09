@@ -37,5 +37,7 @@
         <mapping class="com.pahappa.models.Role"/>
         <mapping class="com.pahappa.models.AuditLog"/>
         <mapping class="com.pahappa.models.Permissions"/>
+        <mapping class="com.pahappa.models.analytics.DashboardLayout"/>
+        <mapping class="com.pahappa.models.analytics.DashboardWidgetEntity"/>
     </session-factory>
 </hibernate-configuration>
