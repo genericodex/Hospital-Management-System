@@ -1,5 +1,6 @@
 package com.pahappa.services.dashboard;
 
+import com.google.gson.Gson;
 import com.pahappa.models.analytics.AnalysisDimension;
 import com.pahappa.models.analytics.BenchmarkLog;
 import com.pahappa.models.analytics.CurrentView;
@@ -84,12 +85,9 @@ public class DashboardScheduler {
 
             if (needsUpdate) {
                 String hql = dim.getDataPoint().getQuery();
-                Object resultObj = session.createQuery(hql, Object.class).uniqueResult();
+                List<?> resultList = session.createQuery(hql).list();
 
-                Double newResultValue = 0.0;
-                if (resultObj instanceof Number) {
-                    newResultValue = ((Number) resultObj).doubleValue();
-                }
+                String jsonResult = new Gson().toJson(resultList);
 
                 LocalDateTime now = LocalDateTime.now();
 
@@ -103,22 +101,22 @@ public class DashboardScheduler {
                     session.persist(log);
 
                     // Update CurrentView with NEW data
-                    currentView.setResult(newResultValue);
+                    currentView.setResult(jsonResult);
                     currentView.setComputationDate(now);
                     currentView.setStatus("Active");
                     session.merge(currentView);
 
-                    logger.info("Updated Dimension '{}': Old={} -> New={}", dim.getName(), log.getResult(), newResultValue);
+                    logger.info("Updated Dimension '{}': Old={} -> New={}", dim.getName(), log.getResult(), jsonResult);
                 } else {
                     // First time creation
                     currentView = new CurrentView();
                     currentView.setAnalysisDimension(dim);
-                    currentView.setResult(newResultValue);
+                    currentView.setResult(jsonResult);
                     currentView.setComputationDate(now);
                     currentView.setStatus("Active");
                     session.persist(currentView);
 
-                    logger.info("Created Dimension '{}': Result={}", dim.getName(), newResultValue);
+                    logger.info("Created Dimension '{}': Result={}", dim.getName(), jsonResult);
                 }
             }
         } catch (Exception e) {

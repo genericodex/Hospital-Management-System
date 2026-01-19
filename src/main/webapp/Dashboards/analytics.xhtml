@@ -12,6 +12,7 @@
 <h:body>
     <ui:composition template="/template.xhtml">
         <ui:define name="content">
+            <h:form >
             <div class="card">
                 <p:toolbar styleClass="bg-blue-50 rounded-lg mb-4 p-4 flex flex-wrap gap-4 items-center justify-between">
 
@@ -49,7 +50,7 @@
                                 <p:column headerText="Query">#{dp.query}</p:column>
                                 <p:column width="100">
                                     <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
-                                                     actionListener="#{analyticsBean.deleteDataPoint(dp)}" update="dataPointTable :growl">
+                                                     actionListener="#{analyticsBean.deleteDataPoint(dp)}" update="dataPointTable :growl"  process="@this">
                                         <p:confirm header="Confirmation" message="Delete this data point?" icon="pi pi-exclamation-triangle"/>
                                     </p:commandButton>
                                 </p:column>
@@ -90,7 +91,7 @@
                                 <p:column headerText="Frequency (min)">#{ad.frequency}</p:column>
                                 <p:column width="100">
                                     <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
-                                                     actionListener="#{analyticsBean.deleteDimension(ad)}" update="dimensionTable :growl">
+                                                     actionListener="#{analyticsBean.deleteDimension(ad)}" update="dimensionTable :growl"  process="@this">
                                         <p:confirm header="Confirmation" message="Delete this dimension?" icon="pi pi-exclamation-triangle"/>
                                     </p:commandButton>
                                 </p:column>
@@ -152,6 +153,7 @@
                     <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes" />
                 </p:confirmDialog>
             </div>
+        </h:form>
         </ui:define>
     </ui:composition>
 </h:body>

@@ -15,8 +15,9 @@ public class BenchmarkLog implements Serializable {
     @JoinColumn(name = "analysis_dimension_id", nullable = false)
     private AnalysisDimension analysisDimension;
 
-    @Column(name = "result_value")
-    private Double result;
+    // CHANGED: Store result as JSON String
+    @Column(name = "result_data", columnDefinition = "TEXT")
+    private String resultData;
 
     @Column(name = "computation_date", nullable = false)
     private LocalDateTime computationDate;
@@ -30,8 +31,8 @@ public class BenchmarkLog implements Serializable {
     public void setId(Long id) { this.id = id; }
     public AnalysisDimension getAnalysisDimension() { return analysisDimension; }
     public void setAnalysisDimension(AnalysisDimension analysisDimension) { this.analysisDimension = analysisDimension; }
-    public Double getResult() { return result; }
-    public void setResult(Double result) { this.result = result; }
+    public String getResult() { return resultData; }
+    public void setResult(String resultData) { this.resultData = resultData; }
     public LocalDateTime getComputationDate() { return computationDate; }
     public void setComputationDate(LocalDateTime computationDate) { this.computationDate = computationDate; }
     public String getStatus() { return status; }
