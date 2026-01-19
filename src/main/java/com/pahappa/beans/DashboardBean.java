@@ -20,11 +20,7 @@ import org.primefaces.PrimeFaces;
 
 import java.io.Serializable;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
 
 @Named
 @ViewScoped
@@ -46,10 +42,15 @@ public class DashboardBean implements Serializable {
     private List<String> availableFields;
     private boolean isEditMode = false;
 
-    // NEW: Bind UI multi-select to this list, then convert to CSV string for entity
+    // Bind UI multi-select to this list, then convert to CSV string for entity
     private List<String> selectedTableColumns;
 
     private String newDashboardName;
+
+    // --- PREVIEW FIELDS ---
+    private String previewHql;
+    private List<Map<String, Object>> previewDataRows;
+    private List<String> previewDataColumns;
 
     @PostConstruct
     public void init() {
@@ -148,6 +149,7 @@ public class DashboardBean implements Serializable {
         isEditMode = false;
         availableFields = new ArrayList<>();
         selectedTableColumns = new ArrayList<>();
+        clearPreview();
     }
 
     public void editWidget(DashboardWidgetEntity widget) {
@@ -162,9 +164,15 @@ public class DashboardBean implements Serializable {
         } else {
             selectedTableColumns = new ArrayList<>();
         }
+        clearPreview();
     }
 
-    // --- FIX: Updated deleteWidget to use orphanRemoval via Parent ---
+    private void clearPreview() {
+        previewHql = null;
+        previewDataRows = new ArrayList<>();
+        previewDataColumns = new ArrayList<>();
+    }
+
     public void deleteWidget(DashboardWidgetEntity widget) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -174,7 +182,6 @@ public class DashboardBean implements Serializable {
             DashboardLayout layout = session.get(DashboardLayout.class, currentLayout.getId());
 
             // 2. Remove the widget from the parent's collection
-            // This triggers the actual deletion because of orphanRemoval=true
             boolean removed = layout.getWidgets().removeIf(w -> w.getId().equals(widget.getId()));
 
             if (removed) {
@@ -199,6 +206,122 @@ public class DashboardBean implements Serializable {
             availableFields = schemaProvider.getFieldsForTable(newWidget.getDataSourceTable());
         }
     }
+
+    // --- PREVIEW LOGIC START ---
+    public void runWidgetPreview() {
+        clearPreview();
+
+        if (newWidget.getDataSourceTable() == null) {
+            addError("Please select a Data Source table.");
+            return;
+        }
+
+        // 1. Sync Columns for Table Type (needed for query generation)
+        if (newWidget.getType() == DashboardWidgetEntity.WidgetType.TABLE) {
+            if (selectedTableColumns != null && !selectedTableColumns.isEmpty()) {
+                newWidget.setTableColumns(String.join(",", selectedTableColumns));
+            } else {
+                addError("Select at least one column for Table widget.");
+                return;
+            }
+        }
+
+        // 2. Generate Pseudo-HQL for display
+        generatePreviewHql();
+
+        // 3. Execute Data Preview
+        try {
+            Object result = queryService.executeWidgetQuery(newWidget);
+            processPreviewData(result);
+        } catch (Exception e) {
+            clearPreview();
+            addError("Query Execution Failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void generatePreviewHql() {
+        StringBuilder sb = new StringBuilder();
+        String table = newWidget.getDataSourceTable();
+        String filter = newWidget.getFilterClause();
+
+        switch (newWidget.getType()) {
+            case CHART:
+                sb.append("SELECT ").append(newWidget.getXAxisField()).append(", ")
+                        .append(newWidget.getAggregation()).append("(").append(newWidget.getYAxisField()).append(") ")
+                        .append("FROM ").append(table);
+                if (filter != null && !filter.isEmpty()) sb.append(" WHERE ").append(filter);
+                sb.append(" GROUP BY ").append(newWidget.getXAxisField());
+                break;
+            case CARD:
+                sb.append("SELECT ").append(newWidget.getAggregation()).append("(").append(newWidget.getYAxisField()).append(") ")
+                        .append("FROM ").append(table);
+                if (filter != null && !filter.isEmpty()) sb.append(" WHERE ").append(filter);
+                break;
+            case TABLE:
+                sb.append("SELECT ").append(newWidget.getTableColumns()).append(" FROM ").append(table);
+                if (filter != null && !filter.isEmpty()) sb.append(" WHERE ").append(filter);
+                break;
+            case CALENDAR:
+                sb.append("SELECT ").append(newWidget.getXAxisField()).append(", ").append(newWidget.getYAxisField())
+                        .append(" FROM ").append(table);
+                if (filter != null && !filter.isEmpty()) sb.append(" WHERE ").append(filter);
+                break;
+        }
+        this.previewHql = sb.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processPreviewData(Object result) {
+        if (result == null) return;
+
+        if (newWidget.getType() == DashboardWidgetEntity.WidgetType.CHART) {
+            Map<?, ?> map = (Map<?, ?>) result;
+            previewDataColumns = Arrays.asList("Label (" + newWidget.getXAxisField() + ")", "Value");
+            int count = 0;
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (count++ >= 5) break; // Limit to 5 rows
+                Map<String, Object> row = new HashMap<>();
+                row.put(previewDataColumns.get(0), entry.getKey() != null ? entry.getKey().toString() : "NULL");
+                row.put(previewDataColumns.get(1), entry.getValue());
+                previewDataRows.add(row);
+            }
+        } else if (newWidget.getType() == DashboardWidgetEntity.WidgetType.CARD) {
+            previewDataColumns = Collections.singletonList("Result");
+            Map<String, Object> row = new HashMap<>();
+            row.put("Result", formatNumber(result));
+            previewDataRows.add(row);
+        } else if (newWidget.getType() == DashboardWidgetEntity.WidgetType.TABLE) {
+            Map<String, Object> tableData = (Map<String, Object>) result;
+            List<String> headers = (List<String>) tableData.get("headers");
+            List<List<Object>> rows = (List<List<Object>>) tableData.get("rows");
+
+            if (headers != null) previewDataColumns = headers;
+            if (rows != null) {
+                int count = 0;
+                for (List<Object> rowData : rows) {
+                    if (count++ >= 5) break;
+                    Map<String, Object> rowMap = new HashMap<>();
+                    for (int i = 0; i < headers.size() && i < rowData.size(); i++) {
+                        rowMap.put(headers.get(i), rowData.get(i));
+                    }
+                    previewDataRows.add(rowMap);
+                }
+            }
+        } else if (newWidget.getType() == DashboardWidgetEntity.WidgetType.CALENDAR) {
+            List<Map<String, String>> events = (List<Map<String, String>>) result;
+            previewDataColumns = Arrays.asList("Date", "Title");
+            int count = 0;
+            for (Map<String, String> evt : events) {
+                if (count++ >= 5) break;
+                Map<String, Object> row = new HashMap<>();
+                row.put("Date", evt.getOrDefault("start", ""));
+                row.put("Title", evt.getOrDefault("title", ""));
+                previewDataRows.add(row);
+            }
+        }
+    }
+    // --- PREVIEW LOGIC END ---
 
     public void saveWidget() {
         // Validation
@@ -348,7 +471,7 @@ public class DashboardBean implements Serializable {
         return value != null ? value.toString() : "0";
     }
 
-    // NEW: Friendly Aggregation Names
+    // Friendly Aggregation Names
     public List<SelectItem> getAggregationSelectItems() {
         List<SelectItem> items = new ArrayList<>();
         items.add(new SelectItem(DashboardWidgetEntity.AggregationType.COUNT, "Count (Total Items)"));
@@ -381,4 +504,9 @@ public class DashboardBean implements Serializable {
     public void setNewDashboardName(String newDashboardName) { this.newDashboardName = newDashboardName; }
     public List<String> getSelectedTableColumns() { return selectedTableColumns; }
     public void setSelectedTableColumns(List<String> selectedTableColumns) { this.selectedTableColumns = selectedTableColumns; }
+
+    // Preview Getters
+    public String getPreviewHql() { return previewHql; }
+    public List<Map<String, Object>> getPreviewDataRows() { return previewDataRows; }
+    public List<String> getPreviewDataColumns() { return previewDataColumns; }
 }

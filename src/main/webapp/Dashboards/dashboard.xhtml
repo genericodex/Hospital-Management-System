@@ -225,6 +225,51 @@
                         <p:outputLabel value="Filter (HQL Clause)"/>
                         <p:inputText value="#{dashboardBean.newWidget.filterClause}" placeholder="e.g. status = 'SCHEDULED'"/>
                     </div>
+
+
+                    <div class="col-span-2 mt-4 border-t border-gray-200 pt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h:outputText value="Query &amp; Data Preview" styleClass="font-bold text-gray-700"/>
+                            <p:commandButton value="Run Preview" icon="pi pi-play"
+                                             actionListener="#{dashboardBean.runWidgetPreview}"
+                                             process="@form" update="previewPanel"
+                                             styleClass="ui-button-secondary ui-button-outlined ui-button-sm"/>
+                        </div>
+
+                        <p:outputPanel id="previewPanel" styleClass="bg-gray-50 rounded p-3 border border-gray-200">
+                            <h:panelGroup rendered="#{not empty dashboardBean.previewHql}">
+                                <!-- HQL Preview -->
+                                <div class="mb-3">
+                                    <span class="text-xs font-bold text-gray-500 uppercase block mb-1">Generated Query:</span>
+                                    <div class="bg-white p-2 border rounded font-mono text-xs text-blue-700 overflow-x-auto whitespace-pre-wrap">
+                                        <h:outputText value="#{dashboardBean.previewHql}"/>
+                                    </div>
+                                </div>
+
+                                <!-- Data Preview -->
+                                <div>
+                                    <span class="text-xs font-bold text-gray-500 uppercase block mb-1">Result Sample (Max 5):</span>
+                                    <p:dataTable value="#{dashboardBean.previewDataRows}" var="row"
+                                                 size="small" styleClass="text-xs shadow-sm"
+                                                 emptyMessage="No records found for this query."
+                                                 rendered="#{not empty dashboardBean.previewDataColumns}">
+
+                                        <p:columns value="#{dashboardBean.previewDataColumns}" var="col" headerText="#{col}">
+                                            <h:outputText value="#{row[col]}" />
+                                        </p:columns>
+                                    </p:dataTable>
+
+                                    <h:outputText value="No columns to display."
+                                                  rendered="#{empty dashboardBean.previewDataColumns}"
+                                                  styleClass="text-xs text-gray-400 italic"/>
+                                </div>
+                            </h:panelGroup>
+
+                            <h:outputText value="Configure the widget fields above and click 'Run Preview' to verify the data."
+                                          rendered="#{empty dashboardBean.previewHql}"
+                                          styleClass="text-sm text-gray-400 italic block text-center py-2"/>
+                        </p:outputPanel>
+                    </div>
                 </div>
 
                 <div class="mt-4 flex justify-end">

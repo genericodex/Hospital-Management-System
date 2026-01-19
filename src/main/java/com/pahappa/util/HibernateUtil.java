@@ -1,8 +1,7 @@
 package com.pahappa.util;
 
 import com.pahappa.models.*;
-import com.pahappa.models.analytics.DashboardLayout;
-import com.pahappa.models.analytics.DashboardWidgetEntity;
+import com.pahappa.models.analytics.*;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
@@ -70,6 +69,11 @@ public class HibernateUtil {
                 configuration.addAnnotatedClass(Role.class);
                 configuration.addAnnotatedClass(Permissions.class);
 
+                configuration.addAnnotatedClass(DataPoint.class);
+                configuration.addAnnotatedClass(AnalysisDimension.class);
+                configuration.addAnnotatedClass(CurrentView.class);
+                configuration.addAnnotatedClass(BenchmarkLog.class);
+
                 registry = new StandardServiceRegistryBuilder()
                         .applySettings(configuration.getProperties())
                         .build();
@@ -87,6 +91,12 @@ public class HibernateUtil {
                 sources.addAnnotatedClass(Staff.class);
                 sources.addAnnotatedClass(Role.class);
                 sources.addAnnotatedClass(Permissions.class);
+
+                // NEW ANALYTICS ENTITIES
+                sources.addAnnotatedClass(DataPoint.class);
+                sources.addAnnotatedClass(AnalysisDimension.class);
+                sources.addAnnotatedClass(CurrentView.class);
+                sources.addAnnotatedClass(BenchmarkLog.class);
 
                 Metadata metadata = sources.getMetadataBuilder().build();
                 sessionFactory = metadata.getSessionFactoryBuilder().build();

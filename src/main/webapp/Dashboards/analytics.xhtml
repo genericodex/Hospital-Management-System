@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <title>Analytics Configuration</title>
+</h:head>
+
+<h:body>
+    <ui:composition template="/template.xhtml">
+        <ui:define name="content">
+            <div class="card">
+                <p:toolbar styleClass="bg-blue-50 rounded-lg mb-4 p-4 flex flex-wrap gap-4 items-center justify-between">
+
+                    <p:toolbarGroup name="center">
+                        <div class="text-2xl font-bold text-green-700/20  " style="letter-spacing: 2.5rem; justify-content: center">
+                            <h1>Analytics Engine Configuration</h1>
+                        </div>
+                    </p:toolbarGroup>
+                </p:toolbar>
+                <p:growl id="growl" showDetail="true" />
+
+                <p:tabView>
+                    <!-- TAB 1: DATA POINTS -->
+                    <p:tab title="1. Data Points">
+                        <h:form id="dataPointForm">
+                            <p:panel header="Create Data Point" styleClass="mb-3">
+                                <div class="ui-fluid formgrid grid">
+                                    <div class="field col-12 md:col-4">
+                                        <p:outputLabel for="dpName" value="Name"/>
+                                        <p:inputText id="dpName" value="#{analyticsBean.newDataPoint.name}" required="true" placeholder="e.g., Active Patients Count"/>
+                                    </div>
+                                    <div class="field col-12 md:col-8">
+                                        <p:outputLabel for="dpQuery" value="HQL Query (Must return a single number)"/>
+                                        <p:inputTextarea id="dpQuery" value="#{analyticsBean.newDataPoint.query}" required="true" rows="2"
+                                                         placeholder="SELECT count(p) FROM Patient p WHERE p.isDeleted = false"/>
+                                    </div>
+                                </div>
+                                <p:commandButton value="Save Data Point" actionListener="#{analyticsBean.saveDataPoint}"
+                                                 update=":growl dataPointTable @form" icon="pi pi-check" styleClass="mt-2"/>
+                            </p:panel>
+
+                            <p:dataTable id="dataPointTable" value="#{analyticsBean.dataPoints}" var="dp" stripedRows="true" styleClass="mt-3">
+                                <p:column headerText="ID" width="50">#{dp.id}</p:column>
+                                <p:column headerText="Name">#{dp.name}</p:column>
+                                <p:column headerText="Query">#{dp.query}</p:column>
+                                <p:column width="100">
+                                    <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
+                                                     actionListener="#{analyticsBean.deleteDataPoint(dp)}" update="dataPointTable :growl">
+                                        <p:confirm header="Confirmation" message="Delete this data point?" icon="pi pi-exclamation-triangle"/>
+                                    </p:commandButton>
+                                </p:column>
+                            </p:dataTable>
+                        </h:form>
+                    </p:tab>
+
+                    <!-- TAB 2: ANALYSIS DIMENSIONS -->
+                    <p:tab title="2. Analysis Dimensions">
+                        <h:form id="dimensionForm">
+                            <p:panel header="Create Analysis Dimension" styleClass="mb-3">
+                                <div class="ui-fluid formgrid grid">
+                                    <div class="field col-12 md:col-4">
+                                        <p:outputLabel for="adName" value="Dimension Name"/>
+                                        <p:inputText id="adName" value="#{analyticsBean.newDimension.name}" required="true" placeholder="e.g., Patient Growth Tracker"/>
+                                    </div>
+                                    <div class="field col-12 md:col-4">
+                                        <p:outputLabel for="adDataPoint" value="Data Point"/>
+                                        <p:selectOneMenu id="adDataPoint" value="#{analyticsBean.selectedDataPointId}" required="true">
+                                            <f:selectItem itemLabel="Select Data Point" itemValue=""/>
+                                            <f:selectItems value="#{analyticsBean.dataPoints}" var="d"
+                                                           itemLabel="#{d.name}" itemValue="#{d.id}"/>
+                                        </p:selectOneMenu>
+                                    </div>
+                                    <div class="field col-12 md:col-4">
+                                        <p:outputLabel for="adFreq" value="Frequency (Minutes)"/>
+                                        <p:spinner id="adFreq" value="#{analyticsBean.newDimension.frequency}" min="1" required="true"/>
+                                    </div>
+                                </div>
+                                <p:commandButton value="Save Dimension" actionListener="#{analyticsBean.saveDimension}"
+                                                 update=":growl dimensionTable @form" icon="pi pi-check" styleClass="mt-2"/>
+                            </p:panel>
+
+                            <p:dataTable id="dimensionTable" value="#{analyticsBean.analysisDimensions}" var="ad" stripedRows="true" styleClass="mt-3">
+                                <p:column headerText="ID" width="50">#{ad.id}</p:column>
+                                <p:column headerText="Name">#{ad.name}</p:column>
+                                <p:column headerText="Data Point">#{ad.dataPoint.name}</p:column>
+                                <p:column headerText="Frequency (min)">#{ad.frequency}</p:column>
+                                <p:column width="100">
+                                    <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger rounded-button"
+                                                     actionListener="#{analyticsBean.deleteDimension(ad)}" update="dimensionTable :growl">
+                                        <p:confirm header="Confirmation" message="Delete this dimension?" icon="pi pi-exclamation-triangle"/>
+                                    </p:commandButton>
+                                </p:column>
+                            </p:dataTable>
+                        </h:form>
+                    </p:tab>
+
+                    <!-- TAB 3: MONITORING -->
+                    <p:tab title="3. Live Monitor">
+                        <h:form id="monitorForm">
+                            <div class="flex justify-content-between align-items-center mb-3">
+                                <!-- NEW: Manual Trigger Button -->
+                                <p:commandButton value="Run Analysis Now" actionListener="#{analyticsBean.runAnalysisNow}"
+                                                 update="currentViewTable benchmarkTable :growl" icon="pi pi-refresh"
+                                                 styleClass="ui-button-success"/>
+                            </div>
+
+                            <!-- Auto-refresh every 10 seconds to show updates -->
+                            <p:poll interval="10" listener="#{analyticsBean.refreshData}" update="currentViewTable benchmarkTable" />
+
+                            <div class="grid">
+                                <div class="col-12 md:col-6">
+                                    <p:panel header="Current Views (Live)">
+                                        <p:dataTable id="currentViewTable" value="#{analyticsBean.currentViews}" var="cv" size="small" emptyMessage="No active analytics yet.">
+                                            <p:column headerText="Dimension">#{cv.analysisDimension.name}</p:column>
+                                            <p:column headerText="Result">
+                                                <h:outputText value="#{cv.result}" style="font-weight: bold; color: var(--primary-color); font-size: 1.2em"/>
+                                            </p:column>
+                                            <p:column headerText="Last Computed">
+                                                <h:outputText value="#{cv.computationDate}">
+                                                    <f:convertDateTime pattern="HH:mm:ss" type="localDateTime"/>
+                                                </h:outputText>
+                                            </p:column>
+                                        </p:dataTable>
+                                    </p:panel>
+                                </div>
+
+                                <div class="col-12 md:col-6">
+                                    <p:panel header="Benchmark Logs (History)">
+                                        <p:dataTable id="benchmarkTable" value="#{analyticsBean.benchmarkLogs}" var="log" paginatorPosition="bottom"
+                                                     paginator="true" rows="30" size="small" emptyMessage="No history logs yet." rowsPerPageTemplate="5,10,15,50,100">
+                                            <p:column headerText="Dimension">#{log.analysisDimension.name}</p:column>
+                                            <p:column headerText="Result">#{log.result}</p:column>
+                                            <p:column headerText="Archived At">
+                                                <h:outputText value="#{log.computationDate}">
+                                                    <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss" type="localDateTime"/>
+                                                </h:outputText>
+                                            </p:column>
+                                        </p:dataTable>
+                                    </p:panel>
+                                </div>
+                            </div>
+                        </h:form>
+                    </p:tab>
+                </p:tabView>
+
+                <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
+                    <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                    <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes" />
+                </p:confirmDialog>
+            </div>
+        </ui:define>
+    </ui:composition>
+</h:body>
+</html>
